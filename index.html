@@ -397,6 +397,60 @@ function engine(){
     }
   }
   flat.forEach(({d},i)=>{ST.malusList.forEach(m=>{const rec=d[m.id];if(!rec)return;const fxp=(typeof rec==="object")?rec.xp:m.xp;const fdd=(typeof rec==="object")?rec.debtDays:m.debtDays;const pd=Math.ceil(Math.abs(fxp)/fdd);for(let j=0;j<fdd&&i+j<n;j++){dxp[i+j]+=pd;dstat[i+j][m.stat]=(dstat[i+j][m.stat]||0)+pd;}});});
+  // Perfect week / perfect month — big bonus for slots, big extra malus for malus checkboxes
+  const _curKeyPW=mk(new Date().getFullYear(),new Date().getMonth());
+  ST.slots.forEach(slot=>{
+    for(let weekStart=0;weekStart<flat.length;weekStart+=7){
+      const weekEnd=Math.min(weekStart+7,flat.length);
+      if(weekEnd-weekStart<7)continue;
+      const chunk=flat.slice(weekStart,weekEnd);
+      const allChecked=chunk.every(({d,aIds})=>aIds.includes(slot.id)&&d[slot.id]);
+      if(allChecked){
+        bonXP[weekEnd-1]=(bonXP[weekEnd-1]||0)+Math.round(slot.xp*3);
+      }
+    }
+  });
+  let _monthOffPW=0;
+  skeys.forEach(k=>{
+    const _mdPW=ST.history[k];
+    if(k<_curKeyPW){
+      const _aIdsPW=_mdPW.activeSlots||[];
+      ST.slots.forEach(slot=>{
+        if(!_aIdsPW.includes(slot.id))return;
+        const allDaysChecked=_mdPW.days.length>0&&_mdPW.days.every(d=>d[slot.id]);
+        if(allDaysChecked){
+          const lastIdx=_monthOffPW+_mdPW.days.length-1;
+          bonXP[lastIdx]=(bonXP[lastIdx]||0)+Math.round(slot.xp*10);
+        }
+      });
+    }
+    _monthOffPW+=_mdPW.days.length;
+  });
+  ST.malusList.forEach(m=>{
+    for(let weekStart=0;weekStart<flat.length;weekStart+=7){
+      const weekEnd=Math.min(weekStart+7,flat.length);
+      if(weekEnd-weekStart<7)continue;
+      const chunk=flat.slice(weekStart,weekEnd);
+      const allChecked=chunk.every(({d})=>d[m.id]);
+      if(allChecked){
+        dxp[weekEnd-1]=(dxp[weekEnd-1]||0)+Math.round(Math.abs(m.xp)*3);
+      }
+    }
+  });
+  let _monthOffPWm=0;
+  skeys.forEach(k=>{
+    const _mdPWm=ST.history[k];
+    if(k<_curKeyPW){
+      ST.malusList.forEach(m=>{
+        const allDaysChecked=_mdPWm.days.length>0&&_mdPWm.days.every(d=>d[m.id]);
+        if(allDaysChecked){
+          const lastIdx=_monthOffPWm+_mdPWm.days.length-1;
+          dxp[lastIdx]=(dxp[lastIdx]||0)+Math.round(Math.abs(m.xp)*10);
+        }
+      });
+    }
+    _monthOffPWm+=_mdPWm.days.length;
+  });
   const netXP=flat.map((_,i)=>grossXP[i]+bonXP[i]-dxp[i]);
   const sxp={intel:0,physique:0,craft:0,disc:0,bienetre:0};
   const sla={intel:-999,physique:-999,craft:-999,disc:-999,bienetre:-999};
@@ -574,11 +628,49 @@ function rProfile(eng){
     const wi=Object.entries(warns).map(([s,w])=>`<span style="margin-right:12px;color:${w.level==="danger"?"#ec4899":"#f59e0b"}">${SM[s].icon} ${SM[s].label} — ${w.daysSince}j</span>`).join("");
     html+=`<div class="warn-banner" style="background:${hd?"rgba(255,68,102,.08)":"rgba(251,191,36,.08)"};border:1px solid ${hd?"#ec489950":"#f59e0b50"}"><span style="font-size:1.4rem">${hd?"🚨":"⚠️"}</span><div><div style="font-weight:700;font-size:.85rem;color:${hd?"#ec4899":"#f59e0b"};margin-bottom:4px">${hd?"ALERTE — decay !":"Stat en dégradation"}</div><div style="font-size:.72rem;color:#a0a0a0">${wi}</div></div></div>`;
   }
-  var motiv=getMotivationMsg(eng);
+  function xpAsOf(eng,targetDate){
+  const key=mk(targetDate.getFullYear(),targetDate.getMonth());
+  const dayIdx=targetDate.getDate()-1;
+  if(!ST.history[key])return null;
+  let idx=-1;
+  for(let j=0;j<eng.flat.length;j++){if(eng.flat[j].k===key&&eng.flat[j].i===dayIdx){idx=j;break;}}
+  if(idx<0)return null;
+  let sum=0;
+  for(let j=0;j<=idx;j++)sum+=eng.netXP[j];
+  return Math.round(sum);
+}
+function rThrowback(eng){
+  const now=new Date();
+  const points=[
+    {label:'il y a 1 mois',months:1},
+    {label:'il y a 3 mois',months:3},
+    {label:'il y a 1 an',months:12},
+  ];
+  const results=points.map(p=>{
+    const d=new Date(now.getFullYear(),now.getMonth()-p.months,now.getDate());
+    return{label:p.label,xp:xpAsOf(eng,d)};
+  }).filter(r=>r.xp!==null);
+  if(results.length===0)return'';
+  let html=`<div class="card" style="margin-bottom:16px"><div class="sl" style="margin-bottom:10px">⏳ IL Y A...</div><div style="display:flex;gap:8px">`;
+  results.forEach(r=>{
+    const delta=eng.totXP-r.xp;
+    const deltaColor=delta>=0?'#10b981':'#dc2626';
+    const deltaIcon=delta>=0?'↑':'↓';
+    html+=`<div style="flex:1;background:#f8f4ff;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(139,92,246,0.15)">
+      <div style="font-size:.52rem;color:#8b5cf6;font-family:'Anton',sans-serif;letter-spacing:1px;margin-bottom:4px">${r.label.toUpperCase()}</div>
+      <div style="font-size:1.1rem;font-weight:700;color:#6d28d9">${r.xp}</div>
+      <div style="font-size:.55rem;color:${deltaColor};font-weight:700;margin-top:2px">${deltaIcon} ${Math.abs(delta)}</div>
+    </div>`;
+  });
+  html+=`</div></div>`;
+  return html;
+}
+var motiv=getMotivationMsg(eng);
   html+=`<div style="background:${motiv.color}10;border:1px solid ${motiv.color}30;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
     <span style="font-size:1.6rem;flex-shrink:0">${motiv.icon}</span>
     <div style="font-size:.78rem;color:#1e3a4a;font-weight:600;line-height:1.4">${motiv.msg}</div>
   </div>`;
+  html+=rThrowback(eng);
   html+=`<div class="card-big" style="border-color:${t.color}30"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
   <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start">
   <div><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
@@ -592,7 +684,7 @@ function rProfile(eng){
   <div style="display:flex;gap:20px;flex-wrap:wrap">
     ${[["🔥 Streak",cstr,"#f59e0b","streak"],["🏆 Record",rstr,"#f59e0b","record"],["📅 Actifs",adays,"#10b981","actifs"],["📆 Total",tdays,"#8b5cf6","total"]].map(([l,v,c,k])=>`<div style="cursor:pointer;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.05)" data-key="${k}" onclick="openProfilePanel(this.dataset.key)"><div style="font-size:.54rem;text-transform:uppercase;letter-spacing:2px;color:#0e7490">${l}</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:${c}">${v}</div></div>`).join("")}
   </div></div>
-  <div style="position:relative;width:180px;height:180px;flex-shrink:0" ontouchstart="radarPressStart()" ontouchend="radarPressEnd()" ontouchcancel="radarPressEnd()" onmousedown="radarPressStart()" onmouseup="radarPressEnd()" onmouseleave="radarPressEnd()">
+  <div style="position:relative;width:180px;height:180px;flex-shrink:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation" ontouchstart="radarPressStart(event)" ontouchend="radarPressEnd(event)" ontouchcancel="radarPressEnd(event)" onmousedown="radarPressStart(event)" onmouseup="radarPressEnd(event)" onmouseleave="radarPressEnd(event)" oncontextmenu="return false">
   <canvas id="radar-canvas" width="180" height="180"></canvas>
   <div id="radar-ghost-label" style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.55rem;color:#999;white-space:nowrap;opacity:0;transition:opacity .2s;font-family:Anton,sans-serif;letter-spacing:1px"></div>
   <span data-stat="intel"    onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:1.2rem;cursor:pointer">🧠</span>
@@ -776,7 +868,7 @@ function rConfig(){
       <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;margin-bottom:8px">
         <div style="font-family:'Anton',sans-serif;color:#f59e0b;font-size:.7rem;letter-spacing:2px;margin-bottom:8px">MALUS HEBDO</div>
         <div style="font-size:.75rem;color:#1e3a4a;margin-bottom:8px">
-          Slot actif : <strong style="color:#f59e0b">${scfg.weeklyMalusSlotId?(ST.slots.find(s=>s.id===scfg.weeklyMalusSlotId)&&s.name||scfg.weeklyMalusSlotId):"Aucun"}</strong>
+          Slot actif : <strong style="color:#f59e0b">${scfg.weeklyMalusSlotId?((ST.slots.find(s=>s.id===scfg.weeklyMalusSlotId)||{}).name||scfg.weeklyMalusSlotId):"Aucun"}</strong>
           ${scfg.weeklyMalusSlotId?`<span onclick="setWeeklyMalus('')" style="cursor:pointer;margin-left:8px;color:#ec4899;font-size:.7rem">✕ Désactiver</span>`:""}
         </div>
         <div style="display:flex;align-items:center;gap:10px;font-size:.75rem;color:#1e3a4a">
@@ -943,29 +1035,99 @@ function computeBadges(eng){
 
   const earned = [];
 
-  // ── BADGES À VIE — Progression rang ──
-  const rankBadges = [
-    {id:'b_terrien',   icon:'🌍', name:'Terrien',      desc:'Premier jour actif',     xp:0,    special:'firstday'},
-    {id:'b_guerrier',  icon:'⚔️', name:'Guerrier Z',   desc:'500 XP total',           xp:500},
-    {id:'b_kaioken',   icon:'🔴', name:'Kaioken',      desc:'1 500 XP total',         xp:1500},
-    {id:'b_kaioken2',  icon:'🔴', name:'Kaioken x2',   desc:'3 000 XP total',         xp:3000},
-    {id:'b_kaioken4',  icon:'🔴', name:'Kaioken x4',   desc:'5 000 XP total',         xp:5000},
-    {id:'b_ssj',       icon:'🌟', name:'Super Saiyan', desc:'8 000 XP total',         xp:8000},
-    {id:'b_ssj2',      icon:'⚡', name:'SSJ2',         desc:'12 000 XP total',        xp:12000},
-    {id:'b_ssj3',      icon:'⚡', name:'SSJ3',         desc:'18 000 XP total',        xp:18000},
-    {id:'b_ssj4',      icon:'🔥', name:'SSJ4',         desc:'25 000 XP total',        xp:25000},
-    {id:'b_ssjgod',    icon:'🔴', name:'SSJ God',      desc:'35 000 XP total',        xp:35000},
-    {id:'b_ssjblue',   icon:'🔵', name:'SSJ Blue',     desc:'50 000 XP total',        xp:50000},
-    {id:'b_ui',        icon:'⚪', name:'Ultra Instinct',desc:'75 000 XP total',       xp:75000},
-  ];
-  rankBadges.forEach(b=>{
-    if(b.special==='firstday'){
-      if(adays>0) earned.push({...b, unlocked:true});
-    } else {
-      earned.push({...b, unlocked:totXP>=b.xp});
-    }
+  // ── BADGES À VIE — Progression rang (générés depuis TIERS, source unique) ──
+  const rankIcons = ["🌍","⚔️","🔴","🔴","🔴","🌟","⚡","⚡","🔴","🔵","⚪"];
+  TIERS.forEach((t,i)=>{
+    const isFirst = i===0;
+    earned.push({
+      id:'b_tier_'+i,
+      icon: rankIcons[i]||'🏅',
+      name: t.title,
+      desc: isFirst ? 'Premier jour actif' : (t.min.toLocaleString('fr-FR')+' XP total'),
+      rank: t.rank,
+      unlocked: isFirst ? adays>0 : totXP>=t.min,
+    });
   });
 
+  // ── BADGES À VIE — Semaine / Mois parfait (une fois débloqué sur n'importe quelle tâche) ──
+  let everPerfectWeek=false, everPerfectMonth=false;
+  const _skeysPB=Object.keys(ST.history).sort();
+  let _flatAllPB=[];
+  _skeysPB.forEach(k=>{const m=ST.history[k],mAIds=m.activeSlots||[];m.days.forEach(d=>_flatAllPB.push({d,aIds:mAIds}));});
+  ST.slots.forEach(slot=>{
+    for(let ws=0;ws<_flatAllPB.length;ws+=7){
+      const we=Math.min(ws+7,_flatAllPB.length);
+      if(we-ws<7)continue;
+      const chunk=_flatAllPB.slice(ws,we);
+      if(chunk.every(({d,aIds})=>aIds.includes(slot.id)&&d[slot.id]))everPerfectWeek=true;
+    }
+  });
+  _skeysPB.forEach(k=>{
+    const m=ST.history[k],mAIds=m.activeSlots||[];
+    ST.slots.forEach(slot=>{
+      if(!mAIds.includes(slot.id))return;
+      if(m.days.length>0&&m.days.every(d=>d[slot.id]))everPerfectMonth=true;
+    });
+  });
+  earned.push({id:'b_perfectweek',  icon:'🏆', name:'Semaine parfaite', desc:'7/7 jours sur une tâche',      unlocked:everPerfectWeek,  cat:'streak'});
+  earned.push({id:'b_perfectmonth', icon:'👑', name:'Mois parfait',      desc:'Un mois entier à 100% sur une tâche', unlocked:everPerfectMonth, cat:'streak'});
+
+  // ── BADGES À VIE — Comeback / Touche-à-tout / Rebond ──
+  const _skeysCB=Object.keys(ST.history).sort();
+  const _curKeyCB=mk(new Date().getFullYear(),new Date().getMonth());
+  const _todayCB=new Date().getDate()-1;
+  // Comeback: any gap of 7+ inactive days followed by an active day, anywhere in history
+  let _everComeback=false;
+  {
+    let _gap=0;
+    _skeysCB.forEach(k=>{
+      const m=ST.history[k],mAIds=m.activeSlots||[];
+      const _lastIdx=(k===_curKeyCB)?_todayCB:m.days.length-1;
+      for(let i=0;i<=_lastIdx;i++){
+        const d=m.days[i];
+        const active=ST.slots.some(s=>mAIds.includes(s.id)&&d[s.id]);
+        if(active){
+          if(_gap>=7)_everComeback=true;
+          _gap=0;
+        } else _gap++;
+      }
+    });
+  }
+  earned.push({id:'b_comeback', icon:'🔄', name:'Comeback', desc:'Reprendre après 7+ jours d’inactivité', unlocked:_everComeback, cat:'streak'});
+
+  // Touche-à-tout: in any single month, every currently-active slot was checked at least once
+  let _everToucheATout=false;
+  _skeysCB.forEach(k=>{
+    const m=ST.history[k],mAIds=m.activeSlots||[];
+    if(mAIds.length===0)return;
+    const allTouched=mAIds.every(sid=>m.days.some(d=>d[sid]));
+    if(allTouched)_everToucheATout=true;
+  });
+  earned.push({id:'b_touchatout', icon:'🌈', name:'Touche-à-tout', desc:'Chaque tâche active cochée au moins 1x dans le mois', unlocked:_everToucheATout, cat:'streak'});
+
+  // Rebond: a week with more XP than the previous week, where the previous week was below average
+  let _everRebond=false;
+  {
+    const _flatCB=[];
+    _skeysCB.forEach(k=>{
+      const m=ST.history[k],mAIds=m.activeSlots||[];
+      const _lastIdx=(k===_curKeyCB)?_todayCB:m.days.length-1;
+      for(let i=0;i<=_lastIdx;i++)_flatCB.push({d:m.days[i],aIds:mAIds});
+    });
+    const _weekXP=[];
+    for(let ws=0;ws<_flatCB.length;ws+=7){
+      const we=Math.min(ws+7,_flatCB.length);
+      if(we-ws<7)continue;
+      let xp=0;
+      for(let i=ws;i<we;i++){const{d,aIds}=_flatCB[i];ST.slots.forEach(s=>{if(aIds.includes(s.id)&&d[s.id])xp+=d[s.id];});}
+      _weekXP.push(xp);
+    }
+    const _avgW=_weekXP.length>0?_weekXP.reduce((a,b)=>a+b,0)/_weekXP.length:0;
+    for(let i=1;i<_weekXP.length;i++){
+      if(_weekXP[i-1]<_avgW*0.5&&_weekXP[i]>_weekXP[i-1]*1.5&&_weekXP[i]>0){_everRebond=true;break;}
+    }
+  }
+  earned.push({id:'b_rebond', icon:'📈', name:'Rebond', desc:'Grosse remontée après une semaine faible', unlocked:_everRebond, cat:'streak'});
   // ── BADGES À VIE — Streak ──
   earned.push({id:'b_str7',  icon:'🔥', name:'Semaine de feu',   desc:'Streak de 7 jours',   unlocked:rstr>=7,  cat:'streak'});
   earned.push({id:'b_str14', icon:'🔑', name:'Discipline de fer', desc:'Streak de 14 jours',  unlocked:rstr>=14, cat:'streak'});
@@ -1034,6 +1196,7 @@ function rBadges(eng){
       <div style="font-size:1.6rem;font-weight:700;color:#aaa;font-family:'Anton',sans-serif">${badges.length}</div>
     </div>
   </div>`;
+  html+=`<button onclick="openBadgesReference()" style="width:100%;margin-bottom:20px;padding:10px;border:1px solid rgba(139,92,246,0.3);border-radius:12px;background:#fff;color:#8b5cf6;font-family:'Anton',sans-serif;font-size:.68rem;letter-spacing:1px;cursor:pointer">📖 VOIR TOUS LES PALIERS & BADGES</button>`;
 
   // Monthly badges
   html+=`<div style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#0891b2;margin-bottom:10px">CE MOIS</div>`;
@@ -1051,7 +1214,8 @@ function rBadges(eng){
   html+=`<div style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#0891b2;margin-bottom:10px">À VIE</div>`;
   html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">`;
   lifetime.forEach(b=>{
-    html+=`<div style="background:${b.unlocked?'#fff':'rgba(0,0,0,0.03)'};border:2px solid ${b.unlocked?'#0891b2':'rgba(0,0,0,0.06)'};border-radius:14px;padding:12px;text-align:center;opacity:${b.unlocked?1:0.35}">
+    html+=`<div style="position:relative;background:${b.unlocked?'#fff':'rgba(0,0,0,0.03)'};border:2px solid ${b.unlocked?'#0891b2':'rgba(0,0,0,0.06)'};border-radius:14px;padding:12px;text-align:center;opacity:${b.unlocked?1:0.35}">
+      ${b.rank?`<div style="position:absolute;top:4px;right:6px;font-size:.5rem;font-weight:900;color:${b.unlocked?'#8b5cf6':'#ccc'};font-family:'Anton',sans-serif">${b.rank}</div>`:''}
       <div style="font-size:1.4rem;margin-bottom:4px">${b.icon}</div>
       <div style="font-size:.58rem;font-weight:700;color:${b.unlocked?'#1e3a4a':'#aaa'};font-family:'Anton',sans-serif">${b.name}</div>
       <div style="font-size:.48rem;color:#0e7490;margin-top:2px">${b.desc}</div>
@@ -1124,6 +1288,25 @@ function checkPopupTriggers(di,sid,wasChecked){
   var eng=engine();
 
   if(malus&&wasChecked){
+    var weekStartM=Math.floor(di/7)*7;
+    var weekEndM=Math.min(weekStartM+7,md.days.length);
+    if(di===weekEndM-1&&weekEndM-weekStartM===7){
+      var weekPerfectM=true;
+      for(var wim=weekStartM;wim<weekEndM;wim++){if(!md.days[wim][sid]){weekPerfectM=false;break;}}
+      if(weekPerfectM){
+        showPopup(randPick(["💀 7 jours d’affilée sur ‘"+malus.name+"’ — GROS malus supplémentaire cette semaine.","Semaine noire complète sur ‘"+malus.name+"’. Le prix à payer est lourd."]),"🚨","#991b1b",4200);
+        return;
+      }
+    }
+    if(di===md.days.length-1){
+      var monthPerfectM=true;
+      for(var djm=0;djm<md.days.length;djm++){if(!md.days[djm][sid]){monthPerfectM=false;break;}}
+      if(monthPerfectM){
+        showPopup("💀💀 TOUT LE MOIS sur ‘"+malus.name+"’. Malus MASSIF appliqué. Il faut vraiment agir.","🆘","#991b1b",5000);
+        return;
+      }
+    }
+
     var frozenRec=d[sid];
     var xp=Math.abs((frozenRec&&typeof frozenRec==="object")?frozenRec.xp:malus.xp);
     var heavy=xp>=15;
@@ -1153,6 +1336,30 @@ function checkPopupTriggers(di,sid,wasChecked){
     return;
   }
   if(!slot)return;
+
+    // Perfect week / perfect month check (slots only — malus handled above)
+  if(wasChecked&&slot){
+    var weekStart2=Math.floor(di/7)*7;
+    var weekEnd2=Math.min(weekStart2+7,md.days.length);
+    var isLastDayOfWeek=(di===weekEnd2-1)&&(weekEnd2-weekStart2===7);
+    var isLastDayOfMonth=(di===md.days.length-1);
+    if(isLastDayOfWeek){
+      var weekPerfectS=true;
+      for(var wj=weekStart2;wj<weekEnd2;wj++){if(!md.days[wj][sid]){weekPerfectS=false;break;}}
+      if(weekPerfectS){
+        showPopup(randPick(["🔥 SEMAINE PARFAITE sur ‘"+slot.name+"’ ! Bonus x3 débloqué.","7/7 sur ‘"+slot.name+"’ cette semaine — bonus énorme !"]),"🏆","#f59e0b",4000);
+        return;
+      }
+    }
+    if(isLastDayOfMonth){
+      var monthPerfectS=true;
+      for(var dj=0;dj<md.days.length;dj++){if(!md.days[dj][sid]){monthPerfectS=false;break;}}
+      if(monthPerfectS){
+        showPopup("🐉🐉 MOIS PARFAIT sur ‘"+slot.name+"’ ! Bonus x10 — performance légendaire.","👑","#8b5cf6",5000);
+        return;
+      }
+    }
+  }
 
   var checkedSlots=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0&&d[s.id]&&s.id!==sid;});
   if(checkedSlots.length===0&&wasChecked){
@@ -1406,7 +1613,8 @@ function openProfilePanel(key){
   document.getElementById("stat-panel").style.display="block";
   document.body.style.overflow="hidden";
 }
-function radarPressStart(){
+function radarPressStart(e){
+  if(e&&e.preventDefault)e.preventDefault();
   var skeys=Object.keys(ST.history).sort();
   if(skeys.length<2)return;
   var lastKey=skeys[skeys.length-2];
@@ -1425,7 +1633,8 @@ function radarPressStart(){
   var label=ge("radar-ghost-label");
   if(label){label.textContent="vs "+MFR[lp.month]+" "+lp.year;label.style.opacity="1";}
 }
-function radarPressEnd(){
+function radarPressEnd(e){
+  if(e&&e.preventDefault)e.preventDefault();
   window._radarGhost=null;
   var c=ge("radar-canvas");
   var eng=engine();
@@ -1500,6 +1709,65 @@ function openHelpGuide(){
   ]);
 
   html+="<div style='font-size:.68rem;color:#999;text-align:center;margin-top:16px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)'>Créé avec Claude · Version évolutive</div>";
+
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+function refSection(title,color,rows){
+  var h="<div style='margin-bottom:18px'><div style='font-size:.65rem;font-family:Anton,sans-serif;letter-spacing:2px;color:"+color+";margin-bottom:8px'>"+title+"</div>";
+  rows.forEach(function(r){
+    h+="<div style='display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.05)'>";
+    h+="<span style='font-size:1.1rem;flex-shrink:0'>"+r.icon+"</span>";
+    h+="<div style='flex:1'><div style='font-size:.76rem;font-weight:700;color:#1e3a4a'>"+r.name+"</div>";
+    h+="<div style='font-size:.66rem;color:#0e7490'>"+r.desc+"</div></div>";
+    if(r.badge)h+="<div style='font-size:.6rem;font-weight:900;color:"+color+";flex-shrink:0'>"+r.badge+"</div>";
+    h+="</div>";
+  });
+  h+="</div>";
+  return h;
+}
+function openBadgesReference(){
+  var html="";
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>📖</span>";
+  html+="<div style='font-family:Anton,sans-serif;font-size:1.05rem;color:#8b5cf6;letter-spacing:2px'>PALIERS & BADGES</div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+
+  var rankIcons = ["🌍","⚔️","🔴","🔴","🔴","🌟","⚡","⚡","🔴","🔵","⚪"];
+  var tierRows = TIERS.map(function(t,i){
+    return{icon:rankIcons[i]||"🏅",name:t.title,desc:(i===0?"Premier jour actif":t.min.toLocaleString("fr-FR")+" XP total"),badge:t.rank};
+  });
+  html+=refSection("🏆 PALIERS (RANGS)",'#8b5cf6',tierRows);
+
+  html+=refSection("📅 BADGES DU MOIS",'#f59e0b',[
+    {icon:"💪",name:"Beast Mode",desc:"100 XP en Physique dans le mois"},
+    {icon:"📋",name:"Admin King",desc:"Une tâche clé cochée chaque semaine du mois"},
+    {icon:"🌟",name:"Mois de feu",desc:"20+ jours actifs dans le mois"},
+    {icon:"🔥",name:"Combo Master",desc:"5 jours avec combo déclenché dans le mois"},
+  ]);
+
+  html+=refSection("🔥 BADGES À VIE — STREAK",'#f97316',[
+    {icon:"🔥",name:"Semaine de feu",desc:"Streak de 7 jours"},
+    {icon:"🔑",name:"Discipline de fer",desc:"Streak de 14 jours"},
+    {icon:"👑",name:"Mois parfait (streak)",desc:"Streak de 30 jours"},
+    {icon:"💫",name:"Indestructible",desc:"Streak de 90 jours"},
+    {icon:"🏆",name:"Semaine parfaite",desc:"7/7 jours sur une tâche"},
+    {icon:"👑",name:"Mois parfait",desc:"Un mois entier à 100% sur une tâche"},
+    {icon:"🔄",name:"Comeback",desc:"Reprendre après 7+ jours d’inactivité"},
+    {icon:"🌈",name:"Touche-à-tout",desc:"Chaque tâche active cochée au moins 1x dans le mois"},
+    {icon:"📈",name:"Rebond",desc:"Grosse remontée après une semaine faible"},
+  ]);
+
+  html+=refSection("🌱 BADGES À VIE — POLYVALENCE",'#10b981',[
+    {icon:"🌱",name:"Éveil",desc:"Toutes les stats > 10 XP"},
+    {icon:"💪",name:"Équilibré",desc:"Toutes les stats > 50 XP"},
+    {icon:"🏅",name:"Complet",desc:"Toutes les stats > 200 XP"},
+    {icon:"💎",name:"Maître",desc:"Toutes les stats > 500 XP"},
+    {icon:"👑",name:"Légende",desc:"Toutes les stats > 1000 XP"},
+  ]);
+
+  html+="<div style='font-size:.62rem;color:#999;text-align:center;margin-top:8px'>Toutes les valeurs sont extraites directement de la configuration actuelle de l'app.</div>";
 
   document.getElementById("stat-panel-content").innerHTML=html;
   document.getElementById("stat-panel").style.display="block";
