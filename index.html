@@ -96,6 +96,12 @@ pointer-events:none;z-index:0}
 .tog-pulse{animation:togPulse .35s cubic-bezier(.34,1.56,.64,1);}
 @keyframes xpFloat{0%{opacity:0;transform:translate(-50%,0) scale(.6);}15%{opacity:1;transform:translate(-50%,-6px) scale(1.1);}80%{opacity:1;transform:translate(-50%,-28px) scale(1);}100%{opacity:0;transform:translate(-50%,-40px) scale(.9);}}
 .xp-float{position:absolute;left:50%;top:0;font-family:'Anton',sans-serif;font-size:.85rem;font-weight:700;pointer-events:none;animation:xpFloat 1s ease-out forwards;z-index:50;white-space:nowrap;}
+@keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
+.confetti-piece{position:fixed;top:-20px;width:8px;height:8px;pointer-events:none;z-index:9998;animation:confettiFall 2.2s ease-in forwards;}
+@keyframes confettiFall{0%{opacity:1;transform:translateY(0) rotate(0deg);}100%{opacity:0;transform:translateY(120px) rotate(360deg);}}
+.confetti-piece{position:fixed;pointer-events:none;z-index:9998;animation:confettiFall 1.2s ease-in forwards;}
+@keyframes badgeFlash{0%{transform:scale(0.5);opacity:0;}50%{transform:scale(1.15);opacity:1;}100%{transform:scale(1);opacity:1;}}
+.badge-unlock-flash{animation:badgeFlash .5s cubic-bezier(.34,1.56,.64,1);}
 
 /* Save bar */
 .save-bar{display:flex;gap:8px;align-items:center;margin-bottom:22px;padding:9px 14px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:12px}
@@ -139,7 +145,9 @@ th.th-left{text-align:left;padding-left:20px;min-width:80px;color:#0e7490;positi
 td{padding:5px 3px;text-align:center;vertical-align:middle}
 td.td-left{text-align:left;padding:7px 0 7px 12px;position:sticky;left:0;z-index:5;background:#fff;min-width:80px;border-right:1px solid rgba(8,145,178,0.1)}
 tbody tr{border-bottom:1px solid rgba(8,145,178,0.08)}
-tr.row-today{background:rgba(8,145,178,0.06)} tr.row-today td.td-left{background:rgba(215,240,248,0.95)}
+tr.row-today{background:rgba(8,145,178,0.06)}
+@keyframes todayPulse{0%,100%{box-shadow:inset 3px 0 0 0 #8b5cf6;}50%{box-shadow:inset 3px 0 0 0 #ec4899;}}
+tr.row-today td.td-left{background:rgba(215,240,248,0.95);animation:todayPulse 2s ease-in-out infinite;}
 tr.row-malus{background:rgba(220,38,38,0.06)}
 tr.row-future{opacity:.4}
 tr.week-sep{border-top:1px solid var(--border2)}
@@ -277,9 +285,20 @@ function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
+function migrateCombos(){
+  if(ST.combosMigrated)return;
+  if(!ST.streakCfg)ST.streakCfg=mkStreakCfg();
+  if(!ST.streakCfg.combos)ST.streakCfg.combos={};
+  // Migrate old single combo config (comboStatId/comboMinSlots/comboBonus) into the new per-stat format
+  if(ST.streakCfg.comboStatId&&ST.streakCfg.comboMinSlots&&ST.streakCfg.comboBonus){
+    ST.streakCfg.combos[ST.streakCfg.comboStatId]={minSlots:ST.streakCfg.comboMinSlots,bonus:ST.streakCfg.comboBonus};
+  }
+  ST.combosMigrated=true;
+  saveST();
+}
 function migrateXpFreeze(){
   if(ST.xpFrozen)return;
   var slotMap={};
@@ -302,6 +321,7 @@ function migrateXpFreeze(){
   saveST();
 }
 migrateXpFreeze();
+migrateCombos();
 let TAB="profile",CTAB="tasks",EDIT=null,HOPEN=null,TRACKER_MONTH=null;
 
 function ensureCurMonth(){
@@ -355,12 +375,16 @@ function engine(){
   flat.forEach(({d,aIds},i)=>{
     grossXP[i]=gxp(d,aIds,ST.slots);
     bonXP[i]=bonus(streaks[i]);
-    // Combo bonus: if X+ slots of a stat are checked same day
+    // Combo bonus: per-stat, if X+ slots of that stat are checked same day
     const scfg2=ST.streakCfg||mkStreakCfg();
-    if(scfg2.comboStatId&&scfg2.comboMinSlots&&scfg2.comboBonus){
-      const comboDone=ST.slots.filter(s=>s.stat===scfg2.comboStatId&&aIds.includes(s.id)&&d[s.id]).length;
-      if(comboDone>=scfg2.comboMinSlots&&scfg2.comboBonus>0) bonXP[i]+=scfg2.comboBonus;
-    }
+    const combos2=scfg2.combos||{};
+    STATS.forEach(statKey=>{
+      const c=combos2[statKey];
+      if(c&&c.minSlots&&c.bonus){
+        const comboDone=ST.slots.filter(s=>s.stat===statKey&&aIds.includes(s.id)&&d[s.id]).length;
+        if(comboDone>=c.minSlots&&c.bonus>0) bonXP[i]+=c.bonus;
+      }
+    });
   });
   // Per-slot frequency malus
   const slotRules = ST.slotRules||{};
@@ -454,6 +478,12 @@ function engine(){
       });
     }
     _monthOffPWm+=_mdPWm.days.length;
+  });
+  // Perfect day mega-bonus: EVERY active slot checked on the same day
+  flat.forEach(({d,aIds},i)=>{
+    if(aIds.length===0)return;
+    const allDone=ST.slots.filter(s=>aIds.includes(s.id)).every(s=>d[s.id]);
+    if(allDone)bonXP[i]=(bonXP[i]||0)+50;
   });
   const netXP=flat.map((_,i)=>grossXP[i]+bonXP[i]-dxp[i]);
   const sxp={intel:0,physique:0,craft:0,disc:0,bienetre:0};
@@ -561,6 +591,8 @@ function importData(e){
           // Force re-migration on freshly imported data (old backups store 1/0, not frozen XP)
           ST.xpFrozen=false;
           migrateXpFreeze();
+          ST.combosMigrated=false;
+          migrateCombos();
           saveST();
           TAB="profile";
           render();
@@ -718,10 +750,12 @@ var motiv=getMotivationMsg(eng);
   html+=rThrowback(eng);
   html+=`<div class="card-big" style="border-color:${t.color}30"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
   <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start">
-  <div><div style="display:flex;align-items:center;gap:12px;margin-bottom:8px">
+  <div><div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
     <div style="font-size:1.4rem;font-weight:800;color:${t.color}">${t.title}</div>
     <div style="background:${t.color}20;border:1px solid ${t.color};border-radius:8px;padding:3px 10px;font-size:.72rem;font-weight:700;color:${t.color};letter-spacing:2px">RANG ${t.rank}</div>
+    ${cstr>0?`<span style="font-size:${Math.min(1.6,1+cstr/20)}rem;filter:drop-shadow(0 0 ${Math.min(6,cstr/3)}px #f59e0b80)" title="${cstr} jours de streak">🔥</span>`:''}
   </div>
+  ${nt?`<div style="font-size:.68rem;color:#8b5cf6;font-weight:600;margin-bottom:8px">→ Plus que <strong>${nt.min-totXP} XP</strong> pour <strong>${nt.title}</strong></div>`:`<div style="font-size:.68rem;color:#8b5cf6;font-weight:600;margin-bottom:8px">👑 Rang maximum atteint !</div>`}
   <div style="margin-bottom:14px">
     <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:#000">XP Net total</span><span style="font-family:monospace;font-size:.75rem;color:${t.color};font-weight:700">${totXP} / ${nt?nt.min:"∞"} XP</span></div>
     <div class="track-big"><div class="track-big-fill" style="width:${xpPct}%;background:linear-gradient(90deg,${t.color},#ec4899)"></div></div>
@@ -844,8 +878,8 @@ function rTracker(eng){
     const bl=isT?"3px solid #8b5cf6":hasM?"3px solid #ec4899":"3px solid transparent";
     const rc=`${hasM?"row-malus":isT?"row-today":""} ${isF?"row-future":""} ${dt.getDay()===1&&i>0?"week-sep":""}`;
     html+=`<tr class="${rc}" id="row-${i}"><td class="td-left" style="border-left:${bl}"><div style="font-weight:700;font-size:.82rem;color:#1e3a4a">${isT?"⚡ ":hasM?"💀 ":""}Jour ${i+1}</div><div style="font-family:monospace;font-size:.54rem;color:#000">${ds}</div>${debt>0?`<div style="font-size:.5rem;color:#ec4899;font-weight:700">dette -${debt}xp</div>`:""}</td>`;
-    aSlots.forEach(s=>{const chk=!!d[s.id];html+=`<td><div id="tog-${i}-${s.id}" class="tog ${chk?cls[s.stat]:""}" onclick="${isF?"":"tDay("+i+",'"+s.id+"','"+viewKey+"')"}">${chk?"✓":"·"}</div></td>`;});
-    ST.malusList.forEach(m=>{const chk=!!d[m.id];html+=`<td><div id="tog-${i}-${m.id}" class="tog ${chk?"cm":""}" onclick="${isF?"":"tDay("+i+",'"+m.id+"','"+viewKey+"')"}">${chk?"❌":"·"}</div></td>`;});
+    aSlots.forEach(s=>{const chk=!!d[s.id];const mkArg=isCurrentMonth?"":(",'"+viewKey+"'");html+=`<td><div id="tog-${i}-${s.id}" class="tog ${chk?cls[s.stat]:""}" onclick="${isF?"":"tDay("+i+",'"+s.id+"'"+mkArg+")"}">${chk?"✓":"·"}</div></td>`;});
+    ST.malusList.forEach(m=>{const chk=!!d[m.id];const mkArg2=isCurrentMonth?"":(",'"+viewKey+"'");html+=`<td><div id="tog-${i}-${m.id}" class="tog ${chk?"cm":""}" onclick="${isF?"":"tDay("+i+",'"+m.id+"'"+mkArg2+")"}">${chk?"❌":"·"}</div></td>`;});
     html+=`<td>${mt>0?`<span style="color:#ec4899;font-family:monospace;font-size:.75rem;font-weight:700">-${mt}</span>`:`<span style="color:#0e7490">—</span>`}</td><td id="xp-${i}" style="font-family:monospace;font-weight:700;font-size:.82rem;color:${nc}">${net}</td><td style="font-weight:700;font-size:.88rem;color:#0891b2">${str>0?str:"—"}</td><td id="lv-${i}" style="font-size:.95rem">${lvEmoji(net)}</td><td id="bar-${i}" style="padding:5px 10px"><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div></td></tr>`;
   });
   html+=`</tbody></table></div></div>`;return html;
@@ -910,6 +944,16 @@ function rConfig(){
   }
   if(CTAB==="streak"){
     const scfg=ST.streakCfg||mkStreakCfg();
+    const soundOn=ST.soundEnabled!==false;
+    html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.3rem">${soundOn?"🔊":"🔇"}</span>
+        <span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Son au check</span>
+      </div>
+      <div class="cfg-toggle" style="background:${soundOn?"#8b5cf630":"#e0f2f8"};border:1px solid ${soundOn?"#8b5cf6":"rgba(8,145,178,0.2)"}" onclick="toggleSound()">
+        <div class="cfg-toggle-dot" style="left:${soundOn?"16":"2"}px;background:${soundOn?"#8b5cf6":"#7dd3e8"}"></div>
+      </div>
+    </div>`;
     html+=`<div style="background:rgba(255,224,51,0.08);border:1px solid rgba(255,224,51,0.3);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#0e7490">
       🔥 Configure le <strong>seuil minimum d'XP</strong> pour maintenir ton streak chaque jour.
     </div>`;
@@ -942,32 +986,29 @@ function rConfig(){
         <div style="font-size:.65rem;color:#000;margin-top:6px">Active le ⚠️ (x2 disponible) sur n'importe quel slot dans Config → Tâches</div>
       </div>
       <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;margin-top:8px">
-        <div style="font-family:'Anton',sans-serif;color:#0e7490;font-size:.7rem;letter-spacing:2px;margin-bottom:10px">🔥 BONUS COMBO</div>
-        <div style="font-size:.75rem;color:#1e3a4a;margin-bottom:8px">Si tu coches <strong style="color:#f59e0b">${scfg.comboMinSlots||3}+ slots</strong> de la stat <strong style="color:#f59e0b">${(SM[scfg.comboStatId||'craft']&&SM[scfg.comboStatId||'craft'].icon)||'🔥'} ${(SM[scfg.comboStatId||'craft']&&SM[scfg.comboStatId||'craft'].label)||'Craft'}</strong> le même jour → bonus XP</div>
-        <div style="display:flex;gap:16px;flex-wrap:wrap">
-          <div>
-            <div style="font-size:.6rem;color:#000;margin-bottom:4px;font-family:'Anton',sans-serif">STAT COMBO</div>
-            <div style="display:flex;gap:6px">
-              ${['intel','physique','craft','disc','bienetre'].map(st=>`<span onclick="setComboStat('${st}')" style="font-size:1rem;cursor:pointer;opacity:${(scfg.comboStatId||'craft')===st?1:0.3}">${(SM[st]&&SM[st].icon)}</span>`).join('')}
+        <div style="font-family:'Anton',sans-serif;color:#0e7490;font-size:.7rem;letter-spacing:2px;margin-bottom:10px">🔥 BONUS COMBO — PAR COMPÉTENCE</div>
+        <div style="font-size:.72rem;color:#1e3a4a;margin-bottom:10px">Coche X+ tâches d'une même compétence le même jour → bonus XP. Configurable pour chaque compétence en même temps.</div>
+        ${STATS.map(st=>{
+          const c=(scfg.combos||{})[st];
+          const active=!!(c&&c.minSlots&&c.bonus);
+          const m2=SM[st];
+          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
+            <span style="font-size:1.1rem;width:26px">${m2.icon}</span>
+            <span style="font-size:.72rem;font-weight:700;color:${m2.color};min-width:70px">${m2.label}</span>
+            <div class="cfg-toggle" style="background:${active?m2.color+'40':'rgba(255,255,255,0.08)'};border:1px solid ${active?m2.color:'rgba(255,255,255,0.15)'}" onclick="toggleCombo('${st}')">
+              <div class="cfg-toggle-dot" style="left:${active?'16':'2'}px;background:${active?m2.color:'#7dd3e8'}"></div>
             </div>
-          </div>
-          <div>
-            <div style="font-size:.6rem;color:#000;margin-bottom:4px;font-family:'Anton',sans-serif">MIN SLOTS</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="btn-small" onclick="dCombo('comboMinSlots',-1,1,7)">−</button>
-              <span style="color:#f59e0b;font-weight:700;font-family:monospace">${scfg.comboMinSlots||3}</span>
-              <button class="btn-small" onclick="dCombo('comboMinSlots',1,1,7)">+</button>
-            </div>
-          </div>
-          <div>
-            <div style="font-size:.6rem;color:#000;margin-bottom:4px;font-family:'Anton',sans-serif">BONUS XP</div>
-            <div style="display:flex;align-items:center;gap:6px">
-              <button class="btn-small" onclick="dCombo('comboBonus',-1,1,20)">−</button>
-              <span style="color:#f59e0b;font-weight:700;font-family:monospace">+${scfg.comboBonus||5}</span>
-              <button class="btn-small" onclick="dCombo('comboBonus',1,1,20)">+</button>
-            </div>
-          </div>
-        </div>
+            ${active?`<div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:#1e3a4a">
+              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','minSlots',-1,1,7)">−</button>
+              <span style="min-width:34px;text-align:center">${c.minSlots} slots</span>
+              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','minSlots',1,1,7)">+</button>
+              <span style="margin:0 2px">→</span>
+              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','bonus',-1,1,30)">−</button>
+              <span style="min-width:28px;text-align:center;color:${m2.color};font-weight:700">+${c.bonus}</span>
+              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','bonus',1,1,30)">+</button>
+            </div>`:''}
+          </div>`;
+        }).join('')}
       </div>
       <div style="background:rgba(8,145,178,0.15);border-radius:10px;padding:12px;font-size:.78rem;color:#1e3a4a">
         <div style="font-family:'Anton',sans-serif;color:#f59e0b;margin-bottom:8px;letter-spacing:2px">BONUS STREAK EXPONENTIEL</div>
@@ -1243,6 +1284,18 @@ function computeBadges(eng){
     }
   }
   earned.push({id:'b_rebond', icon:'📈', name:'Rebond', desc:'Grosse remontée après une semaine faible', unlocked:_everRebond, cat:'streak'});
+  // Journée légendaire: toutes les tâches actives cochées le même jour, au moins une fois
+  let _everLegendaryDay=false;
+  _skeysCB.forEach(k=>{
+    const m=ST.history[k],mAIds=m.activeSlots||[];
+    if(mAIds.length===0)return;
+    const mSlots=ST.slots.filter(s=>mAIds.includes(s.id));
+    const lastIdx=(k===_curKeyCB)?_todayCB:m.days.length-1;
+    for(let i=0;i<=lastIdx;i++){
+      if(mSlots.every(s=>m.days[i][s.id])){_everLegendaryDay=true;break;}
+    }
+  });
+  earned.push({id:'b_legendday', icon:'🌟', name:'Journée légendaire', desc:'Toutes les tâches actives cochées en un seul jour', unlocked:_everLegendaryDay, cat:'streak'});
   // ── BADGES À VIE — Streak ──
   earned.push({id:'b_str7',  icon:'🔥', name:'Semaine de feu',   desc:'Streak de 7 jours',   unlocked:rstr>=7,  progress:Math.min(1,rstr/7), cat:'streak'});
   earned.push({id:'b_str14', icon:'🔑', name:'Discipline de fer', desc:'Streak de 14 jours',  unlocked:rstr>=14, progress:Math.min(1,rstr/14), cat:'streak'});
@@ -1276,17 +1329,21 @@ function computeBadges(eng){
   // Mois actif: 20+ jours actifs ce mois
   const monthActive = days.filter((d,i)=>i<=today&&ST.slots.filter(s=>aIds.includes(s.id)).some(s=>d[s.id])).length;
   earned.push({id:'m_active', icon:'🌟', name:'Mois de feu',   desc:'20+ jours actifs ce mois',   unlocked:monthActive>=20, progress:Math.min(1,monthActive/20), cat:'monthly'});
-  // Combo craft
+  // Combo (n'importe quelle stat configurée)
   const comboCfg = ST.streakCfg||{};
-  const comboStat = comboCfg.comboStatId||'craft';
-  const comboMin = comboCfg.comboMinSlots||3;
+  const combosAll = comboCfg.combos||{};
   let comboDays=0;
   days.forEach((d,i)=>{
     if(i>today)return;
-    const cnt=ST.slots.filter(s=>s.stat===comboStat&&aIds.includes(s.id)&&d[s.id]).length;
-    if(cnt>=comboMin)comboDays++;
+    const dayHasCombo=STATS.some(st=>{
+      const c=combosAll[st];
+      if(!c||!c.minSlots)return false;
+      const cnt=ST.slots.filter(s=>s.stat===st&&aIds.includes(s.id)&&d[s.id]).length;
+      return cnt>=c.minSlots;
+    });
+    if(dayHasCombo)comboDays++;
   });
-  earned.push({id:'m_combo', icon:'🔥', name:'Combo Master',  desc:'5 jours combo Craft ce mois', unlocked:comboDays>=5, progress:Math.min(1,comboDays/5), cat:'monthly'});
+  earned.push({id:'m_combo', icon:'🔥', name:'Combo Master',  desc:'5 jours avec un combo activé ce mois', unlocked:comboDays>=5, progress:Math.min(1,comboDays/5), cat:'monthly'});
 
   return earned;
 }
@@ -1380,6 +1437,56 @@ function render(){
 function setTab(t){TAB=t;render();}
 function setCTab(t){CTAB=t;render();}
 function tHist(k){HOPEN=HOPEN===k?null:k;render();}
+var _audioCtx=null;
+function toggleSound(){
+  ST.soundEnabled=ST.soundEnabled===false?true:false;
+  saveST();
+  if(ST.soundEnabled)playCheckSound(false);
+  render();
+}
+function playCheckSound(isMalus){
+  if(ST.soundEnabled===false)return;
+  try{
+    if(!_audioCtx)_audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    var t=_audioCtx.currentTime;
+    var osc=_audioCtx.createOscillator();
+    var gain=_audioCtx.createGain();
+    osc.connect(gain);gain.connect(_audioCtx.destination);
+    if(isMalus){
+      osc.type='sine';
+      osc.frequency.setValueAtTime(340,t);
+      osc.frequency.exponentialRampToValueAtTime(180,t+0.25);
+      gain.gain.setValueAtTime(0.12,t);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+0.28);
+      osc.start(t);osc.stop(t+0.3);
+    } else {
+      osc.type='sine';
+      osc.frequency.setValueAtTime(740,t);
+      osc.frequency.exponentialRampToValueAtTime(1180,t+0.09);
+      gain.gain.setValueAtTime(0.001,t);
+      gain.gain.exponentialRampToValueAtTime(0.14,t+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+      osc.start(t);osc.stop(t+0.24);
+    }
+  }catch(e){}
+}
+function showConfetti(){
+  var colors=['#8b5cf6','#ec4899','#f59e0b','#10b981','#0891b2','#ffd700'];
+  for(var i=0;i<28;i++){
+    (function(idx){
+      var el=document.createElement('div');
+      el.className='confetti-piece';
+      el.style.left=(Math.random()*100)+'vw';
+      el.style.background=colors[idx%colors.length];
+      el.style.borderRadius=Math.random()>0.5?'50%':'2px';
+      el.style.animationDelay=(Math.random()*0.4)+'s';
+      el.style.animationDuration=(1.8+Math.random()*0.8)+'s';
+      document.body.appendChild(el);
+      setTimeout(function(){if(el.parentElement)el.remove();},2800);
+    })(i);
+  }
+}
 var _popupTimer=null;
 function showPopup(msg,icon,color,duration){
   duration=duration||2800;
@@ -1405,6 +1512,15 @@ function checkPopupTriggers(di,sid,wasChecked){
   var malus=ST.malusList.find(function(m){return m.id===sid;});
   var scfg=ST.streakCfg||{};
   var eng=engine();
+
+  // JOURNÉE LÉGENDAIRE : toutes les tâches actives cochées le même jour (vérifié en priorité absolue)
+  if(wasChecked){
+    var _allSlotsToday=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0;});
+    if(_allSlotsToday.length>0&&_allSlotsToday.every(function(s){return d[s.id];})){
+      showPopup("🌟🌟🌟 JOURNÉE LÉGENDAIRE ! Toutes tes tâches cochées aujourd’hui. +50 XP BONUS MASSIF !","🏆","#ffd700",6000);
+      return;
+    }
+  }
 
   if(malus&&wasChecked){
     var weekStartM=Math.floor(di/7)*7;
@@ -1501,14 +1617,14 @@ function checkPopupTriggers(di,sid,wasChecked){
     }
   }
 
-  var comboStat=scfg.comboStatId||"craft";
-  var comboMin=scfg.comboMinSlots||3;
-  var comboBonus=scfg.comboBonus||5;
-  if(slot.stat===comboStat&&wasChecked){
-    var statChecked=ST.slots.filter(function(s){return s.stat===comboStat&&aIds.indexOf(s.id)>=0&&d[s.id];}).length;
-    if(statChecked===comboMin){
-      var statLabel=SM[comboStat]?SM[comboStat].label:comboStat;
-      showPopup(randPick(["COMBO "+statLabel.toUpperCase()+" ! +"+comboBonus+" XP bonus 🔥",comboMin+" tâches "+statLabel+" — combo active !"]),"🔥","#8b5cf6",3000);
+  var combosAll2=scfg.combos||{};
+  var comboForThisStat=combosAll2[slot.stat];
+  if(comboForThisStat&&comboForThisStat.minSlots&&wasChecked){
+    var statChecked=ST.slots.filter(function(s){return s.stat===slot.stat&&aIds.indexOf(s.id)>=0&&d[s.id];}).length;
+    if(statChecked===comboForThisStat.minSlots){
+      var statLabel2=SM[slot.stat]?SM[slot.stat].label:slot.stat;
+      var cBonus=comboForThisStat.bonus||5;
+      showPopup(randPick(["COMBO "+statLabel2.toUpperCase()+" ! +"+cBonus+" XP bonus 🔥",comboForThisStat.minSlots+" t\u00e2ches "+statLabel2+" — combo activ\u00e9 !"]),"🔥","#8b5cf6",3000);
       return;
     }
   }
@@ -1535,6 +1651,8 @@ function tDay(di,sid,monthKey){
   const _savedScrollLeft=_scrollBox?_scrollBox.scrollLeft:0;
   const _savedScrollTop=_scrollBox?_scrollBox.scrollTop:0;
   var wasChecked=md.days[di][sid]?false:true;
+  var _badgesBefore={};
+  if(!monthKey){try{ computeBadges(engine()).forEach(function(b){_badgesBefore[b.id]=b.unlocked;}); }catch(e){}}
   var isMalusSlot=ST.malusList.some(function(m){return m.id===sid;});
   if(wasChecked&&!isMalusSlot){
     var slotDef=ST.slots.find(function(s){return s.id===sid;});
@@ -1552,6 +1670,17 @@ function tDay(di,sid,monthKey){
     return;
   }
   setTimeout(function(){checkPopupTriggers(di,sid,wasChecked);},150);
+  setTimeout(function(){
+    try{
+      var _badgesAfter=computeBadges(engine());
+      var _newlyUnlocked=_badgesAfter.filter(function(b){return b.unlocked&&_badgesBefore[b.id]===false;});
+      if(_newlyUnlocked.length>0){
+        var _b=_newlyUnlocked[0];
+        showConfetti();
+        showPopup("BADGE D\u00c9BLOQU\u00c9 : "+_b.icon+" "+_b.name+" \u2014 "+_b.desc,"\u{1F3C6}","#8b5cf6",4500);
+      }
+    }catch(e){}
+  },250);
   // Update only the clicked cell - no full re-render, no scroll jump (current month only)
   const checked=!!md.days[di][sid];
   const cell=document.getElementById('tog-'+di+'-'+sid);
@@ -1572,6 +1701,8 @@ function tDay(di,sid,monthKey){
       cell.textContent=checked?'✓':'·';
     }
     if(checked){
+      // Sound feedback
+      playCheckSound(isMalus);
       // Pulse animation
       cell.classList.remove('tog-pulse');
       void cell.offsetWidth; // force reflow to restart animation
@@ -1636,11 +1767,32 @@ function tDay(di,sid,monthKey){
       }
     }
   }
-  // Restore horizontal/vertical scroll position — iOS Safari sometimes resets it after a DOM update inside a scrollable table
+  // Restore horizontal/vertical scroll position — iOS Safari sometimes resets it (sometimes with a delay)
+  // after a DOM update inside a scrollable table. We actively "lock" the scroll position for a short
+  // window, correcting any unwanted scroll event that fires during that window.
   if(_scrollBox){
     _scrollBox.scrollLeft=_savedScrollLeft;
     _scrollBox.scrollTop=_savedScrollTop;
-    setTimeout(function(){_scrollBox.scrollLeft=_savedScrollLeft;_scrollBox.scrollTop=_savedScrollTop;},0);
+    var _lockDeadline=Date.now()+500;
+    var _scrollLockFn=function(){
+      if(Date.now()<_lockDeadline){
+        if(_scrollBox.scrollLeft!==_savedScrollLeft)_scrollBox.scrollLeft=_savedScrollLeft;
+        if(_scrollBox.scrollTop!==_savedScrollTop)_scrollBox.scrollTop=_savedScrollTop;
+      } else {
+        _scrollBox.removeEventListener('scroll',_scrollLockFn);
+      }
+    };
+    _scrollBox.addEventListener('scroll',_scrollLockFn,{passive:false});
+    // Also correct at a few explicit delays in case the reset happens without firing a scroll event
+    [0,16,50,120,250,400].forEach(function(delay){
+      setTimeout(function(){
+        if(Date.now()<_lockDeadline+50){
+          if(_scrollBox.scrollLeft!==_savedScrollLeft)_scrollBox.scrollLeft=_savedScrollLeft;
+          if(_scrollBox.scrollTop!==_savedScrollTop)_scrollBox.scrollTop=_savedScrollTop;
+        }
+      },delay);
+    });
+    setTimeout(function(){_scrollBox.removeEventListener('scroll',_scrollLockFn);},550);
   }
 }
 function tActive(sid){
@@ -1703,9 +1855,21 @@ function saveStatLabel(stat){
   if(inp&&inp.value.trim()) ST.statLabels[stat]=inp.value.trim();
   EDIT=null; saveST(); render();
 }
-function setComboStat(stat){
+function toggleCombo(stat){
   if(!ST.streakCfg)ST.streakCfg=mkStreakCfg();
-  ST.streakCfg.comboStatId=stat;
+  if(!ST.streakCfg.combos)ST.streakCfg.combos={};
+  if(ST.streakCfg.combos[stat]){
+    delete ST.streakCfg.combos[stat];
+  } else {
+    ST.streakCfg.combos[stat]={minSlots:3,bonus:5};
+  }
+  saveST();render();
+}
+function dComboStat(stat,field,delta,mn,mx){
+  if(!ST.streakCfg)ST.streakCfg=mkStreakCfg();
+  if(!ST.streakCfg.combos)ST.streakCfg.combos={};
+  if(!ST.streakCfg.combos[stat])ST.streakCfg.combos[stat]={minSlots:3,bonus:5};
+  ST.streakCfg.combos[stat][field]=Math.min(mx,Math.max(mn,(ST.streakCfg.combos[stat][field]||mn)+delta));
   saveST();render();
 }
 function dCombo(field,delta,mn,mx){
@@ -2050,6 +2214,7 @@ function openBadgesReference(){
     {icon:"🔄",name:"Comeback",desc:"Reprendre après 7+ jours d’inactivité"},
     {icon:"🌈",name:"Touche-à-tout",desc:"Chaque tâche active cochée au moins 1x dans le mois"},
     {icon:"📈",name:"Rebond",desc:"Grosse remontée après une semaine faible"},
+    {icon:"🌟",name:"Journée légendaire",desc:"Toutes les tâches actives cochées en un seul jour (+50 XP bonus)"},
   ]);
 
   html+=refSection("🌱 BADGES À VIE — POLYVALENCE",'#10b981',[
