@@ -1008,8 +1008,7 @@ function rHeatmap(eng){
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
   const skeys=Object.keys(ST.history).sort();
   const today=now.getDate()-1;
-  // Compute max XP for a single day across the last ~4 months to calibrate intensity
-  const recentKeys=skeys.slice(-4);
+  const recentKeys=skeys.slice(-3);
   let maxDay=1;
   const dayXPMap={};
   recentKeys.forEach(k=>{
@@ -1023,28 +1022,34 @@ function rHeatmap(eng){
       if(xp>maxDay)maxDay=xp;
     }
   });
-  let html=`<div class="sl">Activité récente</div><div class="card" style="padding:14px">`;
-  html+=`<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-start">`;
+  let html=`<div class="sl">Activité récente</div><div class="card" style="padding:14px">
+    <div style="font-size:.65rem;color:#0e7490;margin-bottom:12px;line-height:1.4">Un carré = un jour. Plus le violet est foncé, plus tu as gagné d’XP ce jour-là.</div>`;
   recentKeys.forEach(k=>{
     const m=ST.history[k];
+    const p=pk(k);
     const lastIdx=(k===curKey)?today:m.days.length-1;
+    const dow=["D","L","M","M","J","V","S"];
+    html+=`<div style="margin-bottom:14px">
+      <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#8b5cf6;margin-bottom:6px">${MFR[p.month].toUpperCase()} ${p.year}</div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;max-width:220px">`;
+    // Leading empty cells to align first day of month with correct weekday column
+    const firstDow=new Date(p.year,p.month,1).getDay();
+    for(let e=0;e<firstDow;e++)html+=`<div></div>`;
     for(let i=0;i<=lastIdx;i++){
       const xp=dayXPMap[k+'_'+i]||0;
       const intensity=xp<=0?0:Math.min(1,xp/maxDay);
-      const bg=intensity===0?'rgba(0,0,0,0.05)':`rgba(139,92,246,${0.15+intensity*0.75})`;
-      const p=pk(k);
-      const dateLabel=(i+1)+' '+MFR[p.month].slice(0,3);
-      html+=`<div title="${dateLabel}: ${xp} XP" style="width:11px;height:11px;border-radius:3px;background:${bg}"></div>`;
+      const bg=intensity===0?'rgba(0,0,0,0.06)':`rgba(139,92,246,${0.2+intensity*0.7})`;
+      html+=`<div title="${i+1} ${MFR[p.month]}: ${xp} XP" style="width:100%;aspect-ratio:1;border-radius:4px;background:${bg};display:flex;align-items:center;justify-content:center;font-size:.42rem;font-weight:700;color:${intensity>0.45?"#fff":"#7a7a8a"}">${i+1}</div>`;
     }
+    html+=`</div></div>`;
   });
-  html+=`</div>`;
-  html+=`<div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:.58rem;color:#999">
-    <span>Moins</span>
-    <div style="width:10px;height:10px;border-radius:2px;background:rgba(0,0,0,0.05)"></div>
-    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.3)"></div>
-    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.55)"></div>
+  html+=`<div style="display:flex;align-items:center;gap:6px;margin-top:6px;font-size:.58rem;color:#999">
+    <span>Rien</span>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(0,0,0,0.06)"></div>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.35)"></div>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.6)"></div>
     <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.9)"></div>
-    <span>Plus</span>
+    <span>Beaucoup d’XP</span>
   </div>`;
   html+=`</div>`;
   return html;
@@ -1526,6 +1531,9 @@ function checkPopupTriggers(di,sid,wasChecked){
 }
 function tDay(di,sid,monthKey){
   const now=new Date(),key=monthKey||mk(now.getFullYear(),now.getMonth()),md=ST.history[key];if(!md)return;
+  const _scrollBox=document.querySelector('.table-scroll');
+  const _savedScrollLeft=_scrollBox?_scrollBox.scrollLeft:0;
+  const _savedScrollTop=_scrollBox?_scrollBox.scrollTop:0;
   var wasChecked=md.days[di][sid]?false:true;
   var isMalusSlot=ST.malusList.some(function(m){return m.id===sid;});
   if(wasChecked&&!isMalusSlot){
@@ -1568,18 +1576,20 @@ function tDay(di,sid,monthKey){
       cell.classList.remove('tog-pulse');
       void cell.offsetWidth; // force reflow to restart animation
       cell.classList.add('tog-pulse');
-      // Floating XP number
-      if(cell.parentElement&&s&&!isMalus){
+      // Floating XP number - attached to body (fixed position) so it's never clipped by table scroll containers
+      if(s&&!isMalus){
+        const rect=cell.getBoundingClientRect();
         const fx=document.createElement('div');
         fx.className='xp-float';
         fx.textContent='+'+s.xp;
         fx.style.color=m?m.color:'#0891b2';
-        cell.parentElement.style.position='relative';
-        cell.parentElement.appendChild(fx);
+        fx.style.position='fixed';
+        fx.style.left=(rect.left+rect.width/2)+'px';
+        fx.style.top=rect.top+'px';
+        fx.style.zIndex='9999';
+        document.body.appendChild(fx);
         setTimeout(function(){if(fx.parentElement)fx.remove();},1000);
       }
-      // Haptic feedback
-      if(navigator.vibrate)navigator.vibrate(isMalus?[30,30,30]:15);
     }
   }
   // Refresh stats panel silently
@@ -1625,6 +1635,12 @@ function tDay(di,sid,monthKey){
         barEl.style.background=pctTD===100?'linear-gradient(90deg,#10b981,#0891b2)':'linear-gradient(90deg,#8b5cf6,#ec4899)';
       }
     }
+  }
+  // Restore horizontal/vertical scroll position — iOS Safari sometimes resets it after a DOM update inside a scrollable table
+  if(_scrollBox){
+    _scrollBox.scrollLeft=_savedScrollLeft;
+    _scrollBox.scrollTop=_savedScrollTop;
+    setTimeout(function(){_scrollBox.scrollLeft=_savedScrollLeft;_scrollBox.scrollTop=_savedScrollTop;},0);
   }
 }
 function tActive(sid){
