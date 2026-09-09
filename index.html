@@ -285,7 +285,7 @@ function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
 function migrateWeeklyMalus(){
@@ -787,7 +787,7 @@ html+=rThrowback(eng);
     const fmin=cfg?cfg.minPerWeek:0;
     const hasXP=(sxp[stat]||0)>0;
     const freqOk=!cfg||!hasXP||freq>=fmin;
-    const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#000"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="opacity:.5;cursor:pointer;font-size:.85em">ⓘ</span></span><span style="color:${freqOk?"#1e3a4a":"#ef4444"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
+    const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#000"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;background:rgba(8,145,178,0.15);color:#0891b2;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;font-style:normal;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;vertical-align:-2px" oncontextmenu="return false">i</span></span><span style="color:${freqOk?"#1e3a4a":"#ef4444"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
     html+=`<div class="stat-card" style="border:1px solid ${bd};cursor:pointer" onclick="openStatPanel('${stat}')"><span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
   });
   html+=`</div>`;
@@ -885,6 +885,10 @@ function rConfig(){
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth()),md=ST.history[curKey],aIds=md?md.activeSlots||[]:[];
   let html=`<div class="sub-tabs">${[["tasks","📋 Tâches"],["malus","💀 Malus"],["decay","📉 Decay"],["streak","🔥 Streak"]].map(([id,l])=>`<button class="sub-tab ${CTAB===id?"active":""}" onclick="setCTab('${id}')">${l}</button>`).join("")}</div>`;
   if(CTAB==="tasks"){
+    html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.7rem;color:#1e3a4a;display:flex;align-items:flex-start;gap:8px">
+      <span onclick="showInfoTip(event,'L\u2019ic\u00f4ne \u23f0 permet de fixer une fr\u00e9quence minimale par semaine pour une t\u00e2che. Si tu ne l\u2019atteins pas, un malus XP s\u2019applique automatiquement en fin de semaine.')" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:rgba(139,92,246,0.15);color:#8b5cf6;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;flex-shrink:0;margin-top:1px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false">i</span>
+      <span>Touche ⏰ sur une tâche pour lui fixer une fréquence minimale par semaine (ex: 3x/semaine).</span>
+    </div>`;
     STATS.forEach(stat=>{
       const m=SM[stat],ss=ST.slots.filter(s=>s.stat===stat),ac=ss.filter(s=>aIds.includes(s.id)).length;
       html+=`<div class="card" style="border:1px solid ${m.dim};margin-bottom:14px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:1.2rem">${m.icon}</span>`;
@@ -930,13 +934,23 @@ function rConfig(){
   if(CTAB==="streak"){
     const scfg=ST.streakCfg||mkStreakCfg();
     const soundOn=ST.soundEnabled!==false;
-    html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+    const rewardOn=ST.rewardSoundEnabled!==false;
+    html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:1.3rem">${soundOn?"🔊":"🔇"}</span>
-        <span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Son au check</span>
+        <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons d'interaction</span><div style="font-size:.58rem;color:#0e7490">Check, ploc, clic de menu...</div></div>
       </div>
       <div class="cfg-toggle" style="background:${soundOn?"#8b5cf630":"#e0f2f8"};border:1px solid ${soundOn?"#8b5cf6":"rgba(8,145,178,0.2)"}" onclick="toggleSound()">
         <div class="cfg-toggle-dot" style="left:${soundOn?"16":"2"}px;background:${soundOn?"#8b5cf6":"#7dd3e8"}"></div>
+      </div>
+    </div>`;
+    html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.3rem">${rewardOn?"🏆":"🔇"}</span>
+        <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons de récompense</span><div style="font-size:.58rem;color:#0e7490">Fanfare badges, journée légendaire...</div></div>
+      </div>
+      <div class="cfg-toggle" style="background:${rewardOn?"#f59e0b30":"#e0f2f8"};border:1px solid ${rewardOn?"#f59e0b":"rgba(8,145,178,0.2)"}" onclick="toggleRewardSound()">
+        <div class="cfg-toggle-dot" style="left:${rewardOn?"16":"2"}px;background:${rewardOn?"#f59e0b":"#7dd3e8"}"></div>
       </div>
     </div>`;
     html+=`<div style="background:rgba(255,224,51,0.08);border:1px solid rgba(255,224,51,0.3);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#0e7490">
@@ -1398,7 +1412,7 @@ function render(){
   ge("app").innerHTML=`
     <div style="margin-bottom:22px;position:relative">
       <button onclick="openHelpGuide()" style="position:absolute;top:0;right:0;width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #8b5cf6;color:#8b5cf6;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 2px 8px rgba(139,92,246,0.25);z-index:10">?${ST.onboardingSeen?'':'<span style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ec4899;border:2px solid #fff;animation:togPulse 1.6s ease-in-out infinite"></span>'}</button>
-      ${ST.onboardingSeen?'':`<div style="position:absolute;top:38px;right:0;background:#1e1e2e;color:#fff;font-size:.65rem;padding:8px 12px;border-radius:10px;max-width:180px;z-index:11;box-shadow:0 4px 14px rgba(0,0,0,0.25);cursor:pointer" onclick="dismissOnboarding()">👋 Nouveau ici ? Touche <strong>?</strong> pour tout comprendre <span style="position:absolute;top:-6px;right:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid #1e1e2e"></span></div>`}
+      ${ST.onboardingSeen?'':`<div style="position:absolute;top:38px;right:0;background:#1e1e2e;color:#fff;font-size:.65rem;padding:8px 12px;border-radius:10px;max-width:180px;z-index:11;box-shadow:0 4px 14px rgba(0,0,0,0.25);cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false" onclick="dismissOnboarding()">👋 Nouveau ici ? Touche <strong>?</strong> pour tout comprendre <span style="position:absolute;top:-6px;right:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid #1e1e2e"></span></div>`}
       <div style="font-family:'Anton',sans-serif;font-size:2rem;letter-spacing:4px;color:#fff;text-transform:uppercase;line-height:1;text-shadow:3px 3px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;margin-bottom:2px">
         <span style="color:#0891b2">SAIYAN</span> <span style="color:#ec4899">EVOLUTION</span>
       </div>
@@ -1414,8 +1428,8 @@ function render(){
   updateGokuAura(eng.totXP);
 }
 
-function setTab(t){TAB=t;render();}
-function setCTab(t){CTAB=t;render();}
+function setTab(t){playTabSound();TAB=t;render();}
+function setCTab(t){playTabSound();CTAB=t;render();}
 function tHist(k){HOPEN=HOPEN===k?null:k;render();}
 var _audioCtx=null;
 function toggleSound(){
@@ -1423,6 +1437,67 @@ function toggleSound(){
   saveST();
   if(ST.soundEnabled)playCheckSound(false);
   render();
+}
+function toggleRewardSound(){
+  ST.rewardSoundEnabled=ST.rewardSoundEnabled===false?true:false;
+  saveST();
+  if(ST.rewardSoundEnabled)playBadgeFanfare();
+  render();
+}
+function playTabSound(){
+  if(ST.soundEnabled===false)return;
+  try{
+    if(!_audioCtx)_audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    var t=_audioCtx.currentTime;
+    var osc=_audioCtx.createOscillator();
+    var gain=_audioCtx.createGain();
+    osc.connect(gain);gain.connect(_audioCtx.destination);
+    osc.type='sine';
+    osc.frequency.setValueAtTime(420,t);
+    gain.gain.setValueAtTime(0.001,t);
+    gain.gain.linearRampToValueAtTime(0.07,t+0.006);
+    gain.gain.exponentialRampToValueAtTime(0.001,t+0.09);
+    osc.start(t);osc.stop(t+0.1);
+  }catch(e){}
+}
+function playPlocSound(){
+  if(ST.soundEnabled===false)return;
+  try{
+    if(!_audioCtx)_audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    var t=_audioCtx.currentTime;
+    var osc=_audioCtx.createOscillator();
+    var gain=_audioCtx.createGain();
+    osc.connect(gain);gain.connect(_audioCtx.destination);
+    osc.type='sine';
+    osc.frequency.setValueAtTime(520,t);
+    osc.frequency.exponentialRampToValueAtTime(320,t+0.09);
+    gain.gain.setValueAtTime(0.001,t);
+    gain.gain.linearRampToValueAtTime(0.1,t+0.008);
+    gain.gain.exponentialRampToValueAtTime(0.001,t+0.13);
+    osc.start(t);osc.stop(t+0.15);
+  }catch(e){}
+}
+function playBadgeFanfare(){
+  if(ST.rewardSoundEnabled===false)return;
+  try{
+    if(!_audioCtx)_audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    var notes=[523.25,659.25,783.99,1046.5];
+    notes.forEach(function(freq,i){
+      var t=_audioCtx.currentTime+i*0.09;
+      var osc=_audioCtx.createOscillator();
+      var gain=_audioCtx.createGain();
+      osc.connect(gain);gain.connect(_audioCtx.destination);
+      osc.type='triangle';
+      osc.frequency.setValueAtTime(freq,t);
+      gain.gain.setValueAtTime(0.001,t);
+      gain.gain.linearRampToValueAtTime(0.13,t+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+0.35);
+      osc.start(t);osc.stop(t+0.37);
+    });
+  }catch(e){}
 }
 function playCheckSound(isMalus){
   if(ST.soundEnabled===false)return;
@@ -1468,19 +1543,31 @@ function showConfetti(){
   }
 }
 var _popupTimer=null;
+var _infoTipDismissHandler=null;
+function closeInfoTip(){
+  var el=document.getElementById("grind-infotip");
+  if(el){el.style.opacity="0";setTimeout(function(){if(el.parentElement)el.remove();},200);}
+  if(_infoTipDismissHandler){document.removeEventListener("touchstart",_infoTipDismissHandler,true);document.removeEventListener("click",_infoTipDismissHandler,true);_infoTipDismissHandler=null;}
+}
 function showInfoTip(e,msg){
   if(e&&e.stopPropagation)e.stopPropagation();
-  var existing=document.getElementById("grind-infotip");
-  if(existing)existing.remove();
+  if(e&&e.preventDefault)e.preventDefault();
+  closeInfoTip();
   var target=e&&e.target?e.target:null;
   var rect=target?target.getBoundingClientRect():{left:20,top:60,width:20};
   var el=document.createElement("div");
   el.id="grind-infotip";
-  el.style.cssText="position:fixed;z-index:9999;background:#1e1e2e;color:#fff;font-size:.65rem;line-height:1.4;padding:8px 12px;border-radius:10px;max-width:200px;box-shadow:0 4px 14px rgba(0,0,0,0.25);pointer-events:none;left:"+Math.max(10,Math.min(window.innerWidth-210,rect.left-90))+"px;top:"+(rect.top+22)+"px;opacity:0;transition:opacity .15s";
+  el.style.cssText="position:fixed;z-index:9999;background:#1e1e2e;color:#fff;font-size:.72rem;line-height:1.5;padding:10px 14px;border-radius:12px;max-width:230px;box-shadow:0 4px 18px rgba(0,0,0,0.3);left:"+Math.max(10,Math.min(window.innerWidth-240,rect.left-100))+"px;top:"+(rect.top+24)+"px;opacity:0;transition:opacity .15s";
   el.textContent=msg;
   document.body.appendChild(el);
   setTimeout(function(){el.style.opacity="1";},10);
-  setTimeout(function(){el.style.opacity="0";setTimeout(function(){if(el.parentElement)el.remove();},200);},3200);
+  // Dismiss when tapping anywhere else, plus a generous 10s fallback
+  _infoTipDismissHandler=function(ev){if(ev.target!==el)closeInfoTip();};
+  setTimeout(function(){
+    document.addEventListener("touchstart",_infoTipDismissHandler,true);
+    document.addEventListener("click",_infoTipDismissHandler,true);
+  },50);
+  setTimeout(closeInfoTip,10000);
 }
 function showPopup(msg,icon,color,duration){
   duration=duration||2800;
@@ -1511,6 +1598,8 @@ function checkPopupTriggers(di,sid,wasChecked){
   if(wasChecked){
     var _allSlotsToday=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0;});
     if(_allSlotsToday.length>0&&_allSlotsToday.every(function(s){return d[s.id];})){
+      showConfetti();
+      playBadgeFanfare();
       showPopup("🌟🌟🌟 JOURNÉE LÉGENDAIRE ! Toutes tes tâches cochées aujourd’hui. +50 XP BONUS MASSIF !","🏆","#ffd700",6000);
       return;
     }
@@ -1671,6 +1760,7 @@ function tDay(di,sid,monthKey){
       if(_newlyUnlocked.length>0){
         var _b=_newlyUnlocked[0];
         showConfetti();
+        playBadgeFanfare();
         showPopup("BADGE D\u00c9BLOQU\u00c9 : "+_b.icon+" "+_b.name+" \u2014 "+_b.desc,"\u{1F3C6}","#8b5cf6",4500);
       }
     }catch(e){}
@@ -1678,6 +1768,9 @@ function tDay(di,sid,monthKey){
   // Update only the clicked cell - no full re-render, no scroll jump (current month only)
   const checked=!!md.days[di][sid];
   const cell=document.getElementById('tog-'+di+'-'+sid);
+  // Sound must always play regardless of which UI surface (Tracker cell or a stat panel) triggered the check
+  const isMalusSound=ST.malusList.some(function(m){return m.id===sid;});
+  if(checked)playCheckSound(isMalusSound);
   if(cell){
     const s=ST.slots.find(s=>s.id===sid);
     const m=s?SM[s.stat]:null;
@@ -1695,8 +1788,6 @@ function tDay(di,sid,monthKey){
       cell.textContent=checked?'✓':'·';
     }
     if(checked){
-      // Sound feedback
-      playCheckSound(isMalus);
       // Pulse animation
       cell.classList.remove('tog-pulse');
       void cell.offsetWidth; // force reflow to restart animation
@@ -2449,6 +2540,15 @@ function openStatPanel(stat,selectedDay){
 function goToday(){TAB="tracker";TRACKER_MONTH=null;render();setTimeout(()=>{const r=ge("row-"+(new Date().getDate()-1));if(r)r.scrollIntoView({behavior:"smooth",block:"center"});},100);}
 
 ge("fab-today").onclick=goToday;
+
+// Global "ploc" sound on any small +/- stepper button click (event delegation - covers all btn-small buttons app-wide)
+document.body.addEventListener("click",function(e){
+  var el=e.target;
+  while(el&&el!==document.body){
+    if(el.classList&&el.classList.contains("btn-small")){playPlocSound();break;}
+    el=el.parentElement;
+  }
+},true);
 
 function updateGokuAura(totXP){
   const ring=document.getElementById("aura-ring");
