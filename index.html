@@ -92,6 +92,10 @@ pointer-events:none;z-index:0}
 .tabs{display:flex;gap:4px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:14px;padding:4px;margin-bottom:10px;box-shadow:0 2px 8px rgba(8,145,178,0.08);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
 .tab{flex:1;padding:9px 6px;border:none;background:none;color:#0891b2;font-family:'Anton',sans-serif;font-size:.8rem;letter-spacing:2px;opacity:0.5;text-transform:uppercase;border-radius:10px;cursor:pointer;transition:all .2s}
 .tab.active{background:#fff;color:#0891b2;border:1px solid rgba(8,145,178,0.3);font-family:'Anton',sans-serif;box-shadow:0 2px 8px rgba(8,145,178,0.12);opacity:1}
+@keyframes togPulse{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
+.tog-pulse{animation:togPulse .35s cubic-bezier(.34,1.56,.64,1);}
+@keyframes xpFloat{0%{opacity:0;transform:translate(-50%,0) scale(.6);}15%{opacity:1;transform:translate(-50%,-6px) scale(1.1);}80%{opacity:1;transform:translate(-50%,-28px) scale(1);}100%{opacity:0;transform:translate(-50%,-40px) scale(.9);}}
+.xp-float{position:absolute;left:50%;top:0;font-family:'Anton',sans-serif;font-size:.85rem;font-weight:700;pointer-events:none;animation:xpFloat 1s ease-out forwards;z-index:50;white-space:nowrap;}
 
 /* Save bar */
 .save-bar{display:flex;gap:8px;align-items:center;margin-bottom:22px;padding:9px 14px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:12px}
@@ -525,8 +529,6 @@ function drawRadar(canvas,sxp,warns,ghostSxp){
     ctx.beginPath();ctx.arc(cx+Math.cos(a)*r,cy+Math.sin(a)*r,4,0,Math.PI*2);
     ctx.fillStyle=(w&&w.level==="danger")?"#ec4899":(w&&w.level==="warning")?"#f59e0b":SM[stat].color;
     ctx.fill();
-    ctx.font="13px serif";ctx.textAlign="center";ctx.textBaseline="middle";
-    ctx.fillText(SM[stat].icon,cx+Math.cos(a)*(R+16),cy+Math.sin(a)*(R+16));
   });
 }
 
@@ -618,6 +620,49 @@ function checkSaveReminder(){
     var msg=msgs[Math.floor(Math.random()*msgs.length)];
     setTimeout(function(){if(typeof showPopup==="function")showPopup(msg,"💾","#0891b2",5000);},2000);
   }
+}
+function rStatDashboard(eng){
+  const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
+  const md=ST.history[curKey];
+  const today=now.getDate()-1;
+  const skeys=Object.keys(ST.history).sort();
+  const aIds=(md&&md.activeSlots)||[];
+
+  let html=`<div class="card" style="margin-bottom:16px"><div class="sl" style="margin-bottom:10px">📊 COMPÉTENCES CE MOIS</div>`;
+  html+=`<table style="width:100%;border-collapse:collapse">`;
+  html+=`<tr style="font-size:.5rem;color:#0e7490;text-transform:uppercase;letter-spacing:1px"><td style="padding:4px 0"></td><td style="text-align:center;padding:4px">Streak</td><td style="text-align:center;padding:4px">Record mois</td><td style="text-align:center;padding:4px">Jours actifs</td></tr>`;
+
+  STATS.forEach(stat=>{
+    const m=SM[stat];
+    const statSlots=ST.slots.filter(s=>s.stat===stat&&aIds.includes(s.id));
+
+    // Streak actuel pour cette stat (jours consécutifs jusqu'à aujourd'hui)
+    let streak=0;
+    for(let i=today;i>=0;i--){
+      const d=(md&&md.days[i])||{};
+      const active=statSlots.some(s=>d[s.id]);
+      if(active)streak++;
+      else break;
+    }
+
+    // Record du mois (meilleur jour) et jours actifs ce mois
+    let bestDay=0,activeDays=0;
+    if(md)md.days.forEach((d,i)=>{
+      if(i>today)return;
+      const dayXP=statSlots.reduce((s,sl)=>s+(d[sl.id]||0),0);
+      if(dayXP>bestDay)bestDay=dayXP;
+      if(statSlots.some(s=>d[s.id]))activeDays++;
+    });
+
+    html+=`<tr style="border-top:1px solid rgba(0,0,0,0.05)">`;
+    html+=`<td style="padding:8px 0;font-size:.75rem;font-weight:700;color:${m.color}">${m.icon} ${m.label}</td>`;
+    html+=`<td style="text-align:center;font-size:.8rem;font-weight:700;color:${streak>0?"#f97316":"#ccc"}">${streak>0?streak+"j":"—"}</td>`;
+    html+=`<td style="text-align:center;font-size:.8rem;font-weight:700;color:${m.color}">${bestDay>0?"+"+bestDay:"—"}</td>`;
+    html+=`<td style="text-align:center;font-size:.8rem;font-weight:700;color:#0891b2">${activeDays}</td>`;
+    html+=`</tr>`;
+  });
+  html+=`</table></div>`;
+  return html;
 }
 function rProfile(eng){
   const{sxp,warns,wfreq,totXP,cstr,rstr,adays,tdays}=eng;
@@ -757,7 +802,24 @@ function rTracker(eng){
   const monthIdx=skeys.indexOf(viewKey);
   const canGoPrev=monthIdx>0;
   const canGoNext=monthIdx<skeys.length-1;
-  let html=`<div class="card" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+  let todayTaskCount=0,todayTaskDone=0,todayTaskId=null;
+  if(isCurrentMonth){
+    const todayD=md.days[curD]||{};
+    todayTaskCount=aSlots.length;
+    todayTaskDone=aSlots.filter(s=>todayD[s.id]).length;
+  }
+  let html='';
+  if(isCurrentMonth&&todayTaskCount>0){
+    const pctToday=Math.round(todayTaskDone/todayTaskCount*100);
+    html+=`<div class="card" style="margin-bottom:12px;padding:12px 16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <span style="font-size:.68rem;color:#0e7490;font-family:'Anton',sans-serif;letter-spacing:1px">AUJOURD'HUI</span>
+        <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctToday===100?"#10b981":"#8b5cf6"}">${todayTaskDone}/${todayTaskCount} t\u00e2ches</span>
+      </div>
+      <div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctToday===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctToday}%;transition:width .4s ease"></div></div>
+    </div>`;
+  }
+  html+=`<div class="card" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
     <button onclick="${canGoPrev?"navTrackerMonth(-1)":""}" style="background:${canGoPrev?"#fff":"rgba(0,0,0,0.03)"};border:1px solid rgba(8,145,178,0.15);border-radius:10px;width:32px;height:32px;font-size:1rem;color:${canGoPrev?"#0891b2":"#ccc"};cursor:${canGoPrev?"pointer":"default"};flex-shrink:0">‹</button>
     <div style="flex:1"><div style="display:flex;justify-content:space-between;margin-bottom:5px;font-size:.62rem;color:#0e7490">
       <span>${MFR[curM]} ${curY}${!isCurrentMonth?` <span style="color:#8b5cf6;font-weight:700">· mode edition</span>`:""}</span>
@@ -942,10 +1004,57 @@ function rConfig(){
   return html;
 }
 
+function rHeatmap(eng){
+  const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
+  const skeys=Object.keys(ST.history).sort();
+  const today=now.getDate()-1;
+  // Compute max XP for a single day across the last ~4 months to calibrate intensity
+  const recentKeys=skeys.slice(-4);
+  let maxDay=1;
+  const dayXPMap={};
+  recentKeys.forEach(k=>{
+    const m=ST.history[k],mAIds=m.activeSlots||[];
+    const lastIdx=(k===curKey)?today:m.days.length-1;
+    for(let i=0;i<=lastIdx;i++){
+      const d=m.days[i];
+      let xp=0;
+      ST.slots.forEach(s=>{if(mAIds.includes(s.id)&&d[s.id])xp+=d[s.id];});
+      dayXPMap[k+'_'+i]=xp;
+      if(xp>maxDay)maxDay=xp;
+    }
+  });
+  let html=`<div class="sl">Activité récente</div><div class="card" style="padding:14px">`;
+  html+=`<div style="display:flex;flex-wrap:wrap;gap:3px;justify-content:flex-start">`;
+  recentKeys.forEach(k=>{
+    const m=ST.history[k];
+    const lastIdx=(k===curKey)?today:m.days.length-1;
+    for(let i=0;i<=lastIdx;i++){
+      const xp=dayXPMap[k+'_'+i]||0;
+      const intensity=xp<=0?0:Math.min(1,xp/maxDay);
+      const bg=intensity===0?'rgba(0,0,0,0.05)':`rgba(139,92,246,${0.15+intensity*0.75})`;
+      const p=pk(k);
+      const dateLabel=(i+1)+' '+MFR[p.month].slice(0,3);
+      html+=`<div title="${dateLabel}: ${xp} XP" style="width:11px;height:11px;border-radius:3px;background:${bg}"></div>`;
+    }
+  });
+  html+=`</div>`;
+  html+=`<div style="display:flex;align-items:center;gap:6px;margin-top:10px;font-size:.58rem;color:#999">
+    <span>Moins</span>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(0,0,0,0.05)"></div>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.3)"></div>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.55)"></div>
+    <div style="width:10px;height:10px;border-radius:2px;background:rgba(139,92,246,0.9)"></div>
+    <span>Plus</span>
+  </div>`;
+  html+=`</div>`;
+  return html;
+}
 function rHistory(eng){
   const{skeys,streaks,netXP,totXP,rstr,adays,tdays}=eng;
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
-  let html=`<div class="quick-grid">${[{l:"XP Net",v:totXP,c:"#a78bfa"},{l:"Jours joués",v:tdays,c:"#10b981"},{l:"Streak record",v:rstr,c:"#f59e0b"},{l:"Mois joués",v:skeys.length,c:"#ec4899"}].map(x=>`<div class="quick-card"><div class="quick-label">${x.l}</div><div class="quick-val" style="color:${x.c}">${x.v}</div></div>`).join("")}</div><div class="sl">Mois joués</div>`;
+  let html=`<div class="quick-grid">${[{l:"XP Net",v:totXP,c:"#a78bfa"},{l:"Jours joués",v:tdays,c:"#10b981"},{l:"Streak record",v:rstr,c:"#f59e0b"},{l:"Mois joués",v:skeys.length,c:"#ec4899"}].map(x=>`<div class="quick-card"><div class="quick-label">${x.l}</div><div class="quick-val" style="color:${x.c}">${x.v}</div></div>`).join("")}</div>`;
+  html+=rHeatmap(eng);
+  html+=`<div class="sl">Mois joués</div>`;
   [...skeys].reverse().forEach(k=>{
     const{year,month}=pk(k),md=ST.history[k];
     let off=0;skeys.forEach(k2=>{if(k2<k)off+=ST.history[k2].days.length;});
@@ -1046,6 +1155,7 @@ function computeBadges(eng){
       desc: isFirst ? 'Premier jour actif' : (t.min.toLocaleString('fr-FR')+' XP total'),
       rank: t.rank,
       unlocked: isFirst ? adays>0 : totXP>=t.min,
+      progress: isFirst ? (adays>0?1:0) : Math.min(1,totXP/t.min),
     });
   });
 
@@ -1129,23 +1239,23 @@ function computeBadges(eng){
   }
   earned.push({id:'b_rebond', icon:'📈', name:'Rebond', desc:'Grosse remontée après une semaine faible', unlocked:_everRebond, cat:'streak'});
   // ── BADGES À VIE — Streak ──
-  earned.push({id:'b_str7',  icon:'🔥', name:'Semaine de feu',   desc:'Streak de 7 jours',   unlocked:rstr>=7,  cat:'streak'});
-  earned.push({id:'b_str14', icon:'🔑', name:'Discipline de fer', desc:'Streak de 14 jours',  unlocked:rstr>=14, cat:'streak'});
-  earned.push({id:'b_str30', icon:'👑', name:'Mois parfait',      desc:'Streak de 30 jours',  unlocked:rstr>=30, cat:'streak'});
-  earned.push({id:'b_str90', icon:'💫', name:'Indestructible',    desc:'Streak de 90 jours',  unlocked:rstr>=90, cat:'streak'});
+  earned.push({id:'b_str7',  icon:'🔥', name:'Semaine de feu',   desc:'Streak de 7 jours',   unlocked:rstr>=7,  progress:Math.min(1,rstr/7), cat:'streak'});
+  earned.push({id:'b_str14', icon:'🔑', name:'Discipline de fer', desc:'Streak de 14 jours',  unlocked:rstr>=14, progress:Math.min(1,rstr/14), cat:'streak'});
+  earned.push({id:'b_str30', icon:'👑', name:'Mois parfait',      desc:'Streak de 30 jours',  unlocked:rstr>=30, progress:Math.min(1,rstr/30), cat:'streak'});
+  earned.push({id:'b_str90', icon:'💫', name:'Indestructible',    desc:'Streak de 90 jours',  unlocked:rstr>=90, progress:Math.min(1,rstr/90), cat:'streak'});
 
   // ── BADGES À VIE — Polyvalent ──
   const minStat = Math.min(...Object.values(sxp));
-  earned.push({id:'b_poly1',  icon:'🌱', name:'Éveil',     desc:'Toutes stats > 10 XP',   unlocked:minStat>=10,   cat:'poly'});
-  earned.push({id:'b_poly2',  icon:'💪', name:'Équilibré', desc:'Toutes stats > 50 XP',   unlocked:minStat>=50,   cat:'poly'});
-  earned.push({id:'b_poly3',  icon:'🏅', name:'Complet',   desc:'Toutes stats > 200 XP',  unlocked:minStat>=200,  cat:'poly'});
-  earned.push({id:'b_poly4',  icon:'💎', name:'Maître',    desc:'Toutes stats > 500 XP',  unlocked:minStat>=500,  cat:'poly'});
-  earned.push({id:'b_poly5',  icon:'👑', name:'Légende',   desc:'Toutes stats > 1000 XP', unlocked:minStat>=1000, cat:'poly'});
+  earned.push({id:'b_poly1',  icon:'🌱', name:'Éveil',     desc:'Toutes stats > 10 XP',   unlocked:minStat>=10,   progress:Math.min(1,minStat/10), cat:'poly'});
+  earned.push({id:'b_poly2',  icon:'💪', name:'Équilibré', desc:'Toutes stats > 50 XP',   unlocked:minStat>=50,   progress:Math.min(1,minStat/50), cat:'poly'});
+  earned.push({id:'b_poly3',  icon:'🏅', name:'Complet',   desc:'Toutes stats > 200 XP',  unlocked:minStat>=200,  progress:Math.min(1,minStat/200), cat:'poly'});
+  earned.push({id:'b_poly4',  icon:'💎', name:'Maître',    desc:'Toutes stats > 500 XP',  unlocked:minStat>=500,  progress:Math.min(1,minStat/500), cat:'poly'});
+  earned.push({id:'b_poly5',  icon:'👑', name:'Légende',   desc:'Toutes stats > 1000 XP', unlocked:minStat>=1000, progress:Math.min(1,minStat/1000), cat:'poly'});
 
   // ── BADGES MENSUELS ──
   // Beast mode: 100 XP Physique ce mois
   const monthPhys = sxp.physique||0;
-  earned.push({id:'m_beast',  icon:'💪', name:'Beast Mode',    desc:'100 XP Physique ce mois',    unlocked:monthPhys>=100,  cat:'monthly'});
+  earned.push({id:'m_beast',  icon:'💪', name:'Beast Mode',    desc:'100 XP Physique ce mois',    unlocked:monthPhys>=100,  progress:Math.min(1,monthPhys/100), cat:'monthly'});
   // Admin king: Paperasse cochée chaque semaine du mois
   const paperSlot = ST.slots.find(s=>s.name==='Paperasse');
   let paperWeeks=0, totalWeeks=0;
@@ -1157,10 +1267,10 @@ function computeBadges(eng){
       if(days.slice(wStart,wEnd).some(d=>d[paperSlot.id])) paperWeeks++;
     }
   }
-  earned.push({id:'m_admin', icon:'📋', name:'Admin King',    desc:'Paperasse chaque semaine',    unlocked:totalWeeks>0&&paperWeeks===totalWeeks, cat:'monthly'});
+  earned.push({id:'m_admin', icon:'📋', name:'Admin King',    desc:'Paperasse chaque semaine',    unlocked:totalWeeks>0&&paperWeeks===totalWeeks, progress:totalWeeks>0?paperWeeks/totalWeeks:0, cat:'monthly'});
   // Mois actif: 20+ jours actifs ce mois
   const monthActive = days.filter((d,i)=>i<=today&&ST.slots.filter(s=>aIds.includes(s.id)).some(s=>d[s.id])).length;
-  earned.push({id:'m_active', icon:'🌟', name:'Mois de feu',   desc:'20+ jours actifs ce mois',   unlocked:monthActive>=20, cat:'monthly'});
+  earned.push({id:'m_active', icon:'🌟', name:'Mois de feu',   desc:'20+ jours actifs ce mois',   unlocked:monthActive>=20, progress:Math.min(1,monthActive/20), cat:'monthly'});
   // Combo craft
   const comboCfg = ST.streakCfg||{};
   const comboStat = comboCfg.comboStatId||'craft';
@@ -1171,7 +1281,7 @@ function computeBadges(eng){
     const cnt=ST.slots.filter(s=>s.stat===comboStat&&aIds.includes(s.id)&&d[s.id]).length;
     if(cnt>=comboMin)comboDays++;
   });
-  earned.push({id:'m_combo', icon:'🔥', name:'Combo Master',  desc:'5 jours combo Craft ce mois', unlocked:comboDays>=5, cat:'monthly'});
+  earned.push({id:'m_combo', icon:'🔥', name:'Combo Master',  desc:'5 jours combo Craft ce mois', unlocked:comboDays>=5, progress:Math.min(1,comboDays/5), cat:'monthly'});
 
   return earned;
 }
@@ -1202,10 +1312,12 @@ function rBadges(eng){
   html+=`<div style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#0891b2;margin-bottom:10px">CE MOIS</div>`;
   html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">`;
   monthly.forEach(b=>{
-    html+=`<div style="background:${b.unlocked?'#fff':'rgba(0,0,0,0.03)'};border:2px solid ${b.unlocked?'#0891b2':'rgba(0,0,0,0.06)'};border-radius:14px;padding:12px;min-width:80px;text-align:center;opacity:${b.unlocked?1:0.4}">
-      <div style="font-size:1.6rem;margin-bottom:4px">${b.icon}</div>
+    const pctB=Math.round((b.progress||0)*100);
+    html+=`<div style="background:${b.unlocked?'#fff':'rgba(0,0,0,0.03)'};border:2px solid ${b.unlocked?'#0891b2':'rgba(0,0,0,0.06)'};border-radius:14px;padding:12px;min-width:80px;text-align:center;opacity:${b.unlocked?1:0.75}">
+      <div style="font-size:1.6rem;margin-bottom:4px;opacity:${b.unlocked?1:0.4}">${b.icon}</div>
       <div style="font-size:.6rem;font-weight:700;color:${b.unlocked?'#1e3a4a':'#aaa'};font-family:'Anton',sans-serif">${b.name}</div>
-      <div style="font-size:.52rem;color:#0e7490;margin-top:2px">${b.desc}</div>
+      <div style="font-size:.52rem;color:#0e7490;margin-top:2px;opacity:${b.unlocked?1:0.6}">${b.desc}</div>
+      ${(!b.unlocked&&b.progress!==undefined&&b.progress>0)?`<div style="margin-top:6px;background:rgba(0,0,0,.08);border-radius:99px;height:4px"><div style="height:100%;border-radius:99px;background:#f59e0b;width:${pctB}%"></div></div><div style="font-size:.44rem;color:#f59e0b;font-weight:700;margin-top:2px">${pctB}%</div>`:''}
     </div>`;
   });
   html+=`</div>`;
@@ -1214,11 +1326,13 @@ function rBadges(eng){
   html+=`<div style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#0891b2;margin-bottom:10px">À VIE</div>`;
   html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">`;
   lifetime.forEach(b=>{
-    html+=`<div style="position:relative;background:${b.unlocked?'#fff':'rgba(0,0,0,0.03)'};border:2px solid ${b.unlocked?'#0891b2':'rgba(0,0,0,0.06)'};border-radius:14px;padding:12px;text-align:center;opacity:${b.unlocked?1:0.35}">
+    const pctL=Math.round((b.progress||0)*100);
+    html+=`<div style="position:relative;background:${b.unlocked?'#fff':'rgba(0,0,0,0.03)'};border:2px solid ${b.unlocked?'#0891b2':'rgba(0,0,0,0.06)'};border-radius:14px;padding:12px;text-align:center;opacity:${b.unlocked?1:0.75}">
       ${b.rank?`<div style="position:absolute;top:4px;right:6px;font-size:.5rem;font-weight:900;color:${b.unlocked?'#8b5cf6':'#ccc'};font-family:'Anton',sans-serif">${b.rank}</div>`:''}
-      <div style="font-size:1.4rem;margin-bottom:4px">${b.icon}</div>
+      <div style="font-size:1.4rem;margin-bottom:4px;opacity:${b.unlocked?1:0.4}">${b.icon}</div>
       <div style="font-size:.58rem;font-weight:700;color:${b.unlocked?'#1e3a4a':'#aaa'};font-family:'Anton',sans-serif">${b.name}</div>
-      <div style="font-size:.48rem;color:#0e7490;margin-top:2px">${b.desc}</div>
+      <div style="font-size:.48rem;color:#0e7490;margin-top:2px;opacity:${b.unlocked?1:0.6}">${b.desc}</div>
+      ${(!b.unlocked&&b.progress!==undefined&&b.progress>0)?`<div style="margin-top:6px;background:rgba(0,0,0,.08);border-radius:99px;height:4px"><div style="height:100%;border-radius:99px;background:#8b5cf6;width:${pctL}%"></div></div><div style="font-size:.42rem;color:#8b5cf6;font-weight:700;margin-top:2px">${pctL}%</div>`:''}
     </div>`;
   });
   html+=`</div>`;
@@ -1449,6 +1563,24 @@ function tDay(di,sid,monthKey){
       cell.className='tog'+(checked?' '+cls[s.stat]:'');
       cell.textContent=checked?'✓':'·';
     }
+    if(checked){
+      // Pulse animation
+      cell.classList.remove('tog-pulse');
+      void cell.offsetWidth; // force reflow to restart animation
+      cell.classList.add('tog-pulse');
+      // Floating XP number
+      if(cell.parentElement&&s&&!isMalus){
+        const fx=document.createElement('div');
+        fx.className='xp-float';
+        fx.textContent='+'+s.xp;
+        fx.style.color=m?m.color:'#0891b2';
+        cell.parentElement.style.position='relative';
+        cell.parentElement.appendChild(fx);
+        setTimeout(function(){if(fx.parentElement)fx.remove();},1000);
+      }
+      // Haptic feedback
+      if(navigator.vibrate)navigator.vibrate(isMalus?[30,30,30]:15);
+    }
   }
   // Refresh stats panel silently
   const eng=engine();
@@ -1474,6 +1606,25 @@ function tDay(di,sid,monthKey){
   const lvCell=document.getElementById('lv-'+di);
   if(lvCell){
     lvCell.textContent=netXPVal>=12?'🔥':netXPVal>=8?'✅':netXPVal>=0?'⚪':'💀';
+  }
+  // Update today's task progress counter if this is today
+  const nowTD=new Date();
+  if(!monthKey&&di===nowTD.getDate()-1){
+    const aIdsTD=(ST.history[key].activeSlots)||[];
+    const aSlotsTD=ST.slots.filter(s=>aIdsTD.includes(s.id));
+    const doneTD=aSlotsTD.filter(s=>md.days[di][s.id]).length;
+    const totalTD=aSlotsTD.length;
+    const countEl=document.getElementById('today-count');
+    const barEl=document.getElementById('today-bar');
+    if(countEl&&totalTD>0){
+      const pctTD=Math.round(doneTD/totalTD*100);
+      countEl.textContent=doneTD+'/'+totalTD+' t\u00e2ches';
+      countEl.style.color=pctTD===100?'#10b981':'#8b5cf6';
+      if(barEl){
+        barEl.style.width=pctTD+'%';
+        barEl.style.background=pctTD===100?'linear-gradient(90deg,#10b981,#0891b2)':'linear-gradient(90deg,#8b5cf6,#ec4899)';
+      }
+    }
   }
 }
 function tActive(sid){
@@ -1561,6 +1712,70 @@ function resetAll(){
   render();
   alert("✅ Reset effectué. Nouvelle partie lancée ! 🐉");
 }
+function computeStatBreakdown(){
+  const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
+  const md=ST.history[curKey];
+  const today=now.getDate()-1;
+  const aIds=(md&&md.activeSlots)||[];
+  const out={};
+  STATS.forEach(stat=>{
+    const statSlots=ST.slots.filter(s=>s.stat===stat&&aIds.includes(s.id));
+    let streak=0;
+    for(let i=today;i>=0;i--){
+      const d=(md&&md.days[i])||{};
+      if(statSlots.some(s=>d[s.id]))streak++;
+      else break;
+    }
+    let bestDay=0,activeDays=0;
+    if(md)md.days.forEach((d,i)=>{
+      if(i>today)return;
+      const dayXP=statSlots.reduce((s,sl)=>s+(d[sl.id]||0),0);
+      if(dayXP>bestDay)bestDay=dayXP;
+      if(statSlots.some(s=>d[s.id]))activeDays++;
+    });
+    out[stat]={streak,bestDay,activeDays};
+  });
+  return out;
+}
+function computeStatLifetime(){
+  const skeys=Object.keys(ST.history).sort();
+  const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth()),today=now.getDate()-1;
+  const out={};
+  STATS.forEach(stat=>{
+    let flatAll=[],maxStreak=0,curStreak=0,bestMonthXP=0,bestMonthLabel='';
+    skeys.forEach(k=>{
+      const m=ST.history[k],mAIds=m.activeSlots||[];
+      const statSlots=ST.slots.filter(s=>s.stat===stat&&mAIds.includes(s.id));
+      const lastIdx=(k===curKey)?today:m.days.length-1;
+      let monthXP=0;
+      for(let i=0;i<=lastIdx;i++){
+        const d=m.days[i];
+        const active=statSlots.some(s=>d[s.id]);
+        flatAll.push(active);
+        monthXP+=statSlots.reduce((s,sl)=>s+(d[sl.id]||0),0);
+      }
+      if(monthXP>bestMonthXP){bestMonthXP=monthXP;const p=pk(k);bestMonthLabel=MFR[p.month]+' '+p.year;}
+    });
+    flatAll.forEach(active=>{if(active){curStreak++;maxStreak=Math.max(maxStreak,curStreak);}else curStreak=0;});
+    out[stat]={maxStreak,bestMonthXP,bestMonthLabel};
+  });
+  return out;
+}
+function statBarRows(breakdown,field,suffix){
+  const maxV=Math.max(1,...STATS.map(s=>breakdown[s][field]));
+  let h="";
+  STATS.forEach(stat=>{
+    const m=SM[stat],v=breakdown[stat][field];
+    const pct=Math.round(v/maxV*100);
+    h+="<div style='display:flex;align-items:center;gap:8px;margin-bottom:8px'>";
+    h+="<span style='font-size:.9rem;width:20px'>"+m.icon+"</span>";
+    h+="<span style='font-size:.68rem;color:"+m.color+";font-weight:700;min-width:78px'>"+m.label+"</span>";
+    h+="<div style='flex:1;background:rgba(0,0,0,.06);border-radius:99px;height:9px'><div style='height:100%;border-radius:99px;background:"+m.color+";width:"+pct+"%'></div></div>";
+    h+="<span style='font-size:.7rem;font-weight:700;color:"+m.color+";min-width:34px;text-align:right'>"+v+(suffix||"")+"</span>";
+    h+="</div>";
+  });
+  return h;
+}
 function openProfilePanel(key){
   var eng=engine();
   var cstr=eng.cstr,rstr=eng.rstr,adays=eng.adays,tdays=eng.tdays,sxp=eng.sxp,streaks=eng.streaks,skeys=eng.skeys;
@@ -1573,10 +1788,27 @@ function openProfilePanel(key){
     body+='<div style="flex:1;background:#fff8e1;border-radius:12px;padding:14px;text-align:center;border:1px solid #f59e0b30"><div style="font-size:.55rem;color:#b45309;font-family:Anton,sans-serif;letter-spacing:1px">ACTUEL</div><div style="font-size:2rem;font-weight:700;color:#f59e0b">'+cstr+'</div><div style="font-size:.6rem;color:#b45309">jours</div></div>';
     body+='<div style="flex:1;background:#fff8e1;border-radius:12px;padding:14px;text-align:center;border:1px solid #f59e0b30"><div style="font-size:.55rem;color:#b45309;font-family:Anton,sans-serif;letter-spacing:1px">RECORD</div><div style="font-size:2rem;font-weight:700;color:#f59e0b">'+rstr+'</div><div style="font-size:.6rem;color:#b45309">jours</div></div>';
     body+='</div>';
+    var bkS=computeStatBreakdown();
+    body+='<div style="font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#0e7490;margin-bottom:10px">STREAK PAR COMPÉTENCE</div>';
+    body+=statBarRows(bkS,'streak','j');
   }
   else if(key==='record'){
     title='Record streak'; icon='🏆'; color='#f59e0b';
-    body='<div style="text-align:center;padding:20px 0"><div style="font-size:4rem;font-weight:700;color:#f59e0b">'+rstr+'</div><div style="font-size:.8rem;color:#0e7490">jours consécutifs</div></div>';
+    body='<div style="text-align:center;padding:20px 0"><div style="font-size:4rem;font-weight:700;color:#f59e0b">'+rstr+'</div><div style="font-size:.8rem;color:#0e7490">jours consécutifs (toutes stats confondues)</div></div>';
+    var bkL=computeStatLifetime();
+    var bkLObj={};
+    STATS.forEach(function(s){bkLObj[s]={maxStreak:bkL[s].maxStreak};});
+    body+='<div style="font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#0e7490;margin-bottom:10px">MEILLEUR STREAK PAR COMPÉTENCE</div>';
+    body+=statBarRows(bkLObj,'maxStreak','j');
+    body+='<div style="font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#0e7490;margin:16px 0 10px">MEILLEUR MOIS PAR COMPÉTENCE</div>';
+    STATS.forEach(function(stat){
+      var m=SM[stat],bm=bkL[stat];
+      if(bm.bestMonthXP<=0)return;
+      body+='<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(0,0,0,0.05);font-size:.72rem">';
+      body+='<span style="color:'+m.color+';font-weight:700">'+m.icon+' '+m.label+'</span>';
+      body+='<span style="color:#1e3a4a">'+bm.bestMonthLabel+' — <strong>+'+bm.bestMonthXP+'</strong></span>';
+      body+='</div>';
+    });
   }
   else if(key==='actifs'){
     title='Jours actifs'; icon='📅'; color='#10b981';
@@ -1585,7 +1817,22 @@ function openProfilePanel(key){
     body+='<div style="flex:1;background:rgba(16,185,129,.06);border-radius:12px;padding:14px;text-align:center;border:1px solid #10b98130"><div style="font-size:.55rem;color:#059669;font-family:Anton,sans-serif;letter-spacing:1px">ACTIFS</div><div style="font-size:2rem;font-weight:700;color:#10b981">'+adays+'</div></div>';
     body+='<div style="flex:1;background:rgba(139,92,246,.06);border-radius:12px;padding:14px;text-align:center;border:1px solid #8b5cf630"><div style="font-size:.55rem;color:#6d28d9;font-family:Anton,sans-serif;letter-spacing:1px">TOTAL</div><div style="font-size:2rem;font-weight:700;color:#8b5cf6">'+tdays+'</div></div>';
     body+='</div>';
-    body+='<div style="background:rgba(8,145,178,.05);border-radius:12px;padding:14px;text-align:center"><div style="font-size:.6rem;color:#0e7490;margin-bottom:6px">TAUX D’ACTIVITÉ</div><div style="font-size:2rem;font-weight:700;color:#0891b2">'+pct+'%</div></div>';
+    body+='<div style="background:rgba(8,145,178,.05);border-radius:12px;padding:14px;text-align:center;margin-bottom:16px"><div style="font-size:.6rem;color:#0e7490;margin-bottom:6px">TAUX D’ACTIVITÉ</div><div style="font-size:2rem;font-weight:700;color:#0891b2">'+pct+'%</div></div>';
+    var bkA=computeStatBreakdown();
+    body+='<div style="font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#0e7490;margin-bottom:10px">JOURS ACTIFS PAR COMPÉTENCE (CE MOIS)</div>';
+    body+=statBarRows(bkA,'activeDays','j');
+    var skeysA=eng.skeys;
+    if(skeysA.length>1){
+      var curKeyA=skeysA[skeysA.length-1],prevKeyA=skeysA[skeysA.length-2];
+      var prevMdA=ST.history[prevKeyA],prevAIdsA=prevMdA.activeSlots||[];
+      var prevActiveA=prevMdA.days.filter(function(d){return ST.slots.filter(function(s){return prevAIdsA.indexOf(s.id)>=0;}).some(function(s){return d[s.id];});}).length;
+      var deltaA=adays-prevActiveA;
+      var pA=pk(prevKeyA);
+      body+='<div style="background:rgba(8,145,178,.05);border-radius:12px;padding:12px;text-align:center;margin-top:16px">';
+      body+='<div style="font-size:.58rem;color:#0e7490;margin-bottom:4px">VS '+MFR[pA.month].toUpperCase()+' '+pA.year+' ('+prevActiveA+' jours)</div>';
+      body+='<div style="font-size:1.1rem;font-weight:700;color:'+(deltaA>=0?"#10b981":"#dc2626")+'">'+(deltaA>=0?"↑ +":"↓ ")+deltaA+' jours</div>';
+      body+='</div>';
+    }
   }
   else if(key==='total'){
     title='XP Total'; icon='📆'; color='#8b5cf6';
@@ -1602,6 +1849,36 @@ function openProfilePanel(key){
       body+='<div style="flex:1;background:rgba(0,0,0,.06);border-radius:99px;height:6px"><div style="height:100%;border-radius:99px;background:'+statColors[s]+';width:'+Math.round(v/maxS*100)+'%"></div></div>';
       body+='<span style="font-size:.72rem;font-weight:700;color:'+statColors[s]+';min-width:36px;text-align:right">'+v+'</span></div>';
     });
+    // Mini graph: XP total par mois (3-6 derniers mois)
+    var skeysT=eng.skeys;
+    if(skeysT.length>1){
+      var monthlyTotals=skeysT.map(function(k){
+        var m=ST.history[k],mAIds=m.activeSlots||[];
+        var xp=0;
+        m.days.forEach(function(d){ST.slots.forEach(function(s){if(mAIds.indexOf(s.id)>=0&&d[s.id])xp+=d[s.id];});});
+        return{k:k,xp:xp};
+      });
+      var last6=monthlyTotals.slice(-6);
+      var maxM=Math.max.apply(null,[1].concat(last6.map(function(m){return m.xp;})));
+      body+='<div style="font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#8b5cf6;margin:16px 0 8px">XP PAR MOIS</div>';
+      body+='<div style="display:flex;gap:6px;align-items:flex-end;height:56px;margin-bottom:12px">';
+      last6.forEach(function(mv){
+        var p=pk(mv.k);
+        var isNow=mv.k===skeysT[skeysT.length-1];
+        var h=mv.xp>0?Math.max(12,Math.round(mv.xp/maxM*46)):4;
+        body+='<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;justify-content:flex-end">';
+        body+='<div style="font-size:.5rem;font-weight:700;color:#8b5cf6">'+mv.xp+'</div>';
+        body+='<div style="width:100%;height:'+h+'px;background:'+(isNow?'#8b5cf6':'#8b5cf660')+';border-radius:4px 4px 2px 2px"></div>';
+        body+='<div style="font-size:.48rem;color:'+(isNow?'#8b5cf6':'#aaa')+';font-weight:'+(isNow?'700':'400')+'">'+MFR[p.month].slice(0,3)+'</div>';
+        body+='</div>';
+      });
+      body+='</div>';
+      var bestM=monthlyTotals.reduce(function(b,m){return m.xp>b.xp?m:b;},{xp:0});
+      if(bestM.xp>0){
+        var pb=pk(bestM.k);
+        body+='<div style="background:rgba(139,92,246,.06);border-radius:12px;padding:10px;text-align:center;font-size:.68rem;color:#6d28d9">👑 Meilleur mois jamais : <strong>'+MFR[pb.month]+' '+pb.year+'</strong> avec +'+bestM.xp+' XP</div>';
+      }
+    }
   }
 
   var html='<div style="display:flex;align-items:center;gap:12px;margin-bottom:20px">';
