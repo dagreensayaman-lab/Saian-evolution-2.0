@@ -288,6 +288,19 @@ function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch
 function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
+function migrateWeeklyMalus(){
+  if(ST.weeklyMalusMigrated)return;
+  if(!ST.slotRules)ST.slotRules={};
+  var scfg=ST.streakCfg||mkStreakCfg();
+  if(scfg.weeklyMalusSlotId&&scfg.weeklyMalusXP&&!ST.slotRules[scfg.weeklyMalusSlotId]){
+    ST.slotRules[scfg.weeklyMalusSlotId]={minPerWeek:1,malusXP:scfg.weeklyMalusXP};
+  }
+  if(scfg.weeklyMalusSlot2Id&&scfg.weeklyMalusXP2&&!ST.slotRules[scfg.weeklyMalusSlot2Id]){
+    ST.slotRules[scfg.weeklyMalusSlot2Id]={minPerWeek:1,malusXP:scfg.weeklyMalusXP2};
+  }
+  ST.weeklyMalusMigrated=true;
+  saveST();
+}
 function migrateCombos(){
   if(ST.combosMigrated)return;
   if(!ST.streakCfg)ST.streakCfg=mkStreakCfg();
@@ -321,6 +334,7 @@ function migrateXpFreeze(){
   saveST();
 }
 migrateXpFreeze();
+migrateWeeklyMalus();
 migrateCombos();
 let TAB="profile",CTAB="tasks",EDIT=null,HOPEN=null,TRACKER_MONTH=null;
 
@@ -404,26 +418,8 @@ function engine(){
       }
     }
   });
-  // Weekly malus check - up to 2 configurable slots
-  const _scfg=ST.streakCfg||mkStreakCfg();
-  for(const [slotKey,xpKey] of [['weeklyMalusSlotId','weeklyMalusXP'],['weeklyMalusSlot2Id','weeklyMalusXP2']]){
-    const _wSlotId=_scfg[slotKey];
-    const _wMalusXP=_scfg[xpKey]||3;
-    const _wSlot=_wSlotId?ST.slots.find(s=>s.id===_wSlotId):null;
-    if(_wSlot){
-      for(let weekStart=0;weekStart<flat.length;weekStart+=7){
-        const weekEnd=Math.min(weekStart+7,flat.length);
-        // Skip the current in-progress week (chunk shorter than 7 days = truncated at "today")
-        if(weekEnd-weekStart<7)continue;
-        const weekDone=flat.slice(weekStart,weekEnd).some(({d,aIds})=>aIds.includes(_wSlot.id)&&d[_wSlot.id]);
-        if(!weekDone){
-          for(let j=weekStart;j<weekEnd;j++){
-            dxp[j]=(dxp[j]||0)+Math.ceil(_wMalusXP/(weekEnd-weekStart));
-          }
-        }
-      }
-    }
-  }
+  // Note: weekly-frequency malus (formerly "weeklyMalusSlotId/2", limited to 2 slots)
+  // now fully handled by the unlimited ST.slotRules ⏰ system above — no separate loop needed.
   flat.forEach(({d},i)=>{ST.malusList.forEach(m=>{const rec=d[m.id];if(!rec)return;const fxp=(typeof rec==="object")?rec.xp:m.xp;const fdd=(typeof rec==="object")?rec.debtDays:m.debtDays;const pd=Math.ceil(Math.abs(fxp)/fdd);for(let j=0;j<fdd&&i+j<n;j++){dxp[i+j]+=pd;dstat[i+j][m.stat]=(dstat[i+j][m.stat]||0)+pd;}});});
   // Perfect week / perfect month — big bonus for slots, big extra malus for malus checkboxes
   const _curKeyPW=mk(new Date().getFullYear(),new Date().getMonth());
@@ -593,6 +589,8 @@ function importData(e){
           migrateXpFreeze();
           ST.combosMigrated=false;
           migrateCombos();
+          ST.weeklyMalusMigrated=false;
+          migrateWeeklyMalus();
           saveST();
           TAB="profile";
           render();
@@ -696,16 +694,7 @@ function rStatDashboard(eng){
   html+=`</table></div>`;
   return html;
 }
-function rProfile(eng){
-  const{sxp,warns,wfreq,totXP,cstr,rstr,adays,tdays}=eng;
-  const t=tier(totXP),ti=TIERS.indexOf(t),nt=TIERS[ti+1],xpPct=nt?Math.min(100,((totXP-t.min)/(nt.min-t.min))*100):100;
-  const wc=Object.keys(warns).length,hd=Object.values(warns).some(w=>w.level==="danger");
-  let html="";
-  if(wc>0){
-    const wi=Object.entries(warns).map(([s,w])=>`<span style="margin-right:12px;color:${w.level==="danger"?"#ec4899":"#f59e0b"}">${SM[s].icon} ${SM[s].label} — ${w.daysSince}j</span>`).join("");
-    html+=`<div class="warn-banner" style="background:${hd?"rgba(255,68,102,.08)":"rgba(251,191,36,.08)"};border:1px solid ${hd?"#ec489950":"#f59e0b50"}"><span style="font-size:1.4rem">${hd?"🚨":"⚠️"}</span><div><div style="font-weight:700;font-size:.85rem;color:${hd?"#ec4899":"#f59e0b"};margin-bottom:4px">${hd?"ALERTE — decay !":"Stat en dégradation"}</div><div style="font-size:.72rem;color:#a0a0a0">${wi}</div></div></div>`;
-  }
-  function xpAsOf(eng,targetDate){
+function xpAsOf(eng,targetDate){
   const key=mk(targetDate.getFullYear(),targetDate.getMonth());
   const dayIdx=targetDate.getDate()-1;
   if(!ST.history[key])return null;
@@ -725,15 +714,16 @@ function rThrowback(eng){
   ];
   const results=points.map(p=>{
     const d=new Date(now.getFullYear(),now.getMonth()-p.months,now.getDate());
-    return{label:p.label,xp:xpAsOf(eng,d)};
-  }).filter(r=>r.xp!==null);
+    const key=mk(d.getFullYear(),d.getMonth());
+    return{label:p.label,xp:xpAsOf(eng,d),key:key};
+  }).filter(r=>r.xp!==null&&ST.history[r.key]);
   if(results.length===0)return'';
-  let html=`<div class="card" style="margin-bottom:16px"><div class="sl" style="margin-bottom:10px">⏳ IL Y A...</div><div style="display:flex;gap:8px">`;
+  let html=`<div class="card" style="margin-bottom:16px"><div class="sl" style="margin-bottom:10px">⏳ IL Y A... <span style="font-size:.55rem;color:#9b8fc0;font-weight:400;text-transform:none;letter-spacing:0">(touche pour voir le mois)</span></div><div style="display:flex;gap:8px">`;
   results.forEach(r=>{
     const delta=eng.totXP-r.xp;
     const deltaColor=delta>=0?'#10b981':'#dc2626';
     const deltaIcon=delta>=0?'↑':'↓';
-    html+=`<div style="flex:1;background:#f8f4ff;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(139,92,246,0.15)">
+    html+=`<div style="flex:1;background:#f8f4ff;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(139,92,246,0.15);cursor:pointer" data-mkey="${r.key}" onclick="jumpToMonth(this.dataset.mkey)">
       <div style="font-size:.52rem;color:#8b5cf6;font-family:'Anton',sans-serif;letter-spacing:1px;margin-bottom:4px">${r.label.toUpperCase()}</div>
       <div style="font-size:1.1rem;font-weight:700;color:#6d28d9">${r.xp}</div>
       <div style="font-size:.55rem;color:${deltaColor};font-weight:700;margin-top:2px">${deltaIcon} ${Math.abs(delta)}</div>
@@ -742,12 +732,26 @@ function rThrowback(eng){
   html+=`</div></div>`;
   return html;
 }
-var motiv=getMotivationMsg(eng);
-  html+=`<div style="background:${motiv.color}10;border:1px solid ${motiv.color}30;border-radius:14px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px">
-    <span style="font-size:1.6rem;flex-shrink:0">${motiv.icon}</span>
-    <div style="font-size:.78rem;color:#1e3a4a;font-weight:600;line-height:1.4">${motiv.msg}</div>
-  </div>`;
-  html+=rThrowback(eng);
+function jumpToMonth(key){
+  TAB="history";
+  HOPEN=key;
+  render();
+  setTimeout(function(){
+    var el=document.querySelector('[data-mkey-target="'+key+'"]');
+    if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
+  },100);
+}
+function rProfile(eng){
+  const{sxp,warns,wfreq,totXP,cstr,rstr,adays,tdays}=eng;
+  const t=tier(totXP),ti=TIERS.indexOf(t),nt=TIERS[ti+1],xpPct=nt?Math.min(100,((totXP-t.min)/(nt.min-t.min))*100):100;
+  const wc=Object.keys(warns).length,hd=Object.values(warns).some(w=>w.level==="danger");
+  let html="";
+  if(wc>0){
+    const wi=Object.entries(warns).map(([s,w])=>`<span style="margin-right:12px;color:${w.level==="danger"?"#ec4899":"#f59e0b"}">${SM[s].icon} ${SM[s].label} — ${w.daysSince}j</span>`).join("");
+    html+=`<div class="warn-banner" style="background:${hd?"rgba(255,68,102,.08)":"rgba(251,191,36,.08)"};border:1px solid ${hd?"#ec489950":"#f59e0b50"}"><span style="font-size:1.4rem">${hd?"🚨":"⚠️"}</span><div><div style="font-weight:700;font-size:.85rem;color:${hd?"#ec4899":"#f59e0b"};margin-bottom:4px">${hd?"ALERTE — decay !":"Stat en dégradation"}</div><div style="font-size:.72rem;color:#a0a0a0">${wi}</div></div></div>`;
+  }
+  
+html+=rThrowback(eng);
   html+=`<div class="card-big" style="border-color:${t.color}30"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
   <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start">
   <div><div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
@@ -761,16 +765,16 @@ var motiv=getMotivationMsg(eng);
     <div class="track-big"><div class="track-big-fill" style="width:${xpPct}%;background:linear-gradient(90deg,${t.color},#ec4899)"></div></div>
   </div>
   <div style="display:flex;gap:20px;flex-wrap:wrap">
-    ${[["🔥 Streak",cstr,"#f59e0b","streak"],["🏆 Record",rstr,"#f59e0b","record"],["📅 Actifs",adays,"#10b981","actifs"],["📆 Total",tdays,"#8b5cf6","total"]].map(([l,v,c,k])=>`<div style="cursor:pointer;padding:8px 10px;border-radius:10px;background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.05)" data-key="${k}" onclick="openProfilePanel(this.dataset.key)"><div style="font-size:.54rem;text-transform:uppercase;letter-spacing:2px;color:#0e7490">${l}</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:${c}">${v}</div></div>`).join("")}
+    ${[["🔥 Streak",cstr,"#f59e0b","streak"],["🏆 Record",rstr,"#f59e0b","record"],["📅 Actifs",adays,"#10b981","actifs"],["📆 Total",tdays,"#8b5cf6","total"]].map(([l,v,c,k])=>`<div style="position:relative;cursor:pointer;padding:8px 14px 8px 10px;border-radius:10px;background:rgba(0,0,0,0.02);border:1px solid ${c}25" data-key="${k}" onclick="openProfilePanel(this.dataset.key)"><div style="font-size:.54rem;text-transform:uppercase;letter-spacing:2px;color:#0e7490">${l}</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:${c}">${v}</div><span style="position:absolute;top:6px;right:5px;font-size:.55rem;color:${c}66">›</span></div>`).join("")}
   </div></div>
   <div style="position:relative;width:180px;height:180px;flex-shrink:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation" ontouchstart="radarPressStart(event)" ontouchend="radarPressEnd(event)" ontouchcancel="radarPressEnd(event)" onmousedown="radarPressStart(event)" onmouseup="radarPressEnd(event)" onmouseleave="radarPressEnd(event)" oncontextmenu="return false">
   <canvas id="radar-canvas" width="180" height="180"></canvas>
   <div id="radar-ghost-label" style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.55rem;color:#999;white-space:nowrap;opacity:0;transition:opacity .2s;font-family:Anton,sans-serif;letter-spacing:1px"></div>
-  <span data-stat="intel"    onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:0;left:50%;transform:translateX(-50%);font-size:1.2rem;cursor:pointer">🧠</span>
-  <span data-stat="craft" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:22%;right:0;font-size:1.2rem;cursor:pointer">🔥</span>
-  <span data-stat="physique" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;bottom:8%;right:10%;font-size:1.2rem;cursor:pointer">🏋️</span>
-  <span data-stat="bienetre" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;bottom:8%;left:10%;font-size:1.2rem;cursor:pointer">❤️</span>
-  <span data-stat="disc" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:22%;left:0;font-size:1.2rem;cursor:pointer">⚡</span>
+  <span data-stat="intel" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">🧠</span>
+  <span data-stat="craft" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:26%;right:8px;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">🔥</span>
+  <span data-stat="physique" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;bottom:14px;right:14%;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">🏋️</span>
+  <span data-stat="bienetre" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;bottom:14px;left:14%;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">❤️</span>
+  <span data-stat="disc" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:26%;left:8px;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">⚡</span>
 </div>
   </div></div>`;
 
@@ -783,32 +787,12 @@ var motiv=getMotivationMsg(eng);
     const fmin=cfg?cfg.minPerWeek:0;
     const hasXP=(sxp[stat]||0)>0;
     const freqOk=!cfg||!hasXP||freq>=fmin;
-    const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#000"><span>Fréquence sem.</span><span style="color:${freqOk?"#1e3a4a":"#ef4444"};font-weight:700">${freq}/${fmin} min</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
+    const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#000"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="opacity:.5;cursor:pointer;font-size:.85em">ⓘ</span></span><span style="color:${freqOk?"#1e3a4a":"#ef4444"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
     html+=`<div class="stat-card" style="border:1px solid ${bd};cursor:pointer" onclick="openStatPanel('${stat}')"><span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
   });
   html+=`</div>`;
-  const pg=tdays>0?totXP/(tdays*14):0;
-  const trackerMsgs=pg>=.75?[
-    {i:"🔥",t:"T'es en feu. Ton personnage grandit.",c:"#10b981"},
-    {i:"🐉",t:"Rythme de Super Saiyan. Continue comme ça.",c:"#10b981"},
-    {i:"💪",t:"Excellente cadence — ton perso monte vite.",c:"#10b981"},
-    {i:"⭐",t:"Tu es dans une zone rare. Profites-en.",c:"#10b981"},
-  ]:pg>=.4?[
-    {i:"⚡",t:"Ça monte. Continue.",c:"#8b5cf6"},
-    {i:"📈",t:"Bonne dynamique — reste régulier.",c:"#8b5cf6"},
-    {i:"🎯",t:"Rythme correct. Un effort de plus et ça décolle.",c:"#8b5cf6"},
-  ]:adays>0?[
-    {i:"⚠️",t:"Réveille-toi. Ton perso stagne.",c:"#f59e0b"},
-    {i:"😴",t:"Ton perso somnole. Une tâche aujourd'hui ?",c:"#f59e0b"},
-    {i:"🔋",t:"Batterie basse. Recharge avec quelques checks.",c:"#f59e0b"},
-    {i:"💀",t:"Ça ralentit sérieusement. Reprends le contrôle.",c:"#dc2626"},
-  ]:[
-    {i:"🎯",t:"Lance ton aventure.",c:"#8b5cf6"},
-    {i:"🚀",t:"Tout commence par un premier check.",c:"#8b5cf6"},
-    {i:"🐉",t:"Le voyage vers Ultra Instinct démarre ici.",c:"#8b5cf6"},
-  ];
-  const mo=trackerMsgs[Math.floor(Math.random()*trackerMsgs.length)];
-  html+=`<div style="background:#f0faff;border:1px solid ${mo.c}35;border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:.85rem;font-weight:500"><span style="font-size:1.4rem">${mo.i}</span><span>${mo.t}</span></div>`;
+  const motiv=getMotivationMsg(eng);
+  html+=`<div style="background:${motiv.color}10;border:1px solid ${motiv.color}35;border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:.85rem;font-weight:600;color:#1e3a4a"><span style="font-size:1.4rem;flex-shrink:0">${motiv.icon}</span><span>${motiv.msg}</span></div>`;
   return html;
 }
 
@@ -914,12 +898,13 @@ function rConfig(){
       html+=`<span style="font-size:.58rem;color:#000;margin-left:auto">${ac}/${ss.length} actifs</span></div>`;
       ss.forEach(s=>{
         const ia=aIds.includes(s.id),ie=EDIT===s.id;
-        const wm=(ST.streakCfg||{weeklyMalusSlotId:'disc_5'}).weeklyMalusSlotId===s.id;
-        const border=wm?"#ffe033":ia?m.color+"40":"rgba(8,145,178,0.08)";
+        const slotRuleX=(ST.slotRules||{})[s.id]||null;
+        const hasRuleX=slotRuleX&&slotRuleX.minPerWeek>0;
+        const border=hasRuleX?"#f59e0b":ia?m.color+"40":"rgba(8,145,178,0.08)";
         html+=`<div class="cfg-row" style="border-color:${border}">`;
         html+=`<div class="cfg-toggle" style="background:${ia?m.color+"30":"#e0f2f8"};border:1.5px solid ${ia?m.color:"#b0d8e8"}" onclick="tActive('${s.id}')">`;
         html+=`<div class="cfg-toggle-dot" style="left:${ia?"16":"2"}px;background:${ia?m.color:"#0891b2"}"></div></div>`;
-        html+=`<span onclick="setWeeklyMalus('${wm?"":s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${wm?1:0.25};flex-shrink:0;margin-right:2px">⚠️</span>`;
+        html+=`<span onclick="openFreqRule('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${hasRuleX?1:0.25};flex-shrink:0;margin-right:2px" title="${hasRuleX?slotRuleX.minPerWeek+'x/sem → -'+slotRuleX.malusXP+' XP':'Ajouter règle fréquence'}">⏰</span>`;
         if(ie){
           html+=`<input class="cfg-input" id="edit-${s.id}" value="${s.name}" onblur="saveSN('${s.id}')" onkeydown="if(event.key==='Enter')saveSN('${s.id}')">`;
         } else {
@@ -972,18 +957,8 @@ function rConfig(){
         Si tu fais moins de <strong>${scfg.minXP} XP</strong> dans une journée → le streak casse.
       </div>
       <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="font-family:'Anton',sans-serif;color:#f59e0b;font-size:.7rem;letter-spacing:2px;margin-bottom:8px">MALUS HEBDO</div>
-        <div style="font-size:.75rem;color:#1e3a4a;margin-bottom:8px">
-          Slot actif : <strong style="color:#f59e0b">${scfg.weeklyMalusSlotId?((ST.slots.find(s=>s.id===scfg.weeklyMalusSlotId)||{}).name||scfg.weeklyMalusSlotId):"Aucun"}</strong>
-          ${scfg.weeklyMalusSlotId?`<span onclick="setWeeklyMalus('')" style="cursor:pointer;margin-left:8px;color:#ec4899;font-size:.7rem">✕ Désactiver</span>`:""}
-        </div>
-        <div style="display:flex;align-items:center;gap:10px;font-size:.75rem;color:#1e3a4a">
-          <span>Malus si non fait :</span>
-          <button class="btn-small" onclick="dWeeklyMalus(-1)">−</button>
-          <span style="color:#ec4899;font-weight:700;font-family:monospace">${scfg.weeklyMalusXP||3} XP</span>
-          <button class="btn-small" onclick="dWeeklyMalus(1)">+</button>
-        </div>
-        <div style="font-size:.65rem;color:#000;margin-top:6px">Active le ⚠️ (x2 disponible) sur n'importe quel slot dans Config → Tâches</div>
+        <div style="font-family:'Anton',sans-serif;color:#f59e0b;font-size:.7rem;letter-spacing:2px;margin-bottom:8px">⏰ MALUS DE FRÉQUENCE</div>
+        <div style="font-size:.72rem;color:#1e3a4a;line-height:1.4">Configure une fréquence minimale par semaine sur autant de tâches que tu veux — clique l'icône ⏰ à côté de chaque tâche dans <strong>Config → Tâches</strong>. Aucune limite de nombre.</div>
       </div>
       <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;margin-top:8px">
         <div style="font-family:'Anton',sans-serif;color:#0e7490;font-size:.7rem;letter-spacing:2px;margin-bottom:10px">🔥 BONUS COMBO — PAR COMPÉTENCE</div>
@@ -992,22 +967,26 @@ function rConfig(){
           const c=(scfg.combos||{})[st];
           const active=!!(c&&c.minSlots&&c.bonus);
           const m2=SM[st];
-          return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">
-            <span style="font-size:1.1rem;width:26px">${m2.icon}</span>
-            <span style="font-size:.72rem;font-weight:700;color:${m2.color};min-width:70px">${m2.label}</span>
-            <div class="cfg-toggle" style="background:${active?m2.color+'40':'rgba(255,255,255,0.08)'};border:1px solid ${active?m2.color:'rgba(255,255,255,0.15)'}" onclick="toggleCombo('${st}')">
-              <div class="cfg-toggle-dot" style="left:${active?'16':'2'}px;background:${active?m2.color:'#7dd3e8'}"></div>
-            </div>
-            ${active?`<div style="display:flex;align-items:center;gap:4px;font-size:.62rem;color:#1e3a4a">
-              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','minSlots',-1,1,7)">−</button>
-              <span style="min-width:34px;text-align:center">${c.minSlots} slots</span>
-              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','minSlots',1,1,7)">+</button>
-              <span style="margin:0 2px">→</span>
-              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','bonus',-1,1,30)">−</button>
-              <span style="min-width:28px;text-align:center;color:${m2.color};font-weight:700">+${c.bonus}</span>
-              <button class="btn-small" style="width:22px;height:22px;font-size:.85rem" onclick="dComboStat('${st}','bonus',1,1,30)">+</button>
-            </div>`:''}
-          </div>`;
+          let row='<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">';
+          row+='<div style="display:flex;align-items:center;gap:10px">';
+          row+='<span style="font-size:1.1rem;width:22px;flex-shrink:0">'+m2.icon+'</span>';
+          row+='<span style="font-size:.72rem;font-weight:700;color:'+m2.color+';flex:1">'+m2.label+'</span>';
+          row+='<div class="cfg-toggle" style="background:'+(active?m2.color+"40":"rgba(255,255,255,0.08)")+';border:1px solid '+(active?m2.color:"rgba(255,255,255,0.15)")+'" onclick="toggleCombo(\''+st+'\')">';
+          row+='<div class="cfg-toggle-dot" style="left:'+(active?"16":"2")+'px;background:'+(active?m2.color:"#7dd3e8")+'"></div></div>';
+          row+='</div>';
+          if(active){
+            row+='<div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:#1e3a4a;margin-top:8px;padding-left:32px;flex-wrap:wrap">';
+            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'minSlots\',-1,1,7)">−</button>';
+            row+='<span style="min-width:44px;text-align:center;flex-shrink:0">'+c.minSlots+' slots</span>';
+            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'minSlots\',1,1,7)">+</button>';
+            row+='<span style="margin:0 2px;flex-shrink:0">→</span>';
+            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'bonus\',-1,1,30)">−</button>';
+            row+='<span style="min-width:26px;text-align:center;color:'+m2.color+';font-weight:700;flex-shrink:0">+'+c.bonus+'</span>';
+            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'bonus\',1,1,30)">+</button>';
+            row+='</div>';
+          }
+          row+='</div>';
+          return row;
         }).join('')}
       </div>
       <div style="background:rgba(8,145,178,0.15);border-radius:10px;padding:12px;font-size:.78rem;color:#1e3a4a">
@@ -1108,7 +1087,7 @@ function rHistory(eng){
     let mxp=0,ma=0,mms=0;md.days.forEach((d,i)=>{mxp+=mn[i];if(gxp(d,md.activeSlots||[],ST.slots)>0)ma++;if(ms[i]>mms)mms=ms[i];});
     const isc=k===curKey,isop=HOPEN===k;
     // Summary line - always visible
-    html+=`<div class="hist-row" style="background:${isc?"rgba(8,145,178,.06)":"#f0faff"};border-color:${isc?"rgba(8,145,178,0.3)":"rgba(8,145,178,0.1)"}" onclick="tHist('${k}')">
+    html+=`<div class="hist-row" data-mkey-target="${k}" style="background:${isc?"rgba(8,145,178,.06)":"#f0faff"};border-color:${isc?"rgba(8,145,178,0.3)":"rgba(8,145,178,0.1)"}" onclick="tHist('${k}')">
       <div><div style="font-weight:700;font-size:.9rem;margin-bottom:2px">${isc?"⚡ ":""}${MFR[month]} ${year}${isc?`<span style="margin-left:8px;font-size:.58rem;color:#0891b2;background:rgba(8,145,178,.12);padding:2px 8px;border-radius:99px">En cours</span>`:""}</div>
       <div style="font-size:.6rem;color:#0e7490">${ma} jours actifs · streak max ${mms}</div></div>
       <div style="display:flex;align-items:center;gap:12px">
@@ -1418,7 +1397,8 @@ function render(){
   const content={profile:rProfile(eng),tracker:rTracker(eng),badges:rBadges(eng),config:rConfig(),history:rHistory(eng)};
   ge("app").innerHTML=`
     <div style="margin-bottom:22px;position:relative">
-      <button onclick="openHelpGuide()" style="position:absolute;top:0;right:0;width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #8b5cf6;color:#8b5cf6;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 2px 8px rgba(139,92,246,0.25);z-index:10">?</button>
+      <button onclick="openHelpGuide()" style="position:absolute;top:0;right:0;width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #8b5cf6;color:#8b5cf6;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 2px 8px rgba(139,92,246,0.25);z-index:10">?${ST.onboardingSeen?'':'<span style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ec4899;border:2px solid #fff;animation:togPulse 1.6s ease-in-out infinite"></span>'}</button>
+      ${ST.onboardingSeen?'':`<div style="position:absolute;top:38px;right:0;background:#1e1e2e;color:#fff;font-size:.65rem;padding:8px 12px;border-radius:10px;max-width:180px;z-index:11;box-shadow:0 4px 14px rgba(0,0,0,0.25);cursor:pointer" onclick="dismissOnboarding()">👋 Nouveau ici ? Touche <strong>?</strong> pour tout comprendre <span style="position:absolute;top:-6px;right:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid #1e1e2e"></span></div>`}
       <div style="font-family:'Anton',sans-serif;font-size:2rem;letter-spacing:4px;color:#fff;text-transform:uppercase;line-height:1;text-shadow:3px 3px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;margin-bottom:2px">
         <span style="color:#0891b2">SAIYAN</span> <span style="color:#ec4899">EVOLUTION</span>
       </div>
@@ -1488,6 +1468,20 @@ function showConfetti(){
   }
 }
 var _popupTimer=null;
+function showInfoTip(e,msg){
+  if(e&&e.stopPropagation)e.stopPropagation();
+  var existing=document.getElementById("grind-infotip");
+  if(existing)existing.remove();
+  var target=e&&e.target?e.target:null;
+  var rect=target?target.getBoundingClientRect():{left:20,top:60,width:20};
+  var el=document.createElement("div");
+  el.id="grind-infotip";
+  el.style.cssText="position:fixed;z-index:9999;background:#1e1e2e;color:#fff;font-size:.65rem;line-height:1.4;padding:8px 12px;border-radius:10px;max-width:200px;box-shadow:0 4px 14px rgba(0,0,0,0.25);pointer-events:none;left:"+Math.max(10,Math.min(window.innerWidth-210,rect.left-90))+"px;top:"+(rect.top+22)+"px;opacity:0;transition:opacity .15s";
+  el.textContent=msg;
+  document.body.appendChild(el);
+  setTimeout(function(){el.style.opacity="1";},10);
+  setTimeout(function(){el.style.opacity="0";setTimeout(function(){if(el.parentElement)el.remove();},200);},3200);
+}
 function showPopup(msg,icon,color,duration){
   duration=duration||2800;
   var existing=ge("grind-popup");
@@ -2118,7 +2112,14 @@ function helpSection(title,color,items){
   h+="</div>";
   return h;
 }
+function dismissOnboarding(){
+  ST.onboardingSeen=true;
+  saveST();
+  render();
+}
 function openHelpGuide(){
+  ST.onboardingSeen=true;
+  saveST();
   var html="";
   html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
   html+="<span style='font-size:1.8rem'>📖</span>";
