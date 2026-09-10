@@ -86,7 +86,7 @@ pointer-events:none;z-index:0}
 
 /* Logo */
 .logo{font-family:'Bangers',cursive;font-size:2.4rem;letter-spacing:8px;background:linear-gradient(135deg,var(--gold),var(--orange));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-shadow:none}
-.logo-sub{font-size:.54rem;letter-spacing:3px;color:#000;text-transform:uppercase;margin-top:2px;font-family:'Anton',sans-serif}
+.logo-sub{font-size:.54rem;letter-spacing:3px;color:#1e3a4a;text-transform:uppercase;margin-top:2px;font-family:'Anton',sans-serif}
 
 /* Tabs */
 .tabs{display:flex;gap:4px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:14px;padding:4px;margin-bottom:10px;box-shadow:0 2px 8px rgba(8,145,178,0.08);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
@@ -122,7 +122,7 @@ pointer-events:none;z-index:0}
 .stat-icon{font-size:1.2rem;margin-bottom:6px;display:block}
 .stat-name{font-size:.6rem;text-transform:uppercase;letter-spacing:2px;color:#0e7490;margin-bottom:4px;font-family:'Anton',sans-serif}
 .stat-lv{font-family:'Anton',sans-serif;font-size:1.2rem;letter-spacing:1px}
-.stat-lv-label{font-size:.58rem;color:#000;font-style:italic;opacity:.7}
+.stat-lv-label{font-size:.58rem;color:#1e3a4a;font-style:italic;opacity:.7}
 .track{height:6px;background:rgba(0,0,0,0.06);border-radius:99px;overflow:hidden;margin-bottom:5px;position:relative}
 .track-fill{height:100%;border-radius:99px;transition:width .6s;position:relative}
 .track-fill::after{content:'';position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4));animation:shimmer 2s infinite}
@@ -160,15 +160,15 @@ tr.week-sep{border-top:1px solid var(--border2)}
 .cc{background:rgba(139,92,246,.15);border-color:#8b5cf6;border-width:2px}
 .cd{background:rgba(245,158,11,.15);border-color:#f59e0b;border-width:2px}
 .cb{background:rgba(236,72,153,.15);border-color:#ec4899;border-width:2px}
-.cm{background:rgba(239,68,68,.15);border-color:#ef4444;border-width:2px}
+.cm{background:rgba(220,38,38,.15);border-color:#dc2626;border-width:2px}
 
 /* Config */
 .cfg-row{display:flex;align-items:center;gap:10px;background:#f0faff;border-radius:12px;padding:10px 14px;margin-bottom:8px;border:1px solid rgba(255,107,40,0.25)}
 .cfg-toggle{width:36px;height:20px;border-radius:99px;cursor:pointer;flex-shrink:0;position:relative;transition:all .2s}
 .cfg-toggle-dot{position:absolute;top:2px;width:12px;height:12px;border-radius:50%;transition:left .2s}
 .cfg-name{flex:1;font-size:.85rem;font-weight:600}
-.xp-btn{width:24px;height:24px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);color:#000;font-size:.68rem;font-weight:700;cursor:pointer}
-.edit-btn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);cursor:pointer;font-size:.72rem;color:#000;flex-shrink:0}
+.xp-btn{width:24px;height:24px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);color:#1e3a4a;font-size:.68rem;font-weight:700;cursor:pointer}
+.edit-btn{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;background:transparent;border:1px solid var(--border);cursor:pointer;font-size:.72rem;color:#1e3a4a;flex-shrink:0}
 .cfg-input{flex:1;background:var(--bg);border:1px solid var(--gold);border-radius:8px;padding:4px 10px;color:#1e3a4a;font-family:'Exo 2',sans-serif;font-size:.85rem;outline:none}
 .btn-small{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--white);width:24px;height:24px;cursor:pointer;font-size:.85rem;font-family:inherit;padding:0;line-height:1}
 
@@ -205,7 +205,7 @@ tr.week-sep{border-top:1px solid var(--border2)}
 <body>
 <div id="aura-bg" style="position:fixed;inset:0;pointer-events:none;z-index:0;transition:all 1.5s ease"></div>
 <div id="aura-ring" style="position:fixed;bottom:-120px;left:50%;transform:translateX(-50%);width:600px;height:600px;border-radius:50%;pointer-events:none;z-index:0;transition:all 1.5s ease;filter:blur(60px);opacity:0"></div>
-<div class="app" id="app"><div style="text-align:center;padding:60px;color:#000">Chargement...</div></div>
+<div class="app" id="app"><div style="text-align:center;padding:60px;color:#1e3a4a">Chargement...</div></div>
 <div id="stat-panel" style="display:none;position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px)" onclick="closeStatPanel(event)" ontouchstart="event.stopPropagation()">
   <div id="stat-panel-inner" style="position:absolute;bottom:0;left:0;right:0;background:#fff;border-radius:24px 24px 0 0;padding:24px;max-height:80vh;overflow-y:auto;box-shadow:0 -4px 32px rgba(0,0,0,0.12);overscroll-behavior:contain;-webkit-overflow-scrolling:touch" onclick="event.stopPropagation()">
     <div id="stat-panel-content"></div>
@@ -318,7 +318,7 @@ function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
 function migrateWeeklyMalus(){
@@ -333,6 +333,11 @@ function migrateWeeklyMalus(){
   }
   ST.weeklyMalusMigrated=true;
   saveST();
+}
+function migratePlayerProfile(){
+  if(ST.playerName===undefined)ST.playerName='';
+  if(ST.playerAge===undefined)ST.playerAge='';
+  if(ST.playerGoal===undefined)ST.playerGoal='';
 }
 function migrateCombos(){
   if(ST.combosMigrated)return;
@@ -369,7 +374,8 @@ function migrateXpFreeze(){
 migrateXpFreeze();
 migrateWeeklyMalus();
 migrateCombos();
-let TAB="profile",CTAB="tasks",EDIT=null,HOPEN=null,TRACKER_MONTH=null,TRACKER_DAY=null;
+migratePlayerProfile();
+let TAB="profile",CTAB="tasks",EDIT=null,HOPEN=null,TRACKER_MONTH=null,TRACKER_DAY=null,COLLAPSED_STATS={};
 
 function ensureCurMonth(){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth(),key=mk(y,m);
@@ -394,8 +400,6 @@ function ensureCurMonth(){
   }
   if(!ST.statLabels) ST.statLabels=mkStatLabels();
   if(!ST.slotRules) ST.slotRules=mkSlotRules();
-  if(ST.streakCfg&&ST.streakCfg.comboBonus===undefined) ST.streakCfg.comboBonus=5;
-  if(ST.streakCfg&&ST.streakCfg.comboStatId===undefined) ST.streakCfg.comboStatId='craft';
   if(merged)saveST();
 }
 
@@ -738,8 +742,213 @@ function xpAsOf(eng,targetDate){
   for(let j=0;j<=idx;j++)sum+=eng.netXP[j];
   return Math.round(sum);
 }
+const PERIOD_LABEL={day:"aujourd\u2019hui",week:"cette semaine",month:"ce mois-ci",year:"cette ann\u00e9e"};
+const TIP_BANK={
+  congrats:[
+    "Bravo pour tes progr\u00e8s {period}, \u00e7a se voit !",
+    "{periodCap} a \u00e9t\u00e9 productive, bravo !",
+    "T\u2019as tenu ta streak, c\u2019est exactement \u00e7a la r\u00e9gularit\u00e9.",
+    "Beau parcours {period}. Continue comme \u00e7a, tu es sur la bonne voie.",
+    "Tu t\u2019es d\u00e9pass\u00e9 {period}, sois-en fier.",
+    "Chaque jour o\u00f9 tu coches, c\u2019est un jour o\u00f9 tu deviens plus fort. \u00c7a se voit l\u00e0.",
+    "Regarde-toi briller {period}, t\u2019es sur ta lanc\u00e9e !",
+    "Ok l\u00e0 tu m\u2019impressionnes {period}, faut le dire.",
+    "T\u2019as g\u00e9r\u00e9 {period} comme un pro, chapeau.",
+    "Bon en vrai t\u2019assures grave {period}, continue.",
+    "{periodCap}, t\u2019as coch\u00e9 comme si ta vie en d\u00e9pendait \u2014 respect.",
+    "Franchement t\u2019as la classe {period}, garde ce rythme."
+  ],
+  malus:[
+    "Trop de f\u00eate ou de malbouffe {period} \u2014 retrouve vite un \u00e9quilibre.",
+    "Ce n\u2019est pas un jugement, juste un rappel : tes malus s\u2019accumulent {period}, il est temps de rectifier.",
+    "Une soir\u00e9e, \u00e7a arrive. Une semaine de d\u00e9rapage, c\u2019est un choix. Lequel tu fais ?",
+    "Tu connais la sortie de cette spirale \u2014 tu l\u2019as d\u00e9j\u00e0 emprunt\u00e9e avant.",
+    "Alors on scroll plus qu\u2019on soul\u00e8ve, hein ?",
+    "Le canap\u00e9 t\u2019a bien eu {period}, faut le reconna\u00eetre.",
+    "Ton streak fait la gr\u00e8ve, il attend des explications.",
+    "T\u2019as test\u00e9 la version \u00ab flemme totale \u00bb {period}, on conna\u00eet le r\u00e9sultat.",
+    "La malbouffe a gagn\u00e9 cette manche {period}, mais c\u2019est pas fini."
+  ],
+  statTip:[
+    {stat:'physique',msg:"N\u2019oublie pas de faire du sport, c\u2019est important pour ta sant\u00e9 sur le long terme."},
+    {stat:'physique',msg:"Ton corps te porte partout o\u00f9 tu vas. Prends-en soin aujourd\u2019hui."},
+    {stat:'intel',msg:"Un peu de lecture ou d\u2019apprentissage aujourd\u2019hui, m\u00eame 10 minutes, \u00e7a compte."},
+    {stat:'bienetre',msg:"Le sommeil n\u2019est pas une option, c\u2019est la base de tout le reste."},
+    {stat:'craft',msg:"Ton projet cr\u00e9atif t\u2019attend. M\u00eame un petit pas suffit \u00e0 le faire avancer."},
+    {stat:'physique',msg:"Allez, tes muscles envoient un SOS discret."},
+    {stat:'intel',msg:"Ton cerveau r\u00e9clame un peu d\u2019action, il s\u2019ennuie l\u00e0."},
+    {stat:'craft',msg:"Ton projet te fixe depuis le coin de l\u2019app, un peu de respect."},
+    {stat:'bienetre',msg:"Le sommeil c\u2019est gratuit et \u00e7a marche, juste un rappel."},
+    {stat:'physique',msg:"Bouge un peu, ton corps te remercie m\u00eame pour 5 minutes."}
+  ],
+  inactivity:[
+    "Tu n\u2019\u00e9tais pas tr\u00e8s pr\u00e9sent {period}. Rien de grave, mais reviens vite.",
+    "{periodCap} a \u00e9t\u00e9 calme de ton c\u00f4t\u00e9. Qu\u2019est-ce qui t\u2019a \u00e9loign\u00e9 ?",
+    "\u00c7a fait un moment qu\u2019on ne t\u2019a pas vu s\u00e9rieusement actif. Un petit geste aujourd\u2019hui suffit pour relancer la machine.",
+    "Le silence {period} ne doit pas devenir une habitude. Reprends la main.",
+    "Tu as le droit de ralentir. Mais pas de t\u2019arr\u00eater compl\u00e8tement.",
+    "T\u2019es en mode fant\u00f4me {period}, on t\u2019a \u00e0 peine aper\u00e7u.",
+    "L\u2019app a des doutes sur ton existence {period}.",
+    "Allo ? {periodCap}, c\u2019\u00e9tait calme calme de ton c\u00f4t\u00e9.",
+    "Ton avatar prend la poussi\u00e8re {period}, un petit coup de balai ?",
+    "On dirait que t\u2019as pris des vacances sans pr\u00e9venir {period}."
+  ],
+  support:[
+    "J\u2019esp\u00e8re que tu gardes le moral. Accroche-toi, chaque jour compte.",
+    "Les jours difficiles font aussi partie du chemin. Ne les laisse pas te d\u00e9finir.",
+    "Tu n\u2019as pas besoin d\u2019\u00eatre parfait aujourd\u2019hui. Juste pr\u00e9sent.",
+    "Si c\u2019est dur en ce moment, coche une seule chose. Une suffit pour ne pas rompre le fil.",
+    "Personne ne progresse en ligne droite. Les creux font partie de la courbe.",
+    "M\u00eame les champions ont des jours de flemme, t\u2019es en bonne compagnie.",
+    "Une seule t\u00e2che coch\u00e9e vaut mieux que z\u00e9ro, on f\u00e9licite l\u2019effort minimum stylé.",
+    "T\u2019as le droit \u00e0 ta pause, juste reviens vite fait avant que \u00e7a devienne un mois.",
+    "Personne n\u2019est parfait, toi non plus, et c\u2019est tr\u00e8s bien comme \u00e7a.",
+    "Un petit coup de mou ? \u00c7a arrive aux meilleurs, allez on repart."
+  ],
+  coach:[
+    "La motivation te lance. La discipline te fait tenir. Cultive la deuxi\u00e8me.",
+    "Tu n\u2019as pas \u00e0 avoir envie de le faire. Tu as juste \u00e0 le faire.",
+    "Le meilleur moment pour recommencer, c\u2019\u00e9tait hier. Le deuxi\u00e8me meilleur, c\u2019est maintenant.",
+    "Personne ne regarde tes excuses. Tout le monde regarde tes r\u00e9sultats.",
+    "Sois plus dur avec tes objectifs qu\u2019avec toi-m\u00eame \u2014 mais reste ton meilleur alli\u00e9.",
+    "La flemme a de bons arguments, mais toi t\u2019en as de meilleurs.",
+    "Ton \u00ab je m\u2019y mets demain \u00bb a d\u00e9j\u00e0 3 jours, on va dire stop l\u00e0.",
+    "Tu n\u00e9gocies avec toi-m\u00eame depuis un moment, coupe court et coche un truc.",
+    "C\u2019est pas magique, c\u2019est juste toi qui coches des cases. Vas-y."
+  ],
+  steps:[
+    "Une t\u00e2che coch\u00e9e aujourd\u2019hui vaut plus que dix pr\u00e9vues pour demain.",
+    "Ne regarde pas toute la montagne, contente-toi de la prochaine marche.",
+    "Deux minutes maintenant valent mieux que deux heures dans trois semaines.",
+    "Ce n\u2019est pas la taille de l\u2019effort qui compte, c\u2019est qu\u2019il revienne souvent.",
+    "Un petit geste aujourd\u2019hui, c\u2019est d\u00e9j\u00e0 une vraie victoire.",
+    "La r\u00e9gularit\u00e9 gagne toujours contre l\u2019intensit\u00e9, sur la dur\u00e9e.",
+    "Personne ne coche tout, tout le temps \u2014 et \u00e7a ne t\u2019emp\u00eache pas d\u2019avancer.",
+    "Un jour plus calme ne d\u00e9fait pas tous les bons qui l\u2019ont pr\u00e9c\u00e9d\u00e9.",
+    "Tu peux ralentir sans t\u2019arr\u00eater, ce n\u2019est pas la m\u00eame chose.",
+    "Le chemin ne monte jamais en ligne droite, le tien non plus.",
+    "Une petite baisse aujourd\u2019hui, une petite remont\u00e9e demain : c\u2019est \u00e7a, avancer.",
+    "Mieux vaut un geste modeste r\u00e9p\u00e9t\u00e9 qu\u2019un exploit isol\u00e9 vite oubli\u00e9.",
+    "Coche une seule chose, peu importe laquelle. L\u2019essentiel est de garder le rythme.",
+    "On ne construit pas une streak avec un exploit, mais avec des petits riens r\u00e9guliers.",
+    "Fais le petit truc aujourd\u2019hui, le grand projet peut attendre son tour.",
+    "Un pas aujourd\u2019hui, un autre demain : c\u2019est comme \u00e7a que \u00e7a marche, pas autrement.",
+    "Chaque \u00e9tape compte, m\u00eame la plus modeste.",
+    "Tu n\u2019as pas \u00e0 tout faire maintenant, juste le prochain petit pas.",
+    "Un petit pas aujourd\u2019hui pr\u00e9pare un grand chemin dans six mois.",
+    "Le minimum compte double les jours o\u00f9 tu n\u2019as plus grand-chose \u00e0 donner."
+  ]
+};
+function fillPeriod(msg,period){
+  const label=PERIOD_LABEL[period]||PERIOD_LABEL.day;
+  const labelCap=label.charAt(0).toUpperCase()+label.slice(1);
+  return msg.replace(/\{period\}/g,label).replace(/\{periodCap\}/g,labelCap);
+}
+function xpInLastNDays(eng,n){
+  const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
+  const today=now.getDate()-1;
+  const skeys=Object.keys(ST.history).sort();
+  let sum=0,counted=0;
+  for(let k=skeys.length-1;k>=0&&counted<n;k--){
+    const key=skeys[k],m=ST.history[key],mAIds=m.activeSlots||[];
+    const lastIdx=(key===curKey)?today:m.days.length-1;
+    for(let i=lastIdx;i>=0&&counted<n;i--,counted++){
+      const d=m.days[i];
+      ST.slots.forEach(s=>{if(mAIds.includes(s.id)&&d[s.id])sum+=d[s.id];});
+    }
+  }
+  return sum;
+}
+function getDailyTip(eng){
+  const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
+  const md=ST.history[curKey];
+  const today=now.getDate()-1;
+  const aIds=(md&&md.activeSlots)||[];
+  const daySeed=now.getFullYear()*372+now.getMonth()*31+now.getDate();
+  const pick=(arr,offset)=>arr[Math.floor(seededRandom(daySeed+offset)*arr.length)];
+
+  // 1. Progress comparison: this week vs previous week, this month vs previous month
+  const thisWeek=xpInLastNDays(eng,7),prevWeek=xpInLastNDays(eng,14)-thisWeek;
+  const thisMonth=xpInLastNDays(eng,30),prevMonth=xpInLastNDays(eng,60)-thisMonth;
+  if(prevWeek>0&&thisWeek>=prevWeek*1.3){
+    return{msg:fillPeriod(pick(TIP_BANK.congrats,0),'week'),cat:'congrats'};
+  }
+  if(prevMonth>0&&thisMonth>=prevMonth*1.3){
+    return{msg:fillPeriod(pick(TIP_BANK.congrats,1),'month'),cat:'congrats'};
+  }
+
+  // 2. Malus frequency: today / this week / this month
+  if(md){
+    let todayMalus=0,weekMalus=0,monthMalus=0;
+    ST.malusList.forEach(m=>{
+      for(let i=0;i<=today;i++){
+        if(!md.days[i]||!md.days[i][m.id])continue;
+        monthMalus++;
+        if(i>=today-6)weekMalus++;
+        if(i===today)todayMalus++;
+      }
+    });
+    if(weekMalus>=4)return{msg:fillPeriod(pick(TIP_BANK.malus,2),'week'),cat:'malus'};
+    if(monthMalus>=8)return{msg:fillPeriod(pick(TIP_BANK.malus,3),'month'),cat:'malus'};
+  }
+
+  // 3. Weakest active stat this month
+  if(md&&eng.sxp){
+    const activeStatsXP=STATS.filter(st=>ST.slots.some(s=>s.stat===st&&aIds.includes(s.id)))
+      .map(st=>({stat:st,xp:eng.sxp[st]||0}));
+    if(activeStatsXP.length>=2){
+      const avg=activeStatsXP.reduce((s,x)=>s+x.xp,0)/activeStatsXP.length;
+      const weakest=activeStatsXP.reduce((a,b)=>b.xp<a.xp?b:a);
+      if(avg>0&&weakest.xp<avg*0.5){
+        const candidates=TIP_BANK.statTip.filter(t=>t.stat===weakest.stat);
+        if(candidates.length>0)return{msg:candidates[Math.floor(seededRandom(daySeed+4)*candidates.length)].msg,cat:'statTip'};
+      }
+    }
+  }
+
+  // 4. Inactivity: day / week / month
+  const todayActive=md&&aIds.some(sid=>md.days[today]&&md.days[today][sid]);
+  const activeDaysThisWeek=md?aIds.reduce((c,sid)=>{let n=0;for(let i=Math.max(0,today-6);i<=today;i++){if(md.days[i]&&md.days[i][sid]){n=1;break;}}return c+n;},0):0;
+  if(!todayActive&&eng.cstr===0){
+    return{msg:fillPeriod(pick(TIP_BANK.inactivity,5),'day'),cat:'inactivity'};
+  }
+  if(md&&aIds.length>0){
+    let weekActiveDays=0;
+    for(let i=Math.max(0,today-6);i<=today;i++){
+      if(aIds.some(sid=>md.days[i]&&md.days[i][sid]))weekActiveDays++;
+    }
+    if(weekActiveDays<=1){
+      return{msg:fillPeriod(pick(TIP_BANK.inactivity,6),'week'),cat:'inactivity'};
+    }
+  }
+
+  // 5. Fallback: support, coach, or "small steps" tip, alternating by day
+  const fallbackPools=[['support',TIP_BANK.support],['coach',TIP_BANK.coach],['steps',TIP_BANK.steps]];
+  const [fbCat,fbPool]=fallbackPools[Math.floor(seededRandom(daySeed+7)*fallbackPools.length)];
+  return{msg:pick(fbPool,8),cat:fbCat};
+}
+function rDailyTip(eng){
+  const tip=getDailyTip(eng);
+  const isWarning=(tip.cat==='malus'||tip.cat==='inactivity');
+  const bg=isWarning?'rgba(220,38,38,0.06)':(tip.cat==='congrats'?'rgba(16,185,129,0.06)':'rgba(139,92,246,0.06)');
+  const border=isWarning?'rgba(220,38,38,0.2)':(tip.cat==='congrats'?'rgba(16,185,129,0.2)':'rgba(139,92,246,0.2)');
+  const labelColor=isWarning?'#dc2626':(tip.cat==='congrats'?'#10b981':'#8b5cf6');
+  const label=tip.cat==='congrats'?'\u{1F389} BRAVO':isWarning?'\u26A0\uFE0F ATTENTION':'\u{1F4A1} CONSEIL DU JOUR';
+  return `<div class="card" style="background:${bg};border:1px solid ${border};margin-bottom:16px;padding:12px 16px">
+    <div style="font-size:.58rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:${labelColor};margin-bottom:4px">${label}</div>
+    <div style="font-size:.78rem;color:#1e3a4a;line-height:1.4">${tip.msg}</div>
+  </div>`;
+}
+function seededRandom(seed){
+
+  var x=Math.sin(seed)*10000;
+  return x-Math.floor(x);
+}
 function rThrowback(eng){
   const now=new Date();
+  // Random reminder: only shows on ~30% of days, deterministic per calendar day (stays stable all day, changes daily)
+  const daySeed=now.getFullYear()*372+now.getMonth()*31+now.getDate();
+  if(seededRandom(daySeed)>=0.3)return'';
   const points=[
     {label:'il y a 1 mois',months:1},
     {label:'il y a 3 mois',months:3},
@@ -748,22 +957,92 @@ function rThrowback(eng){
   const results=points.map(p=>{
     const d=new Date(now.getFullYear(),now.getMonth()-p.months,now.getDate());
     const key=mk(d.getFullYear(),d.getMonth());
-    return{label:p.label,xp:xpAsOf(eng,d),key:key};
+    return{label:p.label,xp:xpAsOf(eng,d),key:key,months:p.months};
   }).filter(r=>r.xp!==null&&ST.history[r.key]);
   if(results.length===0)return'';
-  let html=`<div class="card" style="margin-bottom:16px"><div class="sl" style="margin-bottom:10px">⏳ IL Y A... <span style="font-size:.55rem;color:#9b8fc0;font-weight:400;text-transform:none;letter-spacing:0">(touche pour voir le mois)</span></div><div style="display:flex;gap:8px">`;
+  // Pick the single most striking comparison to headline (biggest absolute delta), rest shown smaller
+  const best=results.reduce((a,b)=>Math.abs(eng.totXP-b.xp)>Math.abs(eng.totXP-a.xp)?b:a);
+  const bestDelta=eng.totXP-best.xp;
+  const wow=bestDelta>=200;
+  const headline=bestDelta>=500?"🤯 Progression ÉNORME !":bestDelta>=200?"🔥 Belle progression !":bestDelta>=0?"👍 Ça avance.":"😅 Ça a stagné...";
+  let html=`<div class="card" style="margin-bottom:16px"><div class="sl" style="margin-bottom:2px">⏳ REGARDE OÙ TU EN ÉTAIS</div>
+    <div style="font-size:.75rem;font-weight:700;color:${bestDelta>=0?"#10b981":"#dc2626"};margin-bottom:10px">${headline}</div>
+    <div style="display:flex;gap:8px">`;
   results.forEach(r=>{
     const delta=eng.totXP-r.xp;
     const deltaColor=delta>=0?'#10b981':'#dc2626';
     const deltaIcon=delta>=0?'↑':'↓';
-    html+=`<div style="flex:1;background:#f8f4ff;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(139,92,246,0.15);cursor:pointer" data-mkey="${r.key}" onclick="jumpToMonth(this.dataset.mkey)">
+    html+=`<div style="flex:1;background:#f8f4ff;border-radius:12px;padding:10px;text-align:center;border:1px solid rgba(139,92,246,0.15);cursor:pointer" data-mkey="${r.key}" data-months="${r.months}" onclick="openThrowbackDetail(this.dataset.mkey,+this.dataset.months)">
       <div style="font-size:.52rem;color:#8b5cf6;font-family:'Anton',sans-serif;letter-spacing:1px;margin-bottom:4px">${r.label.toUpperCase()}</div>
       <div style="font-size:1.1rem;font-weight:700;color:#6d28d9">${r.xp}</div>
       <div style="font-size:.55rem;color:${deltaColor};font-weight:700;margin-top:2px">${deltaIcon} ${Math.abs(delta)}</div>
     </div>`;
   });
-  html+=`</div></div>`;
+  html+=`</div><div style="font-size:.55rem;color:#9b8fc0;text-align:center;margin-top:8px">touche une carte pour voir le détail complet</div></div>`;
   return html;
+}
+function openThrowbackDetail(key,monthsAgo){
+  const eng=engine();
+  const pastXp=xpAsOf(eng,new Date(pk(key).year,pk(key).month,new Date().getDate()));
+  const delta=eng.totXP-(pastXp||0);
+  const p=pk(key);
+  const md=ST.history[key];
+  const aIdsPast=md.activeSlots||[];
+
+  // Per-stat comparison: XP accumulated up to that point vs now
+  const skeys=Object.keys(ST.history).sort();
+  const cutIdx=skeys.indexOf(key);
+  const statNow={},statThen={};
+  STATS.forEach(st=>{statNow[st]=0;statThen[st]=0;});
+  skeys.forEach((k,i)=>{
+    const m=ST.history[k],mAIds=m.activeSlots||[];
+    const lastIdx=(k===skeys[skeys.length-1]&&k===mk(new Date().getFullYear(),new Date().getMonth()))?new Date().getDate()-1:m.days.length-1;
+    for(let d=0;d<=Math.min(lastIdx,m.days.length-1);d++){
+      ST.slots.forEach(s=>{
+        if(!mAIds.includes(s.id))return;
+        const xp=m.days[d][s.id]||0;
+        statNow[s.stat]+=xp;
+        if(i<=cutIdx)statThen[s.stat]+=xp;
+      });
+    }
+  });
+
+  const headline=delta>=500?"🤯 PROGRESSION ÉNORME !":delta>=200?"🔥 BELLE PROGRESSION !":delta>=0?"👍 ÇA AVANCE":"😅 ÇA A STAGNÉ";
+  const headColor=delta>=200?"#10b981":delta>=0?"#8b5cf6":"#dc2626";
+
+  let html="";
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:16px'>";
+  html+="<span style='font-size:1.8rem'>⏳</span>";
+  html+="<div><div style='font-family:Anton,sans-serif;font-size:1.05rem;color:#8b5cf6;letter-spacing:1px'>"+MFR[p.month].toUpperCase()+" "+p.year+"</div>";
+  html+="<div style='font-size:.68rem;color:#0e7490'>il y a "+monthsAgo+" mois</div></div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+
+  html+="<div style='background:"+headColor+"12;border:1px solid "+headColor+"30;border-radius:14px;padding:16px;text-align:center;margin-bottom:16px'>";
+  html+="<div style='font-size:.9rem;font-weight:700;color:"+headColor+"'>"+headline+"</div>";
+  html+="<div style='font-size:1.6rem;font-weight:700;color:"+headColor+";margin-top:6px'>"+(delta>=0?"+":"")+delta+" XP</div>";
+  html+="<div style='font-size:.68rem;color:#0e7490;margin-top:2px'>"+(pastXp||0)+" XP → "+eng.totXP+" XP aujourd’hui</div>";
+  html+="</div>";
+
+  html+="<div style='font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#0e7490;margin-bottom:4px'>PAR COMPÉTENCE</div>";
+  html+="<div style='display:flex;gap:10px;font-size:.58rem;color:#999;margin-bottom:10px'><span style='display:flex;align-items:center;gap:4px'><span style='width:8px;height:8px;border-radius:2px;background:#bbb;display:inline-block'></span>avant</span><span style='display:flex;align-items:center;gap:4px'><span style='width:8px;height:8px;border-radius:2px;background:#333;display:inline-block'></span>maintenant</span></div>";
+  STATS.forEach(st=>{
+    const m=SM[st];
+    const then=statThen[st],nowV=statNow[st],d=nowV-then;
+    const maxV=Math.max(1,then,nowV);
+    const arrow=d>=0?"↑":"↓";
+    html+="<div style='margin-bottom:12px'>";
+    html+="<div style='display:flex;justify-content:space-between;font-size:.72rem;margin-bottom:5px'><span style='color:"+m.color+";font-weight:700'>"+m.icon+" "+m.label+"</span><span style='color:"+(d>=0?"#10b981":"#dc2626")+";font-weight:700'>"+(d>=0?"+":"")+d+" "+arrow+"</span></div>";
+    html+="<div style='display:flex;flex-direction:column;gap:3px'>";
+    html+="<div style='background:#c4c4c4;border-radius:4px;height:8px;width:"+Math.max(4,Math.round(then/maxV*100))+"%'></div>";
+    html+="<div style='background:"+m.color+";border-radius:4px;height:12px;width:"+Math.max(4,Math.round(nowV/maxV*100))+"%'></div>";
+    html+="</div></div>";
+  });
+
+  html+="<button onclick='jumpToMonth(\'"+key+"\')' style='width:100%;padding:12px;border:1px solid rgba(139,92,246,0.3);border-radius:12px;background:#fff;color:#8b5cf6;font-weight:700;font-size:.78rem;cursor:pointer;margin-top:8px'>Voir le détail jour par jour de ce mois</button>";
+
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
 }
 function jumpToMonth(key){
   TAB="history";
@@ -784,6 +1063,7 @@ function rProfile(eng){
     html+=`<div class="warn-banner" style="background:${hd?"rgba(255,68,102,.08)":"rgba(251,191,36,.08)"};border:1px solid ${hd?"#ec489950":"#f59e0b50"}"><span style="font-size:1.4rem">${hd?"🚨":"⚠️"}</span><div><div style="font-weight:700;font-size:.85rem;color:${hd?"#ec4899":"#f59e0b"};margin-bottom:4px">${hd?"ALERTE — decay !":"Stat en dégradation"}</div><div style="font-size:.72rem;color:#a0a0a0">${wi}</div></div></div>`;
   }
   
+html+=rDailyTip(eng);
 html+=rThrowback(eng);
   html+=`<div class="card-big" style="border-color:${t.color}30"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
   <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start">
@@ -794,7 +1074,7 @@ html+=rThrowback(eng);
   </div>
   ${nt?`<div style="font-size:.68rem;color:#8b5cf6;font-weight:600;margin-bottom:8px">→ Plus que <strong>${nt.min-totXP} XP</strong> pour <strong>${nt.title}</strong></div>`:`<div style="font-size:.68rem;color:#8b5cf6;font-weight:600;margin-bottom:8px">👑 Rang maximum atteint !</div>`}
   <div style="margin-bottom:14px">
-    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:#000">XP Net total</span><span style="font-family:monospace;font-size:.75rem;color:${t.color};font-weight:700">${totXP} / ${nt?nt.min:"∞"} XP</span></div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:#1e3a4a">XP Net total</span><span style="font-family:monospace;font-size:.75rem;color:${t.color};font-weight:700">${totXP} / ${nt?nt.min:"∞"} XP</span></div>
     <div class="track-big"><div class="track-big-fill" style="width:${xpPct}%;background:linear-gradient(90deg,${t.color},#ec4899)"></div></div>
   </div>
   <div style="display:flex;gap:20px;flex-wrap:wrap">
@@ -820,7 +1100,7 @@ html+=rThrowback(eng);
     const fmin=cfg?cfg.minPerWeek:0;
     const hasXP=(sxp[stat]||0)>0;
     const freqOk=!cfg||!hasXP||freq>=fmin;
-    const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#000"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;background:rgba(8,145,178,0.15);color:#0891b2;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;font-style:normal;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;vertical-align:-2px" oncontextmenu="return false">i</span></span><span style="color:${freqOk?"#1e3a4a":"#ef4444"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
+    const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#1e3a4a"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;background:rgba(8,145,178,0.15);color:#0891b2;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;font-style:normal;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;vertical-align:-2px" oncontextmenu="return false">i</span></span><span style="color:${freqOk?"#1e3a4a":"#dc2626"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
     html+=`<div class="stat-card" style="border:1px solid ${bd};cursor:pointer;position:relative" onclick="openStatPanel('${stat}')">
   <span onclick="event.stopPropagation();openStatAnalytics('${stat}')" style="position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:${m.color}15;border-radius:8px;font-size:.85rem;cursor:pointer;z-index:2" title="Stats du mois">📊</span>
   <span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
@@ -894,9 +1174,9 @@ function rTracker(eng){
   if(!isCurrentMonth){
     html+=`<div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:#6d28d9;display:flex;align-items:center;gap:8px"><span>✏️</span><span>Tu modifies un mois passé — les changements sont sauvegardés automatiquement.</span></div>`;
   }
-  if(aSlots.length===0)return html+`<div class="card" style="text-align:center;padding:32px;border-style:dashed"><div style="font-size:1.5rem;margin-bottom:8px">⚙️</div><div style="color:#000;font-size:.85rem">Aucune tâche active — va dans <strong style="color:#e8e8f8">Config → Tâches</strong></div></div>`;
+  if(aSlots.length===0)return html+`<div class="card" style="text-align:center;padding:32px;border-style:dashed"><div style="font-size:1.5rem;margin-bottom:8px">⚙️</div><div style="color:#1e3a4a;font-size:.85rem">Aucune tâche active — va dans <strong style="color:#e8e8f8">Config → Tâches</strong></div></div>`;
   const cls={intel:"ci",physique:"cp",craft:"cc",disc:"cd",bienetre:"cb"};
-  html+=`<div class="table-wrap"><div class="table-scroll"><table style="min-width:${Math.max(700,aSlots.length*65+350)}px"><thead><tr><th class="th-left">Jour</th>${aSlots.map(s=>`<th style="color:${SM[s.stat].color}">${s.name}<br><span style="font-size:.58rem;color:#000;opacity:.8;font-weight:700">${SM[s.stat].icon} +${s.xp}</span></th>`).join("")}${ST.malusList.map(m=>`<th style="color:#dc2626;font-weight:900">${m.icon} ${m.name}<br><span style="font-size:.46rem;color:#000;opacity:.7">💀 ${m.xp}xp/${m.debtDays}j</span></th>`).join("")}<th style="color:#0e7490;min-width:50px">Malus <span onclick=\"showInfoTip(event,'Total des points perdus ce jour-l\u00e0 (somme de tous les malus coch\u00e9s).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="color:#0e7490;min-width:50px">Net</th><th>🔥</th><th>Niv <span onclick=\"showInfoTip(event,'R\u00e9sum\u00e9 visuel du jour : \ud83d\udd25 excellent, \u2705 bon, \u26aa correct, \ud83d\udc80 mauvais (bas\u00e9 sur ton score net).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="min-width:90px">Barre <span onclick=\"showInfoTip(event,'Ta progression du jour compar\u00e9e \u00e0 ton maximum possible si tu cochais tout.')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th></tr></thead><tbody>`;
+  html+=`<div class="table-wrap"><div class="table-scroll"><table style="min-width:${Math.max(700,aSlots.length*65+350)}px"><thead><tr><th class="th-left">Jour</th>${aSlots.map(s=>`<th style="color:${SM[s.stat].color}">${s.name}<br><span style="font-size:.58rem;color:#1e3a4a;opacity:.8;font-weight:700">${SM[s.stat].icon} +${s.xp}</span></th>`).join("")}${ST.malusList.map(m=>`<th style="color:#dc2626;font-weight:900">${m.icon} ${m.name}<br><span style="font-size:.46rem;color:#1e3a4a;opacity:.7">💀 ${m.xp}xp/${m.debtDays}j</span></th>`).join("")}<th style="color:#0e7490;min-width:50px">Malus <span onclick=\"showInfoTip(event,'Total des points perdus ce jour-l\u00e0 (somme de tous les malus coch\u00e9s).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="color:#0e7490;min-width:50px">Net</th><th>🔥</th><th>Niv <span onclick=\"showInfoTip(event,'R\u00e9sum\u00e9 visuel du jour : \ud83d\udd25 excellent, \u2705 bon, \u26aa correct, \ud83d\udc80 mauvais (bas\u00e9 sur ton score net).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="min-width:90px">Barre <span onclick=\"showInfoTip(event,'Ta progression du jour compar\u00e9e \u00e0 ton maximum possible si tu cochais tout.')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th></tr></thead><tbody>`;
   md.days.forEach((d,i)=>{
     const net=cn[i],str=cs[i],debt=cd[i],pct=Math.min(100,Math.max(0,(net/maxDXP)*100));
     const dt=new Date(curY,curM,i+1),ds=dt.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric"});
@@ -906,7 +1186,7 @@ function rTracker(eng){
     const mt=ST.malusList.filter(m=>d[m.id]).reduce((s,m)=>s+Math.abs((typeof d[m.id]==="object")?d[m.id].xp:m.xp),0);
     const bl=isT?"3px solid #8b5cf6":hasM?"3px solid #ec4899":"3px solid transparent";
     const rc=`${hasM?"row-malus":isT?"row-today":""} ${isF?"row-future":""} ${dt.getDay()===1&&i>0?"week-sep":""}`;
-    html+=`<tr class="${rc}" id="row-${i}"><td class="td-left" style="border-left:${bl}"><div style="font-weight:700;font-size:.82rem;color:#1e3a4a">${isT?"⚡ ":hasM?"💀 ":""}Jour ${i+1}</div><div style="font-family:monospace;font-size:.54rem;color:#000">${ds}</div>${debt>0?`<div style="font-size:.5rem;color:#ec4899;font-weight:700">dette -${debt}xp</div>`:""}</td>`;
+    html+=`<tr class="${rc}" id="row-${i}"><td class="td-left" style="border-left:${bl}"><div style="font-weight:700;font-size:.82rem;color:#1e3a4a">${isT?"⚡ ":hasM?"💀 ":""}Jour ${i+1}</div><div style="font-family:monospace;font-size:.54rem;color:#1e3a4a">${ds}</div>${debt>0?`<div style="font-size:.5rem;color:#ec4899;font-weight:700">dette -${debt}xp</div>`:""}</td>`;
     aSlots.forEach(s=>{const chk=!!d[s.id];const mkArg=isCurrentMonth?"":(",'"+viewKey+"'");html+=`<td><div id="tog-${i}-${s.id}" class="tog ${chk?cls[s.stat]:""}" onclick="${isF?"":"tDay("+i+",'"+s.id+"'"+mkArg+")"}">${chk?"✓":"·"}</div></td>`;});
     ST.malusList.forEach(m=>{const chk=!!d[m.id];const mkArg2=isCurrentMonth?"":(",'"+viewKey+"'");html+=`<td><div id="tog-${i}-${m.id}" class="tog ${chk?"cm":""}" onclick="${isF?"":"tDay("+i+",'"+m.id+"'"+mkArg2+")"}">${chk?"❌":"·"}</div></td>`;});
     html+=`<td>${mt>0?`<span style="color:#ec4899;font-family:monospace;font-size:.75rem;font-weight:700">-${mt}</span>`:`<span style="color:#0e7490">—</span>`}</td><td id="xp-${i}" style="font-family:monospace;font-weight:700;font-size:.82rem;color:${nc}">${net}</td><td style="font-weight:700;font-size:.88rem;color:#0891b2">${str>0?str:"—"}</td><td id="lv-${i}" style="font-size:.95rem">${lvEmoji(net)}</td><td id="bar-${i}" style="padding:5px 10px"><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div></td></tr>`;
@@ -953,8 +1233,10 @@ function rConfig(){
         html+=`<span style="font-weight:700;color:${m.color};font-size:.85rem;text-transform:uppercase;letter-spacing:2px">${m.label}</span>`;
       }
       html+=`<div class="edit-btn" onclick="sEdit('statlabel_${stat}')" style="flex-shrink:0">${isEditStat?'✓':'✏️'}</div>`;
-      html+=`<span style="font-size:.58rem;color:#000;margin-left:auto">${ac}/${ss.length} actifs</span></div>`;
-      ss.forEach(s=>{
+      html+=`<span style="font-size:.58rem;color:#1e3a4a;margin-right:8px">${ac}/${ss.length} actifs</span>`;
+      const isCollapsed=!!COLLAPSED_STATS[stat];
+      html+=`<span onclick="toggleStatCollapse('${stat}')" style="cursor:pointer;display:flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:${m.color}18;flex-shrink:0"><span style="font-size:1.1rem;color:${m.color};font-weight:900;transform:rotate(${isCollapsed?'-90':'0'}deg);transition:transform .2s;display:inline-block">▾</span></span></div>`;
+      if(!isCollapsed)ss.forEach(s=>{
         const ia=aIds.includes(s.id),ie=EDIT===s.id;
         const slotRuleX=(ST.slotRules||{})[s.id]||null;
         const hasRuleX=slotRuleX&&slotRuleX.minPerWeek>0;
@@ -972,7 +1254,7 @@ function rConfig(){
         [1,2,3,4,5].forEach(v=>{
           html+=`<div class="xp-btn" style="width:19px;height:19px;font-size:.6rem;background:${s.xp===v?m.color+"30":"transparent"};border-color:${s.xp===v?m.color:"rgba(8,145,178,0.1)"};color:${s.xp===v?m.color:"#a8d4e0"}" onclick="sXP('${s.id}',${v})">${v}</div>`;
         });
-        html+=`<span style="font-size:.5rem;color:#000;align-self:center;margin-left:2px">XP</span></div>`;
+        html+=`<span style="font-size:.5rem;color:#1e3a4a;align-self:center;margin-left:2px">XP</span></div>`;
         html+=`<div class="edit-btn" onclick="sEdit('${s.id}')">${ie?"✓":"✏️"}</div>`;
         html+=`</div>`;
       });
@@ -982,7 +1264,7 @@ function rConfig(){
   if(CTAB==="malus"){
     html+=`<div style="background:rgba(255,68,102,.06);border:1px solid rgba(255,68,102,.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#ffaaaa">💀 Chaque malus coché crée une <strong>dette</strong> répartie sur N jours.</div>`;
     ST.malusList.forEach(m=>{
-      html+=`<div class="card" style="border:1px solid rgba(255,68,102,.15);margin-bottom:12px"><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"><div style="font-size:1.4rem;width:36px;text-align:center">${m.icon}</div><input value="${m.name}" onchange="mName('${m.id}',this.value)" style="flex:2;min-width:130px;background:#e8f6fb;border:1px solid rgba(8,145,178,0.1);border-radius:10px;padding:8px 12px;color:#e8e8f8;font-family:inherit;font-size:.83rem;outline:none"><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:.52rem;color:#0e7490;text-transform:uppercase;letter-spacing:1px;font-family:'Anton',sans-serif">XP MALUS</div><div style="display:flex;align-items:center;gap:5px"><button class="btn-small" onclick="mXP('${m.id}',1)">+</button><span style="font-family:monospace;color:#ec4899;font-weight:700;font-size:1.1rem;min-width:36px;text-align:center">${m.xp}</span><button class="btn-small" onclick="mXP('${m.id}',-1)">−</button></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:.52rem;color:#0e7490;text-transform:uppercase;letter-spacing:1px;font-family:'Anton',sans-serif">JOURS DETTE</div><div style="display:flex;align-items:center;gap:5px"><button class="btn-small" onclick="mDebt('${m.id}',-1)">−</button><span style="font-family:monospace;color:#059669;font-weight:700;font-size:1rem;min-width:22px;text-align:center">${m.debtDays}</span><button class="btn-small" onclick="mDebt('${m.id}',1)">+</button></div></div><div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:.52rem;color:#000;text-transform:uppercase;letter-spacing:1px">Stat ciblée</div><div style="display:flex;gap:4px">${STATS.map(s=>`<div onclick="mStat('${m.id}','${s}')" style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:${m.stat===s?SM[s].color+"30":"transparent"};border:1px solid ${m.stat===s?SM[s].color:"rgba(8,145,178,0.1)"};cursor:pointer;font-size:.82rem">${SM[s].icon}</div>`).join("")}</div></div></div><div style="margin-top:10px;padding:7px 12px;background:rgba(220,38,38,0.06);border-radius:9px;font-size:.7rem;color:#1e3a4a;display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="color:#dc2626;font-weight:700">${m.xp} XP</span> · <span style="color:#059669">${m.debtDays}j</span> · <span style="color:#ec4899">-${Math.ceil(Math.abs(m.xp)/m.debtDays)} XP/j</span> sur <span style="color:${SM[m.stat].color}">${SM[m.stat].icon} ${SM[m.stat].label}</span></div><span onclick="deleteMalus('${m.id}')" style="margin-left:auto;color:#dc2626;cursor:pointer;font-size:.68rem;opacity:.6">🗑️ Supprimer</span></div></div>`;
+      html+=`<div class="card" style="border:1px solid rgba(255,68,102,.15);margin-bottom:12px"><div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center"><div style="font-size:1.4rem;width:36px;text-align:center">${m.icon}</div><input value="${m.name}" onchange="mName('${m.id}',this.value)" style="flex:2;min-width:130px;background:#e8f6fb;border:1px solid rgba(8,145,178,0.1);border-radius:10px;padding:8px 12px;color:#e8e8f8;font-family:inherit;font-size:.83rem;outline:none"><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:.52rem;color:#0e7490;text-transform:uppercase;letter-spacing:1px;font-family:'Anton',sans-serif">XP MALUS</div><div style="display:flex;align-items:center;gap:5px"><button class="btn-small" onclick="mXP('${m.id}',1)">+</button><span style="font-family:monospace;color:#ec4899;font-weight:700;font-size:1.1rem;min-width:36px;text-align:center">${m.xp}</span><button class="btn-small" onclick="mXP('${m.id}',-1)">−</button></div></div><div style="display:flex;flex-direction:column;align-items:center;gap:3px"><div style="font-size:.52rem;color:#0e7490;text-transform:uppercase;letter-spacing:1px;font-family:'Anton',sans-serif">JOURS DETTE</div><div style="display:flex;align-items:center;gap:5px"><button class="btn-small" onclick="mDebt('${m.id}',-1)">−</button><span style="font-family:monospace;color:#059669;font-weight:700;font-size:1rem;min-width:22px;text-align:center">${m.debtDays}</span><button class="btn-small" onclick="mDebt('${m.id}',1)">+</button></div></div><div style="display:flex;flex-direction:column;gap:4px"><div style="font-size:.52rem;color:#1e3a4a;text-transform:uppercase;letter-spacing:1px">Stat ciblée</div><div style="display:flex;gap:4px">${STATS.map(s=>`<div onclick="mStat('${m.id}','${s}')" style="width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;background:${m.stat===s?SM[s].color+"30":"transparent"};border:1px solid ${m.stat===s?SM[s].color:"rgba(8,145,178,0.1)"};cursor:pointer;font-size:.82rem">${SM[s].icon}</div>`).join("")}</div></div></div><div style="margin-top:10px;padding:7px 12px;background:rgba(220,38,38,0.06);border-radius:9px;font-size:.7rem;color:#1e3a4a;display:flex;align-items:center;flex-wrap:wrap;gap:4px"><span style="color:#dc2626;font-weight:700">${m.xp} XP</span> · <span style="color:#059669">${m.debtDays}j</span> · <span style="color:#ec4899">-${Math.ceil(Math.abs(m.xp)/m.debtDays)} XP/j</span> sur <span style="color:${SM[m.stat].color}">${SM[m.stat].icon} ${SM[m.stat].label}</span></div><span onclick="deleteMalus('${m.id}')" style="margin-left:auto;color:#dc2626;cursor:pointer;font-size:.68rem;opacity:.6">🗑️ Supprimer</span></div></div>`;
     });
     html+=`<button onclick="addMalus()" style="width:100%;padding:12px;border:2px dashed rgba(220,38,38,0.3);border-radius:14px;background:rgba(220,38,38,0.03);color:#dc2626;font-weight:700;font-size:.8rem;cursor:pointer;margin-top:4px">➕ Ajouter un malus</button>`;
   }
@@ -993,7 +1275,7 @@ function rConfig(){
     html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
       <div style="display:flex;align-items:center;gap:10px">
         <span style="font-size:1.3rem">${soundOn?"🔊":"🔇"}</span>
-        <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons d'interaction</span><div style="font-size:.58rem;color:#0e7490">Check, ploc, clic de menu...</div></div>
+        <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons d’interaction</span><div style="font-size:.58rem;color:#0e7490">Check, ploc, clic de menu...</div></div>
       </div>
       <div class="cfg-toggle" style="background:${soundOn?"#8b5cf630":"#e0f2f8"};border:1px solid ${soundOn?"#8b5cf6":"rgba(8,145,178,0.2)"}" onclick="toggleSound()">
         <div class="cfg-toggle-dot" style="left:${soundOn?"16":"2"}px;background:${soundOn?"#8b5cf6":"#7dd3e8"}"></div>
@@ -1008,10 +1290,11 @@ function rConfig(){
         <div class="cfg-toggle-dot" style="left:${rewardOn?"16":"2"}px;background:${rewardOn?"#f59e0b":"#7dd3e8"}"></div>
       </div>
     </div>`;
-    html+=`<div style="background:rgba(255,224,51,0.08);border:1px solid rgba(255,224,51,0.3);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#0e7490">
-      🔥 Configure le <strong>seuil minimum d'XP</strong> pour maintenir ton streak chaque jour.
+    html+=`<div style="background:rgba(245,158,11,0.06);border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#0e7490">
+      🔥 Configure le <strong>seuil minimum d’XP</strong> pour maintenir ton streak chaque jour.
     </div>`;
-    html+=`<div class="card" style="border:2px solid #000;margin-bottom:12px">
+
+    html+=`<div class="card" style="border:1px solid rgba(245,158,11,0.3);margin-bottom:14px">
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px">
         <span style="font-size:1.4rem">🔥</span>
         <span style="font-weight:700;color:#f59e0b;font-size:.95rem;font-family:'Anton',sans-serif;letter-spacing:2px">STREAK MINIMUM XP</span>
@@ -1022,48 +1305,52 @@ function rConfig(){
         <button class="btn-small" style="width:32px;height:32px;font-size:1.1rem" onclick="dStreakMin(1)">+</button>
         <span style="color:#1e3a4a;font-size:.85rem">XP minimum par jour</span>
       </div>
-      <div style="font-size:.75rem;color:#000;margin-bottom:16px">
+      <div style="font-size:.75rem;color:#1e3a4a;margin-bottom:16px">
         Si tu fais moins de <strong>${scfg.minXP} XP</strong> dans une journée → le streak casse.
       </div>
-      <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;margin-bottom:8px">
-        <div style="font-family:'Anton',sans-serif;color:#f59e0b;font-size:.7rem;letter-spacing:2px;margin-bottom:8px">⏰ MALUS DE FRÉQUENCE</div>
-        <div style="font-size:.72rem;color:#1e3a4a;line-height:1.4">Configure une fréquence minimale par semaine sur autant de tâches que tu veux — clique l'icône ⏰ à côté de chaque tâche dans <strong>Config → Tâches</strong>. Aucune limite de nombre.</div>
-      </div>
-      <div style="background:rgba(0,0,0,0.15);border-radius:10px;padding:12px;margin-top:8px">
-        <div style="font-family:'Anton',sans-serif;color:#0e7490;font-size:.7rem;letter-spacing:2px;margin-bottom:10px">🔥 BONUS COMBO — PAR COMPÉTENCE</div>
-        <div style="font-size:.72rem;color:#1e3a4a;margin-bottom:10px">Coche X+ tâches d'une même compétence le même jour → bonus XP. Configurable pour chaque compétence en même temps.</div>
-        ${STATS.map(st=>{
-          const c=(scfg.combos||{})[st];
-          const active=!!(c&&c.minSlots&&c.bonus);
-          const m2=SM[st];
-          let row='<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.08)">';
-          row+='<div style="display:flex;align-items:center;gap:10px">';
-          row+='<span style="font-size:1.1rem;width:22px;flex-shrink:0">'+m2.icon+'</span>';
-          row+='<span style="font-size:.72rem;font-weight:700;color:'+m2.color+';flex:1">'+m2.label+'</span>';
-          row+='<div class="cfg-toggle" style="background:'+(active?m2.color+"40":"rgba(255,255,255,0.08)")+';border:1px solid '+(active?m2.color:"rgba(255,255,255,0.15)")+'" onclick="toggleCombo(\''+st+'\')">';
-          row+='<div class="cfg-toggle-dot" style="left:'+(active?"16":"2")+'px;background:'+(active?m2.color:"#7dd3e8")+'"></div></div>';
-          row+='</div>';
-          if(active){
-            row+='<div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:#1e3a4a;margin-top:8px;padding-left:32px;flex-wrap:wrap">';
-            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'minSlots\',-1,1,7)">−</button>';
-            row+='<span style="min-width:44px;text-align:center;flex-shrink:0">'+c.minSlots+' slots</span>';
-            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'minSlots\',1,1,7)">+</button>';
-            row+='<span style="margin:0 2px;flex-shrink:0">→</span>';
-            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'bonus\',-1,1,30)">−</button>';
-            row+='<span style="min-width:26px;text-align:center;color:'+m2.color+';font-weight:700;flex-shrink:0">+'+c.bonus+'</span>';
-            row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'bonus\',1,1,30)">+</button>';
-            row+='</div>';
-          }
-          row+='</div>';
-          return row;
-        }).join('')}
-      </div>
-      <div style="background:rgba(8,145,178,0.15);border-radius:10px;padding:12px;font-size:.78rem;color:#1e3a4a">
-        <div style="font-family:'Anton',sans-serif;color:#f59e0b;margin-bottom:8px;letter-spacing:2px">BONUS STREAK EXPONENTIEL</div>
+      <div style="background:rgba(245,158,11,0.06);border-radius:10px;padding:12px;font-size:.78rem;color:#1e3a4a">
+        <div style="font-family:'Anton',sans-serif;color:#f59e0b;margin-bottom:8px;letter-spacing:2px;font-size:.68rem">BONUS STREAK EXPONENTIEL</div>
         ${[["1-2 jours","+1 XP/j"],["3-6 jours","+2 XP/j"],["7-13 jours","+4 XP/j"],["14-19 jours","+6 XP/j"],["20-29 jours","+8 XP/j"],["30+ jours","+10 XP/j"]].map(([r,b])=>
-          `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.1)"><span>${r}</span><span style="color:#f59e0b;font-weight:700">${b}</span></div>`
+          `<div style="display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid rgba(245,158,11,0.15)"><span>${r}</span><span style="color:#f59e0b;font-weight:700">${b}</span></div>`
         ).join("")}
       </div>
+    </div>`;
+
+    html+=`<div class="card" style="border:1px solid rgba(139,92,246,0.25);margin-bottom:14px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+        <span style="font-size:1.3rem">🔥</span>
+        <span style="font-weight:700;color:#8b5cf6;font-size:.85rem;font-family:'Anton',sans-serif;letter-spacing:2px">BONUS COMBO — PAR COMPÉTENCE</span>
+      </div>
+      <div style="font-size:.72rem;color:#1e3a4a;margin-bottom:12px">Coche X+ tâches d’une même compétence le même jour → bonus XP. Configurable pour chaque compétence en même temps.</div>
+      ${STATS.map(st=>{
+        const c=(scfg.combos||{})[st];
+        const active=!!(c&&c.minSlots&&c.bonus);
+        const m2=SM[st];
+        let row='<div style="padding:8px 0;border-bottom:1px solid rgba(0,0,0,0.05)">';
+        row+='<div style="display:flex;align-items:center;gap:10px">';
+        row+='<span style="font-size:1.1rem;width:22px;flex-shrink:0">'+m2.icon+'</span>';
+        row+='<span style="font-size:.72rem;font-weight:700;color:'+m2.color+';flex:1">'+m2.label+'</span>';
+        row+='<div class="cfg-toggle" style="background:'+(active?m2.color+"30":"#e0f2f8")+';border:1px solid '+(active?m2.color:"rgba(8,145,178,0.2)")+'" onclick="toggleCombo(\''+st+'\')">';
+        row+='<div class="cfg-toggle-dot" style="left:'+(active?"16":"2")+'px;background:'+(active?m2.color:"#7dd3e8")+'"></div></div>';
+        row+='</div>';
+        if(active){
+          row+='<div style="display:flex;align-items:center;gap:4px;font-size:.6rem;color:#1e3a4a;margin-top:8px;padding-left:32px;flex-wrap:wrap">';
+          row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'minSlots\',-1,1,7)">−</button>';
+          row+='<span style="min-width:44px;text-align:center;flex-shrink:0">'+c.minSlots+' slots</span>';
+          row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'minSlots\',1,1,7)">+</button>';
+          row+='<span style="margin:0 2px;flex-shrink:0">→</span>';
+          row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'bonus\',-1,1,30)">−</button>';
+          row+='<span style="min-width:26px;text-align:center;color:'+m2.color+';font-weight:700;flex-shrink:0">+'+c.bonus+'</span>';
+          row+='<button class="btn-small" style="width:20px;height:20px;font-size:.8rem;flex-shrink:0" onclick="dComboStat(\''+st+'\',\'bonus\',1,1,30)">+</button>';
+          row+='</div>';
+        }
+        row+='</div>';
+        return row;
+      }).join('')}
+    </div>`;
+
+    html+=`<div style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.2);border-radius:12px;padding:10px 14px;font-size:.7rem;color:#1e3a4a">
+      ⏰ La fréquence minimale par tâche se configure directement dans <strong>Config → Tâches</strong> (touche l’icône horloge à côté de chaque tâche).
     </div>`;
   }
   if(CTAB==="decay"){
@@ -1078,13 +1365,13 @@ function rConfig(){
         <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px">
           ${[["Jours avant decay","daysThreshold",cfg.daysThreshold,"#ffe033",3,60,"j → decay"],["XP perdu/jour","xpPerDay",cfg.xpPerDay,"#ec4899",1,10,"XP/j"],["Min/semaine","minPerWeek",cfg.minPerWeek,"#ff6600",1,7,"x/sem"]].map(([l,f,v,c,mn,mx,sb])=>`
             <div>
-              <div style="font-size:.58rem;color:#000;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:'Anton',sans-serif">${l}</div>
+              <div style="font-size:.58rem;color:#1e3a4a;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;font-family:'Anton',sans-serif">${l}</div>
               <div style="display:flex;align-items:center;gap:8px">
                 <button class="btn-small" onclick="dDecay('${stat}','${f}',-1,${mn},${mx})">−</button>
                 <span style="font-family:monospace;color:${c};font-weight:700;font-size:1.1rem;min-width:28px;text-align:center">${v}</span>
                 <button class="btn-small" onclick="dDecay('${stat}','${f}',1,${mn},${mx})">+</button>
               </div>
-              <div style="font-size:.55rem;color:#000;margin-top:4px">${v} ${sb}</div>
+              <div style="font-size:.55rem;color:#1e3a4a;margin-top:4px">${v} ${sb}</div>
             </div>`).join("")}
         </div>
       </div>`;
@@ -1466,14 +1753,23 @@ function rBadges(eng){
   html+=`<div style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#0891b2;margin-bottom:10px">CE MOIS</div>`;
   html+=`<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px">${monthly.map(b=>badgeCard(b,true)).join('')}</div>`;
 
-  // Lifetime badges, split into sub-sections
+  // Lifetime badges, split into collapsible sub-sections
   html+=`<div style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#0891b2;margin-bottom:10px">À VIE</div>`;
-  html+=`<div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:2px;color:#8b5cf6;margin-bottom:8px">🏆 RANGS</div>`;
-  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">${ranks.map(b=>badgeCard(b,false)).join('')}</div>`;
-  html+=`<div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:2px;color:#f97316;margin-bottom:8px">🔥 STREAKS</div>`;
-  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">${streaks.map(b=>badgeCard(b,false)).join('')}</div>`;
-  html+=`<div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:2px;color:#10b981;margin-bottom:8px">🌱 POLYVALENCE</div>`;
-  html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${poly.map(b=>badgeCard(b,false)).join('')}</div>`;
+  const badgeSections=[
+    {key:'ranks',label:'🏆 RANGS',color:'#8b5cf6',items:ranks},
+    {key:'streaks',label:'🔥 STREAKS',color:'#f97316',items:streaks},
+    {key:'poly',label:'🌱 POLYVALENCE',color:'#10b981',items:poly},
+  ];
+  badgeSections.forEach((sec,i)=>{
+    const collapsed=!!COLLAPSED_STATS['badge_'+sec.key];
+    const secUnlocked=sec.items.filter(b=>b.unlocked).length;
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="toggleStatCollapse('badge_${sec.key}')">
+      <span style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:2px;color:${sec.color}">${sec.label}</span>
+      <span style="font-size:.58rem;color:${sec.color};opacity:.7">${secUnlocked}/${sec.items.length}</span>
+      <span style="display:flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:${sec.color}18;margin-left:auto"><span style="font-size:1rem;color:${sec.color};font-weight:900;transform:rotate(${collapsed?'-90':'0'}deg);transition:transform .2s;display:inline-block">▾</span></span>
+    </div>`;
+    if(!collapsed)html+=`<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:${i<badgeSections.length-1?'16':'0'}px">${sec.items.map(b=>badgeCard(b,false)).join('')}</div>`;
+  });
 
   // Mark badges as "seen" only when the user is ACTUALLY viewing the Badges tab right now
   // (render() computes all tabs' HTML upfront, so without this guard every badge would be
@@ -2058,6 +2354,10 @@ function tDay(di,sid,monthKey){
     setTimeout(function(){_scrollBox.removeEventListener('scroll',_scrollLockFn);},550);
   }
 }
+function toggleStatCollapse(stat){
+  COLLAPSED_STATS[stat]=!COLLAPSED_STATS[stat];
+  render();
+}
 function tActive(sid){
   const now=new Date(),key=mk(now.getFullYear(),now.getMonth()),md=ST.history[key];if(!md)return;
   const cur=md.activeSlots||[];md.activeSlots=cur.includes(sid)?cur.filter(x=>x!==sid):[...cur,sid];saveST();render();
@@ -2185,7 +2485,7 @@ function dCombo(field,delta,mn,mx){
   saveST();render();
 }
 function resetAll(){
-  if(!confirm("⚠️ RESET COMPLET\n\nTu vas effacer TOUTES tes données :\n• Tout l'historique\n• Tous les niveaux\n• Tous les XP\n\nCette action’est IRRÉVERSIBLE.\n\nTu es sûr ?")) return;
+  if(!confirm("⚠️ RESET COMPLET\n\nTu vas effacer TOUTES tes données :\n• Tout l’historique\n• Tous les niveaux\n• Tous les XP\n\nCette action est IRRÉVERSIBLE.\n\nTu es sûr ?")) return;
   if(!confirm("Dernière chance — confirme le reset total.")) return;
   localStorage.removeItem("grind-v6");
   ST = initST();
@@ -2824,9 +3124,6 @@ function updateGokuAura(totXP){
   const speed=totXP>=19000?"1.5s":totXP>=800?"2.5s":"4s";
   ring.style.animationDuration=speed;
 }
-
-// DEBUG: show what's in localStorage
-
 
 render();
 checkSaveReminder();
