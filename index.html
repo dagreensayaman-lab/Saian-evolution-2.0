@@ -241,6 +241,22 @@ function getStatLabel(stat){try{return(ST&&ST.statLabels&&ST.statLabels[stat])||
 function getSM(){return{intel:{label:getStatLabel('intel'),icon:"🧠",color:"#0891b2",dim:"rgba(8,145,178,0.08)"},physique:{label:getStatLabel('physique'),icon:"🏋️",color:"#10b981",dim:"rgba(16,185,129,0.08)"},craft:{label:getStatLabel('craft'),icon:"🔥",color:"#8b5cf6",dim:"rgba(139,92,246,0.08)"},disc:{label:getStatLabel('disc'),icon:"⚡",color:"#f59e0b",dim:"rgba(245,158,11,0.08)"},bienetre:{label:getStatLabel('bienetre'),icon:"❤️",color:"#ec4899",dim:"rgba(236,72,153,0.08)"}};}
 const SM=getSM();
 const SL2={intel:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],physique:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],craft:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],disc:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],bienetre:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"]};
+// ── SKINS DE COMPÉTENCE ── un skin alternatif par stat, achetable dans le shop, collectionnable.
+// Chaque skin change juste la couleur (variante propre à la stat) + les noms de palier (remplace "Lv X" par un vocabulaire thématique).
+function mkSkins(){return{
+  physique:{id:"skin_physique_1",name:"Athlète",cost:50,color:"#f97316",dim:"rgba(249,115,22,0.08)",tiers:["Débutant","Amateur","Sportif","Cardio","Athlète","Athlète confirmé","Compétiteur","Champion","Machine de guerre","Légende du sport","Titan olympique"]},
+  craft:{id:"skin_craft_1",name:"Artisan",cost:50,color:"#d946ef",dim:"rgba(217,70,239,0.08)",tiers:["Débutant","Bricoleur","Créatif","Artisan","Créateur","Maître artisan","Virtuose","Artiste confirmé","Maestro","Visionnaire","Génie créatif"]},
+  intel:{id:"skin_intel_1",name:"Génie",cost:50,color:"#6366f1",dim:"rgba(99,102,241,0.08)",tiers:["Novice","Étudiant","Curieux","Érudit","Savant","Cerveau","Prodige","Génie","Génie absolu","Esprit supérieur","Einstein Mode"]},
+  disc:{id:"skin_disc_1",name:"Spartiate",cost:50,color:"#dc2626",dim:"rgba(220,38,38,0.08)",tiers:["Recrue","Soldat","Rigoureux","Discipliné","Vétéran","Spartiate","Stoïcien","Inflexible","Machine de discipline","Moine guerrier","Volonté de fer"]},
+  bienetre:{id:"skin_bienetre_1",name:"Zen",cost:50,color:"#14b8a6",dim:"rgba(20,184,166,0.08)",tiers:["Débutant","Apprenti zen","Équilibré","Serein","Harmonieux","Zen","Paisible","Maître zen","Éveillé","Illuminé","Nirvana"]}
+};}
+const SKINS=mkSkins();
+const DEFAULT_STAT_COLORS={intel:"#0891b2",physique:"#10b981",craft:"#8b5cf6",disc:"#f59e0b",bienetre:"#ec4899"};
+const DEFAULT_STAT_DIMS={intel:"rgba(8,145,178,0.08)",physique:"rgba(16,185,129,0.08)",craft:"rgba(139,92,246,0.08)",disc:"rgba(245,158,11,0.08)",bienetre:"rgba(236,72,153,0.08)"};
+function equippedSkinId(stat){return(ST&&ST.equippedSkin&&ST.equippedSkin[stat])||"default";}
+function statColorFor(stat){const eq=equippedSkinId(stat);return(eq!=="default"&&SKINS[stat])?SKINS[stat].color:DEFAULT_STAT_COLORS[stat];}
+function statDimFor(stat){const eq=equippedSkinId(stat);return(eq!=="default"&&SKINS[stat])?SKINS[stat].dim:DEFAULT_STAT_DIMS[stat];}
+function statTierLabel(stat,lv){const eq=equippedSkinId(stat);if(eq==="default")return"";const sk=SKINS[stat];if(!sk)return"";return sk.tiers[Math.min(Math.floor((lv-1)/9),sk.tiers.length-1)];}
 const TIERS=[
   {min:0,     title:"Terrien",              rank:"F",   color:"#6b5a3e"},
   {min:800,   title:"Guerrier Z",           rank:"E",   color:"#cc5500"},
@@ -318,7 +334,7 @@ function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,freezeUntil:null,ownedSkins:{intel:[],physique:[],craft:[],disc:[],bienetre:[]},equippedSkin:{intel:'default',physique:'default',craft:'default',disc:'default',bienetre:'default'},history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
 function migrateOnboarding(){
@@ -354,6 +370,14 @@ function migratePlayerProfile(){
   if(ST.difficulty===undefined)ST.difficulty='normal';
   if(ST.gems===undefined)ST.gems=0;
   if(ST.gemsEarnedTotal===undefined)ST.gemsEarnedTotal=ST.gems;
+  if(ST.boostUntil===undefined)ST.boostUntil=null;
+  if(ST.freezeUntil===undefined)ST.freezeUntil=null;
+  if(!ST.ownedSkins)ST.ownedSkins={};
+  if(!ST.equippedSkin)ST.equippedSkin={};
+  STATS.forEach(function(s){
+    if(!Array.isArray(ST.ownedSkins[s]))ST.ownedSkins[s]=[];
+    if(!ST.equippedSkin[s])ST.equippedSkin[s]='default';
+  });
   // Existing users (onboarding already complete) never had a firstUseDate — backdate it so they
   // land straight in the normal tip phase instead of suddenly seeing a "welcome" message.
   if(ST.onboardingComplete&&!ST.firstUseDate){
@@ -362,6 +386,44 @@ function migratePlayerProfile(){
   }
 }
 const DIFFICULTY_MULT={easy:1.5,normal:1,hard:0.5};
+function buyBoost(hours){
+  const cost=hours*3;
+  if((ST.gems||0)<cost)return;
+  ST.gems-=cost;
+  const base=isBoostActive()?new Date(ST.boostUntil):new Date();
+  base.setHours(base.getHours()+hours);
+  ST.boostUntil=base.toISOString();
+  saveST();render();
+}
+function buyFreeze(days){
+  const cost=days*15;
+  if((ST.gems||0)<cost)return;
+  ST.gems-=cost;
+  const base=isFreezeActive()?new Date(ST.freezeUntil):new Date();
+  base.setDate(base.getDate()+days);
+  ST.freezeUntil=base.toISOString();
+  saveST();render();
+}
+function buySkin(stat){
+  const sk=SKINS[stat];if(!sk)return;
+  if(!ST.ownedSkins)ST.ownedSkins={};
+  if(!Array.isArray(ST.ownedSkins[stat]))ST.ownedSkins[stat]=[];
+  if(!ST.equippedSkin)ST.equippedSkin={};
+  if(ST.ownedSkins[stat].includes(sk.id))return;
+  if((ST.gems||0)<sk.cost)return;
+  ST.gems-=sk.cost;
+  ST.ownedSkins[stat].push(sk.id);
+  ST.equippedSkin[stat]=sk.id;
+  saveST();render();
+}
+function toggleSkin(stat){
+  const sk=SKINS[stat];if(!sk)return;
+  if(!ST.equippedSkin)ST.equippedSkin={};
+  const owned=(ST.ownedSkins&&ST.ownedSkins[stat])||[];
+  if(!owned.includes(sk.id))return;
+  ST.equippedSkin[stat]=(ST.equippedSkin[stat]===sk.id)?'default':sk.id;
+  saveST();render();
+}
 function addGems(n){
   if(n<=0)return;
   ST.gems=(ST.gems||0)+n;
@@ -370,9 +432,12 @@ function addGems(n){
   const el=document.getElementById('gems-count');
   if(el)el.textContent=ST.gems.toLocaleString('fr-FR');
 }
+function isBoostActive(){return !!(ST.boostUntil&&new Date(ST.boostUntil)>new Date());}
+function isFreezeActive(){return !!(ST.freezeUntil&&new Date(ST.freezeUntil)>new Date());}
 function scaledXP(baseXp){
   const mult=DIFFICULTY_MULT[ST.difficulty]||1;
-  return Math.max(1,Math.round(baseXp*mult));
+  const boost=isBoostActive()?2:1;
+  return Math.max(1,Math.round(baseXp*mult*boost));
 }
 function migrateCombos(){
   if(ST.combosMigrated)return;
@@ -563,7 +628,7 @@ function engine(){
     ST.slots.filter(s=>aIds.includes(s.id)&&d[s.id]).forEach(s=>{sxp[s.stat]+=(d[s.id]||0);sla[s.stat]=i;sEverActive[s.stat]=true;});
     if(bonXP[i]>0)sxp.craft+=bonXP[i];
     Object.entries(dstat[i]).forEach(([st,dmg])=>{sxp[st]=Math.max(0,sxp[st]-dmg);});
-    for(const stat of ["physique","disc","bienetre"]){const cfg=ST.decayCfg[stat];if(!cfg||!sEverActive[stat]||sxp[stat]<=0)continue;const days=i-sla[stat];if(days>cfg.daysThreshold&&days>0&&sla[stat]>=0)sxp[stat]=Math.max(0,sxp[stat]-cfg.xpPerDay);}
+    for(const stat of ["physique","disc","bienetre"]){const cfg=ST.decayCfg[stat];if(!cfg||!sEverActive[stat]||sxp[stat]<=0)continue;const days=i-sla[stat];if(days>cfg.daysThreshold&&days>0&&sla[stat]>=0&&!isFreezeActive())sxp[stat]=Math.max(0,sxp[stat]-cfg.xpPerDay);}
   });
   const warns={};
   for(const stat of ["physique","disc","bienetre"]){const cfg=ST.decayCfg[stat];if(!cfg||n===0||!sEverActive[stat]||sxp[stat]<=0)continue;const days=n-1-sla[stat];if(days>cfg.daysThreshold*0.7){const pct=Math.min(1,(days-cfg.daysThreshold*0.7)/(cfg.daysThreshold*0.3+1));warns[stat]={level:pct>=1?"danger":"warning",daysSince:days};}}
@@ -1177,7 +1242,7 @@ html+=rThrowback(eng);
 
   html+=`<div class="sl">Compétences</div><div class="stat-grid">`;
   STATS.forEach(stat=>{
-    const m=SM[stat],xp=Math.max(0,sxp[stat]||0),lv=statLvFromXP(xp),pct=statPct(xp,lv),w=warns[stat],freq=wfreq[stat]||0,cfg=ST.decayCfg[stat];
+    const m=SM[stat],xp=Math.max(0,sxp[stat]||0),lv=statLvFromXP(xp),pct=statPct(xp,lv),w=warns[stat],freq=wfreq[stat]||0,cfg=ST.decayCfg[stat],tierLbl=statTierLabel(stat,lv);
     const hasStatXP=(sxp[stat]||0)>0;
     const bc=hasStatXP&&(w&&w.level==="danger")?"#ec4899":hasStatXP&&(w&&w.level==="warning")?"#f59e0b":m.color;
     const bd=hasStatXP&&(w&&w.level==="danger")?"#ec489950":hasStatXP&&(w&&w.level==="warning")?"#f59e0b40":m.dim;
@@ -1187,7 +1252,7 @@ html+=rThrowback(eng);
     const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#1e3a4a"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;background:rgba(8,145,178,0.15);color:#0891b2;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;font-style:normal;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;vertical-align:-2px" oncontextmenu="return false">i</span></span><span style="color:${freqOk?"#1e3a4a":"#dc2626"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
     html+=`<div class="stat-card" style="border:1px solid ${bd};cursor:pointer;position:relative" onclick="openStatPanel('${stat}')">
   <span onclick="event.stopPropagation();openStatAnalytics('${stat}')" style="position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:${m.color}15;border-radius:8px;font-size:.85rem;cursor:pointer;z-index:2" title="Stats du mois">📊</span>
-  <span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
+  <span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div>${tierLbl?`<div style="font-size:.56rem;font-weight:700;letter-spacing:.5px;color:${bc};opacity:.85;margin-bottom:2px">${tierLbl}</div>`:""}<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
   });
   html+=`</div>`;
   const motiv=getMotivationMsg(eng);
@@ -1439,7 +1504,35 @@ function rConfig(){
         <div class="cfg-toggle-dot" style="left:${rewardOn?"16":"2"}px;background:${rewardOn?"#f59e0b":"#7dd3e8"}"></div>
       </div>
     </div>`;
-    html+=`<div class="sl" style="margin-bottom:10px">👤 PROFIL JOUEUR</div>`;
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">💎 SHOP</div>`;
+    html+=`<div class="card" style="margin-bottom:10px;background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.25)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">⚡</span><span style="font-weight:700;color:#8b5cf6;font-size:.85rem">Boost XP x2</span></div>
+      <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isBoostActive()?'Actif jusqu\'au '+new Date(ST.boostUntil).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Double tes gains XP pendant la dur\u00e9e choisie.'}</div>
+      <div style="display:flex;gap:8px">
+        ${[1,3,24].map(h=>`<button onclick="buyBoost(${h})" style="flex:1;padding:8px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*3}</button>`).join('')}
+      </div>
+    </div>`;
+    html+=`<div class="card" style="margin-bottom:16px;background:rgba(14,165,233,0.06);border-color:rgba(14,165,233,0.25)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🧊</span><span style="font-weight:700;color:#0ea5e9;font-size:.85rem">Artefact Gel</span></div>
+      <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isFreezeActive()?'Gelé jusqu\'au '+new Date(ST.freezeUntil).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'Bloque toute dégradation (Physique/Disc/Bien-être) pendant la durée choisie — idéal en vacances.'}</div>
+      <div style="display:flex;gap:8px">
+        ${[1,3,7].map(d=>`<button onclick="buyFreeze(${d})" style="flex:1;padding:8px;border:1px solid rgba(14,165,233,0.3);border-radius:10px;background:#fff;color:#0ea5e9;font-size:.7rem;font-weight:700;cursor:pointer">${d}j · 💎${d*15}</button>`).join('')}
+      </div>
+    </div>`;
+    html+=`<div class="sl" style="margin-bottom:10px">🎨 SKINS DE COMPÉTENCE</div>`;
+    STATS.forEach(stat=>{
+      const sk=SKINS[stat];if(!sk)return;
+      const owned=((ST.ownedSkins&&ST.ownedSkins[stat])||[]).includes(sk.id);
+      const equipped=equippedSkinId(stat)===sk.id;
+      html+=`<div class="card" style="margin-bottom:10px;background:${sk.color}0f;border-color:${sk.color}40">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${SM[stat].icon}</span><span style="font-weight:700;color:${sk.color};font-size:.85rem">${sk.name} · ${getStatLabel(stat)}</span></div>
+        <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Nouvelle couleur + noms de palier thématiques : ${sk.tiers[0]} → ${sk.tiers[sk.tiers.length-1]}.</div>
+        <div style="display:flex;gap:8px">
+          ${owned?`<button onclick="toggleSkin('${stat}')" style="flex:1;padding:8px;border:1px solid ${sk.color}50;border-radius:10px;background:${equipped?sk.color:'#fff'};color:${equipped?'#fff':sk.color};font-size:.7rem;font-weight:700;cursor:pointer">${equipped?'✓ Équipé':'Activer'}</button>`:`<button onclick="buySkin('${stat}')" style="flex:1;padding:8px;border:1px solid ${sk.color}50;border-radius:10px;background:#fff;color:${sk.color};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${sk.cost}</button>`}
+        </div>
+      </div>`;
+    });
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">👤 PROFIL JOUEUR</div>`;
     html+=`<div class="card" style="margin-bottom:8px">
       <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">PRÉNOM</div>
       <input id="pf-name" type="text" value="${ST.playerName||''}" onblur="savePlayerField('playerName',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
@@ -1570,7 +1663,7 @@ function rHistory(eng){
       // Compute per-stat XP for this month
       const mStatXP={intel:0,physique:0,craft:0,disc:0,bienetre:0};
       md.days.forEach((d,i)=>{activeSlotsData.forEach(s=>{if(d[s.id])mStatXP[s.stat]+=d[s.id];});});
-      const statColors={intel:"#0891b2",physique:"#10b981",craft:"#8b5cf6",disc:"#f59e0b",bienetre:"#ec4899"};
+      const statColors={intel:SM.intel.color,physique:SM.physique.color,craft:SM.craft.color,disc:SM.disc.color,bienetre:SM.bienetre.color};
       const statIcons={intel:"🧠",physique:"🏋️",craft:"🔥",disc:"⚡",bienetre:"❤️"};
       html+=`<div class="hist-detail">
         <!-- Stats summary cards -->
@@ -2165,9 +2258,8 @@ function render(){
   // Refresh SM labels from statLabels
   const _freshSM=getSM();
   Object.keys(_freshSM).forEach(k=>SM[k]=_freshSM[k]);
-  // Force correct colors always
-  SM.intel.color="#0891b2";SM.physique.color="#10b981";SM.craft.color="#8b5cf6";SM.disc.color="#f59e0b";SM.bienetre.color="#ec4899";
-  SM.intel.dim="rgba(8,145,178,0.08)";SM.physique.dim="rgba(16,185,129,0.08)";SM.craft.dim="rgba(139,92,246,0.08)";SM.disc.dim="rgba(245,158,11,0.08)";SM.bienetre.dim="rgba(236,72,153,0.08)";
+  // Force correct colors always (skin-aware : couleur du skin équipé sinon couleur par défaut)
+  STATS.forEach(function(s){SM[s].color=statColorFor(s);SM[s].dim=statDimFor(s);});
   ensureCurMonth();
   const eng=engine();
   const{totXP,warns,off}=eng;
@@ -3015,7 +3107,7 @@ function openProfilePanel(key){
     title='XP Total'; icon='📆'; color='#8b5cf6';
     var tIdxP=tierN(eng.totXP),t=tierAt(tIdxP),ntt=tierAt(tIdxP+1);
     body='<div style="text-align:center;padding:16px 0;margin-bottom:16px"><div style="font-size:.7rem;color:#6d28d9;font-family:Anton,sans-serif;letter-spacing:2px">'+t.title+'</div><div style="font-size:3rem;font-weight:700;color:#8b5cf6">'+eng.totXP+'</div>'+(ntt?'<div style="font-size:.65rem;color:#0e7490;margin-top:4px">→ '+(ntt.min-eng.totXP)+' XP pour '+ntt.title+'</div>':'')+'</div>';
-    var statColors={intel:'#0891b2',physique:'#10b981',craft:'#8b5cf6',disc:'#f59e0b',bienetre:'#ec4899'};
+    var statColors={intel:SM.intel.color,physique:SM.physique.color,craft:SM.craft.color,disc:SM.disc.color,bienetre:SM.bienetre.color};
     var statIcons={intel:'🧠',physique:'🏋️',craft:'🔥',disc:'⚡',bienetre:'❤️'};
     var maxS=Math.max(1,sxp.intel||0,sxp.physique||0,sxp.craft||0,sxp.disc||0,sxp.bienetre||0);
     Object.keys(sxp).forEach(function(s){
@@ -3258,6 +3350,7 @@ function openStatAnalytics(stat){
   var realToday=now.getDate()-1;
   var sxp=eng.sxp[stat]||0;
   var lv=Math.floor(sxp/100)+1;
+  var tierLbl=statTierLabel(stat,lv);
   var dow=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
   var skeys=Object.keys(ST.history).sort();
 
@@ -3318,7 +3411,7 @@ function openStatAnalytics(stat){
   html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
   html+="<span style='font-size:2rem'>"+m.icon+"</span>";
   html+="<div><div style='font-family:Anton,sans-serif;font-size:1.2rem;color:"+m.color+";letter-spacing:2px'>"+m.label+"</div>";
-  html+="<div style='font-size:.7rem;color:#0e7490'>Lv "+lv+" · "+sxp+" XP total</div></div>";
+  html+="<div style='font-size:.7rem;color:#0e7490'>"+(tierLbl?tierLbl+" · ":"")+"Lv "+lv+" · "+sxp+" XP total</div></div>";
   html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button>";
   html+="</div>";
 
@@ -3422,6 +3515,7 @@ function openStatPanel(stat,selectedDay,selectedKey){
   var d=md.days[selDay]||{};
   var sxp=eng.sxp[stat]||0;
   var lv=Math.floor(sxp/100)+1;
+  var tierLbl=statTierLabel(stat,lv);
   var dow=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
   var p=pk(key);
   var thisDate=new Date(p.year,p.month,selDay+1);
@@ -3434,7 +3528,7 @@ function openStatPanel(stat,selectedDay,selectedKey){
   html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
   html+="<span style='font-size:2rem'>"+m.icon+"</span>";
   html+="<div><div style='font-family:Anton,sans-serif;font-size:1.2rem;color:"+m.color+";letter-spacing:2px'>"+m.label+"</div>";
-  html+="<div style='font-size:.7rem;color:#0e7490'>Lv "+lv+" · "+sxp+" XP total (à vie)</div></div>";
+  html+="<div style='font-size:.7rem;color:#0e7490'>"+(tierLbl?tierLbl+" · ":"")+"Lv "+lv+" · "+sxp+" XP total (à vie)</div></div>";
   html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button>";
   html+="</div>";
 
