@@ -372,12 +372,20 @@ function migratePlayerProfile(){
   if(ST.gemsEarnedTotal===undefined)ST.gemsEarnedTotal=ST.gems;
   if(ST.boostUntil===undefined)ST.boostUntil=null;
   if(ST.freezeUntil===undefined)ST.freezeUntil=null;
-  if(!ST.ownedSkins)ST.ownedSkins={};
+  let _skinsWereNew=false;
+  if(!ST.ownedSkins){ST.ownedSkins={};_skinsWereNew=true;}
   if(!ST.equippedSkin)ST.equippedSkin={};
   STATS.forEach(function(s){
     if(!Array.isArray(ST.ownedSkins[s]))ST.ownedSkins[s]=[];
     if(!ST.equippedSkin[s])ST.equippedSkin[s]='default';
   });
+  // Cadeau de bienvenue unique pour les joueurs déjà en cours : de quoi débloquer les 5 skins
+  // (les nouveaux joueurs démarrent l'économie normalement, pas de bonus pour eux).
+  if(_skinsWereNew&&ST.onboardingComplete){
+    ST.gems=(ST.gems||0)+250;
+    ST.gemsEarnedTotal=(ST.gemsEarnedTotal||0)+250;
+    saveST();
+  }
   // Existing users (onboarding already complete) never had a firstUseDate — backdate it so they
   // land straight in the normal tip phase instead of suddenly seeing a "welcome" message.
   if(ST.onboardingComplete&&!ST.firstUseDate){
@@ -503,6 +511,33 @@ function ensureCurMonth(){
   if(!ST.statLabels) ST.statLabels=mkStatLabels();
   if(!ST.slotRules) ST.slotRules=mkSlotRules();
   if(merged)saveST();
+}
+// Une compétence est "active" si au moins une de ses tâches est active ce mois-ci.
+// Dérivé de md.activeSlots — aucun champ ST supplémentaire, donc aucune migration nécessaire.
+function activeCompetencies(){
+  const now=new Date(),key=mk(now.getFullYear(),now.getMonth());
+  const md=ST.history[key];
+  const aIds=(md&&md.activeSlots)||[];
+  const result=STATS.filter(function(stat){
+    return ST.slots.some(function(s){return s.stat===stat&&aIds.indexOf(s.id)>=0;});
+  });
+  return result.length>0?result:STATS.slice(); // filet de sécurité : jamais 0 compétence affichée
+}
+function toggleCompetencyActive(stat){
+  const now=new Date(),key=mk(now.getFullYear(),now.getMonth());
+  const md=ST.history[key];if(!md)return;
+  const statSlotIds=ST.slots.filter(function(s){return s.stat===stat;}).map(function(s){return s.id;});
+  const aIds=md.activeSlots||(md.activeSlots=[]);
+  const isActive=statSlotIds.some(function(id){return aIds.indexOf(id)>=0;});
+  if(isActive){
+    const otherActive=activeCompetencies().filter(function(s){return s!==stat;});
+    if(otherActive.length===0)return; // on ne désactive jamais la dernière compétence active
+    md.activeSlots=aIds.filter(function(id){return statSlotIds.indexOf(id)<0;});
+  } else {
+    const toAdd=statSlotIds.filter(function(id){return aIds.indexOf(id)<0;});
+    md.activeSlots=aIds.concat(toAdd);
+  }
+  saveST();render();
 }
 
 function engine(){
@@ -654,10 +689,10 @@ function engine(){
   return{skeys,flat,streaks,netXP,dxp,bonXP,sxp,warns,wfreq,cstr,rstr,totXP,adays,tdays,off};
 }
 
-function drawRadar(canvas,sxp,warns,ghostSxp){
+function drawRadar(canvas,sts,sxp,warns,ghostSxp){
   var ctx=canvas.getContext("2d"),W=canvas.width,H=canvas.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-22;
   ctx.clearRect(0,0,W,H);
-  var sts=["intel","craft","physique","disc","bienetre"],n=sts.length;
+  var n=sts.length;
   var angles=sts.map(function(_,i){return -Math.PI/2+(2*Math.PI*i/n);});
   function statScale(xp){
     var milestones=[50,200,500,1000,2000,5000];
@@ -932,7 +967,11 @@ const TIP_BANK={
     "La flemme a de bons arguments, mais toi t\u2019en as de meilleurs.",
     "Ton \u00ab je m\u2019y mets demain \u00bb a d\u00e9j\u00e0 3 jours, on va dire stop l\u00e0.",
     "Tu n\u00e9gocies avec toi-m\u00eame depuis un moment, coupe court et coche un truc.",
-    "C\u2019est pas magique, c\u2019est juste toi qui coches des cases. Vas-y."
+    "C\u2019est pas magique, c\u2019est juste toi qui coches des cases. Vas-y.",
+    "\u00c7a sert \u00e0 rien de cocher une t\u00e2che que t\u2019as pas faite. Tu ne trompes que toi.",
+    "Personne ne v\u00e9rifie tes cases \u00e0 part toi. Autant qu\u2019elles disent la v\u00e9rit\u00e9.",
+    "Les XP ne sont pas un troph\u00e9e, c\u2019est un miroir. Triche, et c\u2019est ton reflet qui perd.",
+    "Tricher ici, c\u2019est juste retarder le moment o\u00f9 tu te mens moins bien. C\u2019est toi contre toi."
   ],
   steps:[
     "Une t\u00e2che coch\u00e9e aujourd\u2019hui vaut plus que dix pr\u00e9vues pour demain.",
@@ -1196,6 +1235,7 @@ function jumpToMonth(key){
 }
 function rProfile(eng){
   const{sxp,warns,wfreq,totXP,cstr,rstr,adays,tdays}=eng;
+  const activeStats=activeCompetencies();
   const tIdx=tierN(totXP),t=tierAt(tIdx),nt=tierAt(tIdx+1),xpPct=Math.min(100,((totXP-t.min)/(nt.min-t.min))*100);
   const wc=Object.keys(warns).length,hd=Object.values(warns).some(w=>w.level==="danger");
   let html="";
@@ -1229,19 +1269,21 @@ html+=rThrowback(eng);
   <div style="display:flex;gap:20px;flex-wrap:wrap">
     ${[["🔥 Streak",cstr,"#f59e0b","streak"],["🏆 Record",rstr,"#f59e0b","record"],["📅 Actifs",adays,"#10b981","actifs"],["📆 Total",tdays,"#8b5cf6","total"]].map(([l,v,c,k])=>`<div style="position:relative;cursor:pointer;padding:8px 14px 8px 10px;border-radius:10px;background:rgba(0,0,0,0.02);border:1px solid ${c}25" data-key="${k}" onclick="openProfilePanel(this.dataset.key)"><div style="font-size:.54rem;text-transform:uppercase;letter-spacing:2px;color:#0e7490">${l}</div><div style="font-family:monospace;font-size:1.2rem;font-weight:700;color:${c}">${v}</div><span style="position:absolute;top:6px;right:5px;font-size:.55rem;color:${c}66">›</span></div>`).join("")}
   </div></div>
-  <div style="position:relative;width:180px;height:180px;flex-shrink:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation" ontouchstart="radarPressStart(event)" ontouchend="radarPressEnd(event)" ontouchcancel="radarPressEnd(event)" onmousedown="radarPressStart(event)" onmouseup="radarPressEnd(event)" onmouseleave="radarPressEnd(event)" oncontextmenu="return false">
-  <canvas id="radar-canvas" width="180" height="180"></canvas>
+  <div style="position:relative;width:180px;height:180px;flex-shrink:0;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;touch-action:manipulation" ${activeStats.length>=3?'ontouchstart="radarPressStart(event)" ontouchend="radarPressEnd(event)" ontouchcancel="radarPressEnd(event)" onmousedown="radarPressStart(event)" onmouseup="radarPressEnd(event)" onmouseleave="radarPressEnd(event)"':''} oncontextmenu="return false">
+  ${activeStats.length>=3?`<canvas id="radar-canvas" width="180" height="180"></canvas>
   <div id="radar-ghost-label" style="position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:.55rem;color:#999;white-space:nowrap;opacity:0;transition:opacity .2s;font-family:Anton,sans-serif;letter-spacing:1px"></div>
-  <span data-stat="intel" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:10px;left:50%;transform:translateX(-50%);font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">🧠</span>
-  <span data-stat="craft" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:26%;right:8px;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">🔥</span>
-  <span data-stat="physique" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;bottom:14px;right:14%;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">🏋️</span>
-  <span data-stat="bienetre" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;bottom:14px;left:14%;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">❤️</span>
-  <span data-stat="disc" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:26%;left:8px;font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">⚡</span>
+  ${activeStats.map((stat,i)=>{const angle=-Math.PI/2+(2*Math.PI*i/activeStats.length),leftPct=(50+Math.cos(angle)*38).toFixed(1),topPct=(50+Math.sin(angle)*38).toFixed(1);return `<span data-stat="${stat}" onclick="openStatAnalytics(this.dataset.stat)" style="position:absolute;top:${topPct}%;left:${leftPct}%;transform:translate(-50%,-50%);font-size:1.2rem;cursor:pointer;padding:6px;margin:-6px;background:rgba(139,92,246,0.06);border-radius:50%;">${SM[stat].icon}</span>`;}).join('')}`
+  :`<div style="display:flex;flex-direction:column;justify-content:center;gap:14px;height:100%;padding:0 6px">
+      ${activeStats.map(stat=>{const m=SM[stat],xp=Math.max(0,sxp[stat]||0),lv=statLvFromXP(xp),pct=statPct(xp,lv);return `<div onclick="openStatAnalytics('${stat}')" style="cursor:pointer">
+        <div style="display:flex;justify-content:space-between;align-items:baseline;font-size:.62rem;margin-bottom:4px"><span>${m.icon} ${m.label}</span><span style="color:${m.color};font-weight:700">Lv ${lv}</span></div>
+        <div class="track"><div class="track-fill" style="width:${pct}%;background:${m.color}"></div></div>
+      </div>`;}).join('')}
+    </div>`}
 </div>
   </div></div>`;
 
   html+=`<div class="sl">Compétences</div><div class="stat-grid">`;
-  STATS.forEach(stat=>{
+  activeStats.forEach(stat=>{
     const m=SM[stat],xp=Math.max(0,sxp[stat]||0),lv=statLvFromXP(xp),pct=statPct(xp,lv),w=warns[stat],freq=wfreq[stat]||0,cfg=ST.decayCfg[stat],tierLbl=statTierLabel(stat,lv);
     const hasStatXP=(sxp[stat]||0)>0;
     const bc=hasStatXP&&(w&&w.level==="danger")?"#ec4899":hasStatXP&&(w&&w.level==="warning")?"#f59e0b":m.color;
@@ -1372,7 +1414,7 @@ function rConfig(){
       <span onclick="showInfoTip(event,'L\u2019ic\u00f4ne \u23f0 permet de fixer une fr\u00e9quence minimale par semaine pour une t\u00e2che. Si tu ne l\u2019atteins pas, un malus XP s\u2019applique automatiquement en fin de semaine.')" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:rgba(139,92,246,0.15);color:#8b5cf6;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;flex-shrink:0;margin-top:1px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false">i</span>
       <span>Touche ⏰ sur une tâche pour lui fixer une fréquence minimale par semaine (ex: 3x/semaine).</span>
     </div>`;
-    STATS.forEach(stat=>{
+    activeCompetencies().forEach(stat=>{
       const m=SM[stat],ss=ST.slots.filter(s=>s.stat===stat),ac=ss.filter(s=>aIds.includes(s.id)).length;
       html+=`<div class="card" style="border:1px solid ${m.dim};margin-bottom:14px"><div style="display:flex;align-items:center;gap:10px;margin-bottom:14px"><span style="font-size:1.2rem">${m.icon}</span>`;
       const isEditStat=EDIT==='statlabel_'+stat;
@@ -1392,7 +1434,7 @@ function rConfig(){
         const border=hasRuleX?"#f59e0b":ia?m.color+"40":"rgba(8,145,178,0.08)";
         html+=`<div class="cfg-row" style="border-color:${border}">`;
         html+=`<div class="cfg-toggle" style="background:${ia?m.color+"30":"#e0f2f8"};border:1.5px solid ${ia?m.color:"#b0d8e8"}" onclick="tActive('${s.id}')">`;
-        html+=`<div class="cfg-toggle-dot" style="left:${ia?"16":"2"}px;background:${ia?m.color:"#0891b2"}"></div></div>`;
+        html+=`<div class="cfg-toggle-dot" style="left:${ia?"16":"2"}px;background:${ia?m.color:"#7dd3e8"}"></div></div>`;
         html+=`<span onclick="openFreqRule('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${hasRuleX?1:0.25};flex-shrink:0;margin-right:2px" title="${hasRuleX?slotRuleX.minPerWeek+'x/sem → -'+slotRuleX.malusXP+' XP':'Ajouter règle fréquence'}">⏰</span>`;
         if(ie){
           html+=`<input class="cfg-input" id="edit-${s.id}" value="${s.name}" onblur="saveSN('${s.id}')" onkeydown="if(event.key==='Enter')saveSN('${s.id}')">`;
@@ -1519,7 +1561,24 @@ function rConfig(){
         ${[1,3,7].map(d=>`<button onclick="buyFreeze(${d})" style="flex:1;padding:8px;border:1px solid rgba(14,165,233,0.3);border-radius:10px;background:#fff;color:#0ea5e9;font-size:.7rem;font-weight:700;cursor:pointer">${d}j · 💎${d*15}</button>`).join('')}
       </div>
     </div>`;
-    html+=`<div class="sl" style="margin-bottom:10px">🎨 SKINS DE COMPÉTENCE</div>`;
+    html+=`<div class="sl" style="margin-bottom:10px">🎯 COMPÉTENCES ACTIVES</div>`;
+    html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Désactive une compétence pour la masquer du Profil et du Tracker. Réactive-la ici quand tu veux t'y remettre.</div>`;
+    {
+      const _activeC=activeCompetencies();
+      STATS.forEach(stat=>{
+        const m=SM[stat],isOn=_activeC.includes(stat),isLast=isOn&&_activeC.length===1;
+        html+=`<div class="card" style="border:1px solid ${m.dim};margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.2rem">${m.icon}</span>
+            <div><span style="font-weight:700;color:#1e3a4a;font-size:.82rem">${m.label}</span>${isLast?`<div style="font-size:.55rem;color:#94a3b8">Dernière compétence active</div>`:''}</div>
+          </div>
+          <div class="cfg-toggle" style="background:${isOn?m.color+"30":"#e0f2f8"};border:1px solid ${isOn?m.color:"rgba(8,145,178,0.2)"};${isLast?"opacity:.5":""}" ${isLast?'':`onclick="toggleCompetencyActive('${stat}')"`}>
+            <div class="cfg-toggle-dot" style="left:${isOn?"16":"2"}px;background:${isOn?m.color:"#7dd3e8"}"></div>
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">🎨 SKINS DE COMPÉTENCE</div>`;
     STATS.forEach(stat=>{
       const sk=SKINS[stat];if(!sk)return;
       const owned=((ST.ownedSkins&&ST.ownedSkins[stat])||[]).includes(sk.id);
@@ -2007,8 +2066,8 @@ const TASK_SUGGESTIONS={
   bienetre:[{n:"Sommeil 8h",xp:2},{n:"Marche en nature",xp:1},{n:"Hydratation",xp:1},{n:"Temps social",xp:1},{n:"Gratitude",xp:1},{n:"Repos actif",xp:1}]
 };
 const MOTIVATION_CONFIG={
-  low:{maxStats:1,tasksPerStat:1,label:"Motivation faible",icon:"\U0001F331",desc:"On commence doucement, un petit pas suffit."},
-  medium:{maxStats:2,tasksPerStat:3,label:"Motivation moyenne",icon:"\U0001F525",desc:"Un bon rythme, ni trop ni trop peu."},
+  low:{maxStats:1,tasksPerStat:1,label:"Motivation faible",icon:"\uD83C\uDF31",desc:"On commence doucement, un petit pas suffit."},
+  medium:{maxStats:2,tasksPerStat:3,label:"Motivation moyenne",icon:"\uD83D\uDD25",desc:"Un bon rythme, ni trop ni trop peu."},
   high:{maxStats:3,tasksPerStat:5,label:"Motivation excellente",icon:"\u26A1",desc:"Tu es \u00e0 fond, on te donne de quoi t\u2019exprimer !"}
 };
 
@@ -2144,9 +2203,9 @@ function renderOnboarding(){
 
   else if(ONBOARD_STEP===2){
     const diffOptions=[
-      {level:'easy',icon:'\U0001F60C',label:'Max de dopamine',desc:'Je veux sentir la progression tout de suite \u2014 XP g\u00e9n\u00e9reux sur chaque t\u00e2che.'},
+      {level:'easy',icon:'\uD83D\uDE0C',label:'Max de dopamine',desc:'Je veux sentir la progression tout de suite \u2014 XP g\u00e9n\u00e9reux sur chaque t\u00e2che.'},
       {level:'normal',icon:'\u2696\uFE0F',label:'\u00c9quilibr\u00e9',desc:'Un bon compromis entre effort et r\u00e9compense.'},
-      {level:'hard',icon:'\U0001F3C6',label:'M\u00e9riter ma victoire',desc:'Je pr\u00e9f\u00e8re les d\u00e9fis \u2014 XP plus serr\u00e9, mais chaque palier compte vraiment.'},
+      {level:'hard',icon:'\uD83C\uDFC6',label:'M\u00e9riter ma victoire',desc:'Je pr\u00e9f\u00e8re les d\u00e9fis \u2014 XP plus serr\u00e9, mais chaque palier compte vraiment.'},
     ];
     html+=`<div style="text-align:center;margin-bottom:20px;margin-top:10px">
       <div style="font-family:'Anton',sans-serif;font-size:1.2rem;color:#8b5cf6">Tu pr\u00e9f\u00e8res quel style de jeu ?</div>
@@ -2228,9 +2287,9 @@ function renderOnboarding(){
 
   else if(ONBOARD_STEP===5){
     const tips=[
-      {icon:'\U0001F4C5',title:'Tracker',desc:'Coche tes t\u00e2ches chaque jour pour gagner de l\u2019XP. C\u2019est le c\u0153ur de l\u2019app.'},
+      {icon:'\uD83D\uDCC5',title:'Tracker',desc:'Coche tes t\u00e2ches chaque jour pour gagner de l\u2019XP. C\u2019est le c\u0153ur de l\u2019app.'},
       {icon:'\u2694\uFE0F',title:'Profil',desc:'Suis ta progression, ton rang, et compare-toi \u00e0 toi-m\u00eame dans le temps.'},
-      {icon:'\U0001F3C5',title:'Badges',desc:'D\u00e9bloque des r\u00e9compenses au fil de ta r\u00e9gularit\u00e9 \u2014 il y en a des dizaines \u00e0 collectionner.'},
+      {icon:'\uD83C\uDFC5',title:'Badges',desc:'D\u00e9bloque des r\u00e9compenses au fil de ta r\u00e9gularit\u00e9 \u2014 il y en a des dizaines \u00e0 collectionner.'},
       {icon:'\u2699\uFE0F',title:'Config',desc:'Personnalise tout : tes t\u00e2ches, tes malus, tes sons, tes objectifs. Rien n\u2019est fig\u00e9.'},
     ];
     html+=`<div style="text-align:center;margin-bottom:20px;margin-top:10px">
@@ -2245,7 +2304,7 @@ function renderOnboarding(){
     html+=`<div style="flex:1"></div>`;
     html+=`<div style="display:flex;gap:10px;margin-top:16px">
       <button onclick="onboardBack()" style="padding:14px 20px;border:1px solid rgba(8,145,178,0.2);border-radius:12px;background:#fff;color:#0891b2;font-weight:700;font-size:.85rem;cursor:pointer">\u2039</button>
-      <button onclick="finishOnboarding()" style="flex:1;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#0891b2);color:#fff;font-weight:700;font-size:.9rem;cursor:pointer">C'est parti \U0001F409</button>
+      <button onclick="finishOnboarding()" style="flex:1;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,#10b981,#0891b2);color:#fff;font-weight:700;font-size:.9rem;cursor:pointer">C'est parti \uD83D\uDC09</button>
     </div>`;
   }
 
@@ -2283,7 +2342,7 @@ function render(){
     <div class="tabs">${[["profile","⚔️ Profil"],["tracker","📅 Tracker"],["badges","🏅 Badges"],["config","⚙️ Config"],["history","📚 Historique"]].map(([id,l])=>`<button class="tab ${TAB===id?"active":""}" onclick="setTab('${id}')">${l}${id==="profile"&&wc>0?`<span style="margin-left:4px;color:#059669">⚠️</span>`:""}</button>`).join("")}</div>
     <div class="save-bar"><span class="save-label">💾 Sauvegarde</span><button class="btn-export" onclick="exportData()">⬇️ Exporter</button><label class="btn-import-label">⬆️ Importer<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label><button onclick="resetAll()" style="background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.4);border-radius:9px;color:#ff4444;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap">🗑️ RESET</button></div>
     <div id="tc">${content[TAB]}</div>`;
-  if(TAB==="profile"){const c=ge("radar-canvas");if(c)drawRadar(c,eng.sxp,eng.warns,window._radarGhost||null);}
+  if(TAB==="profile"){const c=ge("radar-canvas");const _actS=activeCompetencies();if(c&&_actS.length>=3)drawRadar(c,_actS,eng.sxp,eng.warns,window._radarGhost||null);}
   updateGokuAura(eng.totXP);
 }
 
@@ -3130,7 +3189,7 @@ function openProfilePanel(key){
       var last6=monthlyTotals.slice(-6);
       var maxM=Math.max.apply(null,[1].concat(last6.map(function(m){return m.xp;})));
       body+='<div style="font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:#8b5cf6;margin:16px 0 8px">XP PAR MOIS</div>';
-      body+='<div style="display:flex;gap:6px;align-items:flex-end;height:56px;margin-bottom:12px">';
+      body+='<div style="display:flex;gap:6px;align-items:flex-end;height:76px;margin-bottom:12px">';
       last6.forEach(function(mv){
         var p=pk(mv.k);
         var isNow=mv.k===skeysT[skeysT.length-1];
@@ -3177,7 +3236,8 @@ function radarPressStart(e){
   window._radarGhost=lsxp;
   var c=ge("radar-canvas");
   var eng=engine();
-  if(c)drawRadar(c,eng.sxp,eng.warns,lsxp);
+  var actS=activeCompetencies();
+  if(c&&actS.length>=3)drawRadar(c,actS,eng.sxp,eng.warns,lsxp);
   var lp=pk(lastKey);
   var label=ge("radar-ghost-label");
   if(label){label.textContent="vs "+MFR[lp.month]+" "+lp.year;label.style.opacity="1";}
@@ -3188,7 +3248,8 @@ function radarPressEnd(e){
   window._radarGhost=null;
   var c=ge("radar-canvas");
   var eng=engine();
-  if(c)drawRadar(c,eng.sxp,eng.warns,null);
+  var actS=activeCompetencies();
+  if(c&&actS.length>=3)drawRadar(c,actS,eng.sxp,eng.warns,null);
   var label=ge("radar-ghost-label");
   if(label)label.style.opacity="0";
 }
@@ -3448,7 +3509,7 @@ function openStatAnalytics(stat){
   html+="<div style='font-size:.6rem;font-family:Anton,sans-serif;letter-spacing:2px;color:"+m.color+";margin-bottom:8px'>📈 PROGRESSION</div>";
   var last3=monthlyXP.slice(-3);
   var maxM=Math.max.apply(null,[1].concat(last3.map(function(mm){return mm.xp;})));
-  html+="<div style='display:flex;gap:6px;align-items:flex-end;height:52px;margin-bottom:18px'>";
+  html+="<div style='display:flex;gap:6px;align-items:flex-end;height:74px;margin-bottom:18px'>";
   last3.forEach(function(mv){
     var p=pk(mv.k);
     var h=mv.xp>0?Math.max(12,Math.round(mv.xp/maxM*44)):4;
