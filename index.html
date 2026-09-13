@@ -70,6 +70,9 @@ document.getElementById('pwa-manifest').href = URL.createObjectURL(_blob);
   --dim:#000000;
   --border:#000000;
   --border2:#000000;
+  /* Thème global actif — piloté en JS via applyThemeCSSVars(), défaut = look d'origine */
+  --theme-primary:#0891b2;
+  --theme-secondary:#ec4899;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{background:#e8f4fd;color:#1e3a4a;font-family:'Exo 2',system-ui,sans-serif;min-height:100vh;padding-bottom:80px;position:relative;overflow-x:hidden}
@@ -90,8 +93,8 @@ pointer-events:none;z-index:0}
 
 /* Tabs */
 .tabs{display:flex;gap:4px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:14px;padding:4px;margin-bottom:10px;box-shadow:0 2px 8px rgba(8,145,178,0.08);position:sticky;top:0;z-index:100;backdrop-filter:blur(8px)}
-.tab{flex:1;padding:9px 6px;border:none;background:none;color:#0891b2;font-family:'Anton',sans-serif;font-size:.8rem;letter-spacing:2px;opacity:0.5;text-transform:uppercase;border-radius:10px;cursor:pointer;transition:all .2s}
-.tab.active{background:#fff;color:#0891b2;border:1px solid rgba(8,145,178,0.3);font-family:'Anton',sans-serif;box-shadow:0 2px 8px rgba(8,145,178,0.12);opacity:1}
+.tab{flex:1;padding:9px 6px;border:none;background:none;color:var(--theme-primary);font-family:'Anton',sans-serif;font-size:.8rem;letter-spacing:2px;opacity:0.5;text-transform:uppercase;border-radius:10px;cursor:pointer;transition:all .2s}
+.tab.active{background:#fff;color:var(--theme-primary);border:1px solid rgba(8,145,178,0.3);font-family:'Anton',sans-serif;box-shadow:0 2px 8px rgba(8,145,178,0.12);opacity:1}
 @keyframes togPulse{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
 .tog-pulse{animation:togPulse .35s cubic-bezier(.34,1.56,.64,1);}
 @keyframes xpFloat{0%{opacity:0;transform:translate(-50%,0) scale(.6);}15%{opacity:1;transform:translate(-50%,-6px) scale(1.1);}80%{opacity:1;transform:translate(-50%,-28px) scale(1);}100%{opacity:0;transform:translate(-50%,-40px) scale(.9);}}
@@ -105,14 +108,14 @@ pointer-events:none;z-index:0}
 
 /* Save bar */
 .save-bar{display:flex;gap:8px;align-items:center;margin-bottom:22px;padding:9px 14px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:12px}
-.save-label{font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:#0891b2;flex:1;font-family:'Anton',sans-serif}
+.save-label{font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--theme-primary);flex:1;font-family:'Anton',sans-serif}
 .btn-export{background:var(--green-dim);border:1px solid var(--green)60;border-radius:9px;color:var(--green);padding:6px 14px;font-family:'Exo 2',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer}
 .btn-import-label{background:var(--blue-dim);border:1px solid var(--blue)60;border-radius:9px;color:var(--blue);padding:6px 14px;font-family:'Exo 2',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer}
 
 /* Cards */
 .card{background:#fff;border:none;border-radius:20px;padding:20px;margin-bottom:16px;box-shadow:0 2px 12px rgba(0,0,0,0.06);box-shadow:0 4px 16px rgba(0,0,0,0.4)}
 .card-big{background:#fff;border:none;border-radius:22px;padding:24px;margin-bottom:16px;position:relative;overflow:hidden;box-shadow:0 2px 16px rgba(0,0,0,0.07)}
-.card-big::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,#0891b2,#ec4899,#06b6d4)}
+.card-big::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--theme-primary),var(--theme-secondary))}
 .card-top-bar{display:none}
 
 /* Stat cards */
@@ -127,11 +130,11 @@ pointer-events:none;z-index:0}
 .track-fill{height:100%;border-radius:99px;transition:width .6s;position:relative}
 .track-fill::after{content:'';position:absolute;top:0;right:0;bottom:0;width:30px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.4));animation:shimmer 2s infinite}
 .track-big{height:10px;background:rgba(0,0,0,0.06);border-radius:99px;overflow:hidden}
-.track-big-fill{height:100%;border-radius:99px;transition:width .7s;background:linear-gradient(90deg,#0891b2,#ec4899,#06b6d4);box-shadow:0 0 8px rgba(8,145,178,0.2)}
+.track-big-fill{height:100%;border-radius:99px;transition:width .7s;background:linear-gradient(90deg,var(--theme-primary),var(--theme-secondary));box-shadow:0 0 8px rgba(8,145,178,0.2)}
 .xp-text{font-family:'JetBrains Mono',monospace;font-size:.58rem;color:#0e7490}
 
 /* Section label */
-.sl{font-family:'Anton',sans-serif;font-size:.85rem;letter-spacing:4px;color:#0369a1;margin-bottom:10px;padding:0 2px}
+.sl{font-family:'Anton',sans-serif;font-size:.85rem;letter-spacing:4px;color:var(--theme-primary);margin-bottom:10px;padding:0 2px}
 
 /* Warning */
 .warn-banner{border-radius:16px;padding:14px 20px;margin-bottom:16px;display:flex;align-items:center;gap:12px;border:1px solid rgba(8,145,178,0.15);background:#fff;box-shadow:0 2px 8px rgba(8,145,178,0.06)}
@@ -173,7 +176,7 @@ tr.week-sep{border-top:1px solid var(--border2)}
 .btn-small{background:var(--bg3);border:1px solid var(--border);border-radius:6px;color:var(--white);width:24px;height:24px;cursor:pointer;font-size:.85rem;font-family:inherit;padding:0;line-height:1}
 
 /* FAB */
-.fab{position:fixed;bottom:24px;right:24px;z-index:200;background:linear-gradient(135deg,#0891b2,#ec4899);color:#fff;border-radius:99px;padding:12px 22px;font-family:'Anton',sans-serif;font-size:.9rem;letter-spacing:3px;cursor:pointer;box-shadow:0 4px 20px rgba(8,145,178,0.3);display:flex;align-items:center;gap:8px;user-select:none;border:none}
+.fab{position:fixed;bottom:24px;right:24px;z-index:200;background:linear-gradient(135deg,var(--theme-primary),var(--theme-secondary));color:#fff;border-radius:99px;padding:12px 22px;font-family:'Anton',sans-serif;font-size:.9rem;letter-spacing:3px;cursor:pointer;box-shadow:0 4px 20px rgba(8,145,178,0.3);display:flex;align-items:center;gap:8px;user-select:none;border:none}
 
 /* History */
 .hist-row{background:#ffffff;border:1px solid rgba(255,107,40,0.3);border-radius:14px;padding:14px 18px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;transition:all .2s;box-shadow:0 2px 10px rgba(0,0,0,0.3)}
@@ -184,8 +187,8 @@ tr.week-sep{border-top:1px solid var(--border2)}
 .quick-label{font-size:.55rem;text-transform:uppercase;letter-spacing:2px;color:#0e7490;margin-bottom:5px;font-family:'Anton',sans-serif}
 .quick-val{font-family:'Anton',sans-serif;font-size:1.8rem;letter-spacing:1px;color:#1e3a4a}
 .sub-tabs{display:flex;gap:4px;background:#fff;border:1px solid rgba(255,107,40,0.3);border-radius:12px;padding:4px;margin-bottom:20px;width:fit-content}
-.sub-tab{padding:7px 14px;border:none;background:none;color:#0891b2;font-family:'Anton',sans-serif;font-size:.72rem;letter-spacing:2px;text-transform:uppercase;border-radius:9px;cursor:pointer}
-.sub-tab.active{background:#0891b2;color:#fff;border:none}
+.sub-tab{padding:7px 14px;border:none;background:none;color:var(--theme-primary);font-family:'Anton',sans-serif;font-size:.72rem;letter-spacing:2px;text-transform:uppercase;border-radius:9px;cursor:pointer}
+.sub-tab.active{background:var(--theme-primary);color:#fff;border:none}
 .freq-bar{display:flex;gap:2px;margin-top:4px}
 .freq-seg{flex:1;height:4px;border-radius:2px;background:rgba(8,145,178,0.15)}
 
@@ -241,22 +244,90 @@ function getStatLabel(stat){try{return(ST&&ST.statLabels&&ST.statLabels[stat])||
 function getSM(){return{intel:{label:getStatLabel('intel'),icon:"🧠",color:"#0891b2",dim:"rgba(8,145,178,0.08)"},physique:{label:getStatLabel('physique'),icon:"🏋️",color:"#10b981",dim:"rgba(16,185,129,0.08)"},craft:{label:getStatLabel('craft'),icon:"🔥",color:"#8b5cf6",dim:"rgba(139,92,246,0.08)"},disc:{label:getStatLabel('disc'),icon:"⚡",color:"#f59e0b",dim:"rgba(245,158,11,0.08)"},bienetre:{label:getStatLabel('bienetre'),icon:"❤️",color:"#ec4899",dim:"rgba(236,72,153,0.08)"}};}
 const SM=getSM();
 const SL2={intel:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],physique:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],craft:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],disc:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"],bienetre:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct"]};
-// ── SKINS DE COMPÉTENCE ── un skin alternatif par stat, achetable dans le shop, collectionnable.
-// Chaque skin change juste la couleur (variante propre à la stat) + les noms de palier (remplace "Lv X" par un vocabulaire thématique).
-function mkSkins(){return{
-  physique:{id:"skin_physique_1",name:"Athlète",cost:50,color:"#f97316",dim:"rgba(249,115,22,0.08)",tiers:["Débutant","Amateur","Sportif","Cardio","Athlète","Athlète confirmé","Compétiteur","Champion","Machine de guerre","Légende du sport","Titan olympique"]},
-  craft:{id:"skin_craft_1",name:"Artisan",cost:50,color:"#d946ef",dim:"rgba(217,70,239,0.08)",tiers:["Débutant","Bricoleur","Créatif","Artisan","Créateur","Maître artisan","Virtuose","Artiste confirmé","Maestro","Visionnaire","Génie créatif"]},
-  intel:{id:"skin_intel_1",name:"Génie",cost:50,color:"#6366f1",dim:"rgba(99,102,241,0.08)",tiers:["Novice","Étudiant","Curieux","Érudit","Savant","Cerveau","Prodige","Génie","Génie absolu","Esprit supérieur","Einstein Mode"]},
-  disc:{id:"skin_disc_1",name:"Spartiate",cost:50,color:"#dc2626",dim:"rgba(220,38,38,0.08)",tiers:["Recrue","Soldat","Rigoureux","Discipliné","Vétéran","Spartiate","Stoïcien","Inflexible","Machine de discipline","Moine guerrier","Volonté de fer"]},
-  bienetre:{id:"skin_bienetre_1",name:"Zen",cost:50,color:"#14b8a6",dim:"rgba(20,184,166,0.08)",tiers:["Débutant","Apprenti zen","Équilibré","Serein","Harmonieux","Zen","Paisible","Maître zen","Éveillé","Illuminé","Nirvana"]}
+// ── THÈMES GLOBAUX ── un seul thème actif à la fois pour toute l'app (comme un mode sombre).
+// Change la couleur générale (nav, FAB, en-têtes de section, carte profil, barre XP) + les noms de l'échelle de rang globale.
+// Les 5 couleurs propres à chaque compétence (Intelligence/Physique/Craft/Discipline/Bien-être) NE changent PAS.
+function mkThemes(){return{
+  physique:{id:"theme_physique",name:"Athlète",icon:"🏋️",cost:250,curName:"Médailles",curIcon:"🏅",primary:"#f97316",secondary:"#dc2626",tierNames:["Débutant","Amateur","Sportif","Cardio","Athlète","Athlète confirmé","Compétiteur","Champion","Machine de guerre","Légende du sport","Titan olympique","Demi-dieu du sport","Demi-dieu du sport maîtrisé","Demi-dieu du sport suprême","Demi-dieu du sport absolu","Demi-dieu du sport éternel","Demi-dieu du sport infini"]},
+  craft:{id:"theme_craft",name:"Artisan",icon:"🔥",cost:250,curName:"Outils",curIcon:"🔧",primary:"#d946ef",secondary:"#8b5cf6",tierNames:["Débutant","Bricoleur","Créatif","Artisan","Créateur","Maître artisan","Virtuose","Artiste confirmé","Maestro","Visionnaire","Génie créatif","Démiurge","Démiurge maîtrisé","Démiurge suprême","Démiurge absolu","Démiurge éternel","Démiurge infini"]},
+  intel:{id:"theme_intel",name:"Génie",icon:"🧠",cost:250,curName:"Idées",curIcon:"💡",primary:"#6366f1",secondary:"#0891b2",tierNames:["Novice","Étudiant","Curieux","Érudit","Savant","Cerveau","Prodige","Génie","Génie absolu","Esprit supérieur","Einstein Mode","Esprit cosmique","Esprit cosmique maîtrisé","Esprit cosmique suprême","Esprit cosmique absolu","Esprit cosmique éternel","Esprit cosmique infini"]},
+  disc:{id:"theme_disc",name:"Spartiate",icon:"⚡",cost:250,curName:"Boucliers",curIcon:"🛡️",primary:"#dc2626",secondary:"#f59e0b",tierNames:["Recrue","Soldat","Rigoureux","Discipliné","Vétéran","Spartiate","Stoïcien","Inflexible","Machine de discipline","Moine guerrier","Volonté de fer","Titan de discipline","Titan de discipline maîtrisé","Titan de discipline suprême","Titan de discipline absolu","Titan de discipline éternel","Titan de discipline infini"]},
+  bienetre:{id:"theme_bienetre",name:"Zen",icon:"❤️",cost:250,curName:"Pétales",curIcon:"🌸",primary:"#14b8a6",secondary:"#10b981",tierNames:["Débutant","Apprenti zen","Équilibré","Serein","Harmonieux","Zen","Paisible","Maître zen","Éveillé","Illuminé","Nirvana","Éveil cosmique","Éveil cosmique maîtrisé","Éveil cosmique suprême","Éveil cosmique absolu","Éveil cosmique éternel","Éveil cosmique infini"]},
+  // ── THÈMES PREMIUM ── plus chers (500💎), pas liés à une compétence en particulier.
+  kawaii:{id:"theme_kawaii",name:"Kawaii",icon:"🎀",cost:500,curName:"Cœurs",curIcon:"💖",primary:"#f472b6",secondary:"#c084fc",tierNames:["Bébé chat","Peluche timide","Étoile filante","Licorne apprentie","Fée scintillante","Princesse pastel","Idole kawaii","Déesse sucrée","Star ultra-mignonne","Légende kawaii","Kawaii ultime","Esprit kawaii","Esprit kawaii maîtrisé","Esprit kawaii suprême","Esprit kawaii absolu","Esprit kawaii éternel","Esprit kawaii infini"]},
+  fantasy:{id:"theme_fantasy",name:"Fantastique",icon:"🧙",cost:500,curName:"Pièces d'or",curIcon:"🪙",primary:"#7c3aed",secondary:"#fbbf24",tierNames:["Paysan","Apprenti mage","Écuyer","Chevalier","Mage","Chevalier royal","Archimage","Seigneur de guerre","Héros légendaire","Champion du royaume","Maître des arcanes","Sorcier ancestral","Sorcier ancestral maîtrisé","Sorcier ancestral suprême","Sorcier ancestral absolu","Sorcier ancestral éternel","Sorcier ancestral infini"]},
+  future:{id:"theme_future",name:"Futuriste",icon:"🚀",cost:500,curName:"Cristaux",curIcon:"💠",primary:"#06b6d4",secondary:"#a855f7",tierNames:["Recrue cyber","Pilote novice","Ingénieur stellaire","Cyborg","Commandant","Capitaine spatial","Amiral galactique","Gardien des étoiles","Légende interstellaire","Titan cybernétique","Voyageur temporel","Noyau quantique","Noyau quantique maîtrisé","Noyau quantique suprême","Noyau quantique absolu","Noyau quantique éternel","Noyau quantique infini"]},
+  hero:{id:"theme_hero",name:"Super-héros",icon:"🦸",cost:500,curName:"Étoiles",curIcon:"⭐",primary:"#dc2626",secondary:"#2563eb",tierNames:["Citoyen ordinaire","Recrue masquée","Justicier débutant","Vigilant","Héros de quartier","Protecteur","Défenseur","Héros confirmé","Gardien de la ville","Icône héroïque","Légende vivante","Titan héroïque","Titan héroïque maîtrisé","Titan héroïque suprême","Titan héroïque absolu","Titan héroïque éternel","Titan héroïque infini"]},
+  nature:{id:"theme_nature",name:"Nature",icon:"🌿",cost:500,curName:"Graines",curIcon:"🌱",primary:"#16a34a",secondary:"#84cc16",tierNames:["Graine","Pousse","Bourgeon","Jeune arbre","Arbre robuste","Gardien de la forêt","Esprit des bois","Protecteur sylvestre","Ancien de la forêt","Sage de la nature","Force de Gaïa","Titan sylvestre","Titan sylvestre maîtrisé","Titan sylvestre suprême","Titan sylvestre absolu","Titan sylvestre éternel","Titan sylvestre infini"]},
+  ocean:{id:"theme_ocean",name:"Abysses",icon:"🌊",cost:500,curName:"Coquillages",curIcon:"🐚",primary:"#0369a1",secondary:"#06b6d4",tierNames:["Plongeur débutant","Nageur","Explorateur des récifs","Plongeur confirmé","Chasseur des profondeurs","Gardien du lagon","Seigneur des mers","Léviathan naissant","Maître des abysses","Titan océanique","Souverain des mers","Léviathan primordial","Léviathan primordial maîtrisé","Léviathan primordial suprême","Léviathan primordial absolu","Léviathan primordial éternel","Léviathan primordial infini"]},
+  ninja:{id:"theme_ninja",name:"Ninja",icon:"🥷",cost:500,curName:"Shurikens",curIcon:"🎯",primary:"#1e293b",secondary:"#dc2626",tierNames:["Villageois","Apprenti ninja","Genin","Chunin","Ronin","Samouraï","Samouraï d'élite","Maître d'armes","Ombre silencieuse","Assassin légendaire","Maître ninja","Esprit du katana","Esprit du katana maîtrisé","Esprit du katana suprême","Esprit du katana absolu","Esprit du katana éternel","Esprit du katana infini"]}
 };}
-const SKINS=mkSkins();
+const THEMES=mkThemes();
+function activeThemeObj(){const id=ST&&ST.activeTheme;if(!id||id==="default")return null;return THEMES[id]||null;}
+// ── CADRES DE PROFIL ── bordure cosmétique de la carte principale du profil, achetable et activable une par une.
+const FRAMES={
+  gold:{id:"frame_gold",name:"Liseré doré",icon:"✨",cost:150,border:"#ffd700",shadow:"rgba(255,215,0,0.4)"},
+  neon:{id:"frame_neon",name:"Contour néon",icon:"💠",cost:150,border:"#06b6d4",shadow:"rgba(6,182,212,0.45)"},
+  fire:{id:"frame_fire",name:"Aura de feu",icon:"🔥",cost:200,border:"#f97316",shadow:"rgba(249,115,22,0.45)"},
+  royal:{id:"frame_royal",name:"Cadre royal",icon:"👑",cost:250,border:"#7c3aed",shadow:"rgba(124,58,237,0.4)"}
+};
+function activeFrameObj(){const id=ST&&ST.activeFrame;if(!id||id==="default")return null;return FRAMES[id]||null;}
+function buyFrame(frameId){
+  const fr=FRAMES[frameId];if(!fr)return;
+  if(!Array.isArray(ST.ownedFrames))ST.ownedFrames=[];
+  if(!ST.ownedFrames.includes(fr.id)){
+    if((ST.gems||0)<fr.cost)return;
+    ST.gems-=fr.cost;
+    ST.ownedFrames.push(fr.id);
+  }
+  ST.activeFrame=frameId;
+  saveST();render();
+}
+function setActiveFrame(frameId){
+  if(frameId!=="default"){
+    const fr=FRAMES[frameId];
+    if(!fr)return;
+    if(!Array.isArray(ST.ownedFrames)||!ST.ownedFrames.includes(fr.id))return;
+  }
+  ST.activeFrame=(ST.activeFrame===frameId)?"default":frameId;
+  saveST();render();
+}
+// ── SKINS DE CONFETTIS ── palette de couleurs alternative pour l'animation de célébration (badges débloqués, etc.).
+const CONFETTI_SKINS={
+  fire:{id:"confetti_fire",name:"Feu",icon:"🔥",cost:120,colors:["#f97316","#dc2626","#fbbf24","#ea580c"]},
+  ice:{id:"confetti_ice",name:"Glace",icon:"❄️",cost:120,colors:["#06b6d4","#0ea5e9","#e0f2fe","#67e8f9"]},
+  sakura:{id:"confetti_sakura",name:"Sakura",icon:"🌸",cost:120,colors:["#f9a8d4","#fbcfe8","#ffffff","#f472b6"]}
+};
+function activeConfettiObj(){const id=ST&&ST.activeConfetti;if(!id||id==="default")return null;return CONFETTI_SKINS[id]||null;}
+function buyConfettiSkin(skinId){
+  const sk=CONFETTI_SKINS[skinId];if(!sk)return;
+  if(!Array.isArray(ST.ownedConfetti))ST.ownedConfetti=[];
+  if(!ST.ownedConfetti.includes(sk.id)){
+    if((ST.gems||0)<sk.cost)return;
+    ST.gems-=sk.cost;
+    ST.ownedConfetti.push(sk.id);
+  }
+  ST.activeConfetti=skinId;
+  saveST();render();
+}
+function setActiveConfetti(skinId){
+  if(skinId!=="default"){
+    const sk=CONFETTI_SKINS[skinId];
+    if(!sk)return;
+    if(!Array.isArray(ST.ownedConfetti)||!ST.ownedConfetti.includes(sk.id))return;
+  }
+  ST.activeConfetti=(ST.activeConfetti===skinId)?"default":skinId;
+  saveST();render();
+}
+function applyThemeCSSVars(){
+  const th=activeThemeObj();
+  const root=document.documentElement;
+  if(!root||!root.style)return;
+  root.style.setProperty("--theme-primary",th?th.primary:"#0891b2");
+  root.style.setProperty("--theme-secondary",th?th.secondary:"#ec4899");
+}
 const DEFAULT_STAT_COLORS={intel:"#0891b2",physique:"#10b981",craft:"#8b5cf6",disc:"#f59e0b",bienetre:"#ec4899"};
 const DEFAULT_STAT_DIMS={intel:"rgba(8,145,178,0.08)",physique:"rgba(16,185,129,0.08)",craft:"rgba(139,92,246,0.08)",disc:"rgba(245,158,11,0.08)",bienetre:"rgba(236,72,153,0.08)"};
-function equippedSkinId(stat){return(ST&&ST.equippedSkin&&ST.equippedSkin[stat])||"default";}
-function statColorFor(stat){const eq=equippedSkinId(stat);return(eq!=="default"&&SKINS[stat])?SKINS[stat].color:DEFAULT_STAT_COLORS[stat];}
-function statDimFor(stat){const eq=equippedSkinId(stat);return(eq!=="default"&&SKINS[stat])?SKINS[stat].dim:DEFAULT_STAT_DIMS[stat];}
-function statTierLabel(stat,lv){const eq=equippedSkinId(stat);if(eq==="default")return"";const sk=SKINS[stat];if(!sk)return"";return sk.tiers[Math.min(Math.floor((lv-1)/9),sk.tiers.length-1)];}
 const TIERS=[
   {min:0,     title:"Terrien",              rank:"F",   color:"#6b5a3e"},
   {min:800,   title:"Guerrier Z",           rank:"E",   color:"#cc5500"},
@@ -280,7 +351,9 @@ const INFINITE_TIER_STEP=90000; // XP per additional step once past the last nam
 function getExtendedTier(n){
   const last=TIERS[TIERS.length-1];
   if(n<=0)return last;
-  return{min:last.min+n*INFINITE_TIER_STEP,title:last.title+" +"+n,rank:last.rank,color:last.color};
+  const th=activeThemeObj();
+  const baseTitle=th?th.tierNames[th.tierNames.length-1]:last.title;
+  return{min:last.min+n*INFINITE_TIER_STEP,title:baseTitle+" +"+n,rank:last.rank,color:last.color};
 }
 function tierN(xp){
   const last=TIERS[TIERS.length-1];
@@ -288,7 +361,12 @@ function tierN(xp){
   return TIERS.length-1+Math.floor((xp-last.min)/INFINITE_TIER_STEP);
 }
 function tierAt(n){
-  if(n<TIERS.length)return TIERS[n];
+  if(n<TIERS.length){
+    const base=TIERS[n];
+    const th=activeThemeObj();
+    if(th&&th.tierNames[n])return Object.assign({},base,{title:th.tierNames[n]});
+    return base;
+  }
   return getExtendedTier(n-(TIERS.length-1));
 }
 const MFR=["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"];
@@ -334,7 +412,7 @@ function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,freezeUntil:null,ownedSkins:{intel:[],physique:[],craft:[],disc:[],bienetre:[]},equippedSkin:{intel:'default',physique:'default',craft:'default',disc:'default',bienetre:'default'},history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,boostMult:2,freezeUntil:null,ownedThemes:[],activeTheme:'default',dayPlans:{},customTitle:'',ownedFrames:[],activeFrame:'default',ownedConfetti:[],activeConfetti:'default',history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
 function migrateOnboarding(){
@@ -371,21 +449,32 @@ function migratePlayerProfile(){
   if(ST.gems===undefined)ST.gems=0;
   if(ST.gemsEarnedTotal===undefined)ST.gemsEarnedTotal=ST.gems;
   if(ST.boostUntil===undefined)ST.boostUntil=null;
+  if(ST.boostMult===undefined)ST.boostMult=2;
+  if(ST.customTitle===undefined)ST.customTitle='';
+  if(!Array.isArray(ST.ownedFrames))ST.ownedFrames=[];
+  if(!ST.activeFrame)ST.activeFrame='default';
+  if(!Array.isArray(ST.ownedConfetti))ST.ownedConfetti=[];
+  if(!ST.activeConfetti)ST.activeConfetti='default';
   if(ST.freezeUntil===undefined)ST.freezeUntil=null;
-  let _skinsWereNew=false;
-  if(!ST.ownedSkins){ST.ownedSkins={};_skinsWereNew=true;}
-  if(!ST.equippedSkin)ST.equippedSkin={};
-  STATS.forEach(function(s){
-    if(!Array.isArray(ST.ownedSkins[s]))ST.ownedSkins[s]=[];
-    if(!ST.equippedSkin[s])ST.equippedSkin[s]='default';
-  });
-  // Cadeau de bienvenue unique pour les joueurs déjà en cours : de quoi débloquer les 5 skins
-  // (les nouveaux joueurs démarrent l'économie normalement, pas de bonus pour eux).
-  if(_skinsWereNew&&ST.onboardingComplete){
-    ST.gems=(ST.gems||0)+250;
-    ST.gemsEarnedTotal=(ST.gemsEarnedTotal||0)+250;
+  // Ancien système de skins par compétence retiré (remplacé par les thèmes globaux) :
+  // on rembourse les gemmes dépensées sur les skins déjà achetés, puis on efface les anciens champs.
+  if(ST.ownedSkins){
+    let refund=0;
+    STATS.forEach(function(s){
+      const owned=ST.ownedSkins[s];
+      if(Array.isArray(owned))refund+=owned.length*50;
+    });
+    if(refund>0){
+      ST.gems=(ST.gems||0)+refund;
+      ST.gemsEarnedTotal=(ST.gemsEarnedTotal||0)+refund;
+    }
+    delete ST.ownedSkins;
+    delete ST.equippedSkin;
     saveST();
   }
+  if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
+  if(!ST.activeTheme)ST.activeTheme='default';
+  if(!ST.dayPlans)ST.dayPlans={};
   // Existing users (onboarding already complete) never had a firstUseDate — backdate it so they
   // land straight in the normal tip phase instead of suddenly seeing a "welcome" message.
   if(ST.onboardingComplete&&!ST.firstUseDate){
@@ -395,16 +484,27 @@ function migratePlayerProfile(){
 }
 const DIFFICULTY_MULT={easy:1.5,normal:1,hard:0.5};
 function buyBoost(hours){
-  const cost=hours*3;
+  const cost=hours*5;
   if((ST.gems||0)<cost)return;
   ST.gems-=cost;
   const base=isBoostActive()?new Date(ST.boostUntil):new Date();
   base.setHours(base.getHours()+hours);
   ST.boostUntil=base.toISOString();
+  ST.boostMult=2;
+  saveST();render();
+}
+function buyBoostPremium(hours){
+  const cost=hours*14;
+  if((ST.gems||0)<cost)return;
+  ST.gems-=cost;
+  const base=isBoostActive()?new Date(ST.boostUntil):new Date();
+  base.setHours(base.getHours()+hours);
+  ST.boostUntil=base.toISOString();
+  ST.boostMult=3;
   saveST();render();
 }
 function buyFreeze(days){
-  const cost=days*15;
+  const cost=days*22;
   if((ST.gems||0)<cost)return;
   ST.gems-=cost;
   const base=isFreezeActive()?new Date(ST.freezeUntil):new Date();
@@ -412,24 +512,24 @@ function buyFreeze(days){
   ST.freezeUntil=base.toISOString();
   saveST();render();
 }
-function buySkin(stat){
-  const sk=SKINS[stat];if(!sk)return;
-  if(!ST.ownedSkins)ST.ownedSkins={};
-  if(!Array.isArray(ST.ownedSkins[stat]))ST.ownedSkins[stat]=[];
-  if(!ST.equippedSkin)ST.equippedSkin={};
-  if(ST.ownedSkins[stat].includes(sk.id))return;
-  if((ST.gems||0)<sk.cost)return;
-  ST.gems-=sk.cost;
-  ST.ownedSkins[stat].push(sk.id);
-  ST.equippedSkin[stat]=sk.id;
+function buyTheme(themeId){
+  const th=THEMES[themeId];if(!th)return;
+  if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
+  if(!ST.ownedThemes.includes(th.id)){
+    if((ST.gems||0)<th.cost)return;
+    ST.gems-=th.cost;
+    ST.ownedThemes.push(th.id);
+  }
+  ST.activeTheme=themeId;
   saveST();render();
 }
-function toggleSkin(stat){
-  const sk=SKINS[stat];if(!sk)return;
-  if(!ST.equippedSkin)ST.equippedSkin={};
-  const owned=(ST.ownedSkins&&ST.ownedSkins[stat])||[];
-  if(!owned.includes(sk.id))return;
-  ST.equippedSkin[stat]=(ST.equippedSkin[stat]===sk.id)?'default':sk.id;
+function setActiveTheme(themeId){
+  if(themeId!=='default'){
+    const th=THEMES[themeId];
+    if(!th)return;
+    if(!Array.isArray(ST.ownedThemes)||!ST.ownedThemes.includes(th.id))return; // pas possédé
+  }
+  ST.activeTheme=(ST.activeTheme===themeId)?'default':themeId;
   saveST();render();
 }
 function addGems(n){
@@ -444,7 +544,7 @@ function isBoostActive(){return !!(ST.boostUntil&&new Date(ST.boostUntil)>new Da
 function isFreezeActive(){return !!(ST.freezeUntil&&new Date(ST.freezeUntil)>new Date());}
 function scaledXP(baseXp){
   const mult=DIFFICULTY_MULT[ST.difficulty]||1;
-  const boost=isBoostActive()?2:1;
+  const boost=isBoostActive()?(ST.boostMult||2):1;
   return Math.max(1,Math.round(baseXp*mult*boost));
 }
 function migrateCombos(){
@@ -1246,11 +1346,13 @@ function rProfile(eng){
   
 html+=rDailyTip(eng);
 html+=rThrowback(eng);
-  html+=`<div class="card-big" style="border-color:${t.color}30"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
+  const activeFr=activeFrameObj();
+  const cardBigStyle=activeFr?`border:2px solid ${activeFr.border};box-shadow:0 0 20px ${activeFr.shadow}`:`border-color:${t.color}30`;
+  html+=`<div class="card-big" style="${cardBigStyle}"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
   <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start">
   <div>
   <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-    ${ST.playerName?`<div style="font-family:'Anton',sans-serif;font-size:.78rem;letter-spacing:2px;color:#8b5cf6;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">👤 ${ST.playerName}</div>`:'<div style="flex:1"></div>'}
+    ${ST.playerName?`<div style="font-family:'Anton',sans-serif;font-size:.78rem;letter-spacing:2px;color:#8b5cf6;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">👤 ${ST.playerName}${ST.customTitle?` · <span style="color:#f59e0b">${ST.customTitle}</span>`:""}</div>`:(ST.customTitle?`<div style="font-family:'Anton',sans-serif;font-size:.78rem;letter-spacing:2px;color:#f59e0b;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">${ST.customTitle}</div>`:'<div style="flex:1"></div>')}
     <div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(14,165,233,0.12),rgba(139,92,246,0.1));border:1px solid rgba(14,165,233,0.3);border-radius:99px;padding:5px 12px;flex-shrink:0">
       <span style="font-size:.9rem">💎</span>
       <span id="gems-count" style="font-weight:700;color:#0ea5e9;font-size:.8rem;font-variant-numeric:tabular-nums">${(ST.gems||0).toLocaleString('fr-FR')}</span>
@@ -1284,7 +1386,7 @@ html+=rThrowback(eng);
 
   html+=`<div class="sl">Compétences</div><div class="stat-grid">`;
   activeStats.forEach(stat=>{
-    const m=SM[stat],xp=Math.max(0,sxp[stat]||0),lv=statLvFromXP(xp),pct=statPct(xp,lv),w=warns[stat],freq=wfreq[stat]||0,cfg=ST.decayCfg[stat],tierLbl=statTierLabel(stat,lv);
+    const m=SM[stat],xp=Math.max(0,sxp[stat]||0),lv=statLvFromXP(xp),pct=statPct(xp,lv),w=warns[stat],freq=wfreq[stat]||0,cfg=ST.decayCfg[stat];
     const hasStatXP=(sxp[stat]||0)>0;
     const bc=hasStatXP&&(w&&w.level==="danger")?"#ec4899":hasStatXP&&(w&&w.level==="warning")?"#f59e0b":m.color;
     const bd=hasStatXP&&(w&&w.level==="danger")?"#ec489950":hasStatXP&&(w&&w.level==="warning")?"#f59e0b40":m.dim;
@@ -1294,7 +1396,7 @@ html+=rThrowback(eng);
     const fb=cfg?`<div style="margin-top:6px"><div style="display:flex;justify-content:space-between;margin-bottom:3px;font-size:.52rem;color:#1e3a4a"><span>Fréquence sem. <span onclick="showInfoTip(event,'Nombre minimum de fois par semaine où cocher cette t\u00e2che, sinon un malus XP s\u2019applique automatiquement.')" style="display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;background:rgba(8,145,178,0.15);color:#0891b2;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;font-style:normal;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none;vertical-align:-2px" oncontextmenu="return false">i</span></span><span style="color:${freqOk?"#1e3a4a":"#dc2626"};font-weight:700">${freq}/${fmin} min/sem.</span></div><div class="freq-bar">${Array.from({length:7},(_,i)=>`<div class="freq-seg" style="background:${i<freq?(freqOk?m.color:"#f59e0b"):"#bae6fd"}"></div>`).join("")}</div></div>`:"";
     html+=`<div class="stat-card" style="border:1px solid ${bd};cursor:pointer;position:relative" onclick="openStatPanel('${stat}')">
   <span onclick="event.stopPropagation();openStatAnalytics('${stat}')" style="position:absolute;top:8px;right:8px;width:24px;height:24px;display:flex;align-items:center;justify-content:center;background:${m.color}15;border-radius:8px;font-size:.85rem;cursor:pointer;z-index:2" title="Stats du mois">📊</span>
-  <span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div>${tierLbl?`<div style="font-size:.56rem;font-weight:700;letter-spacing:.5px;color:${bc};opacity:.85;margin-bottom:2px">${tierLbl}</div>`:""}<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
+  <span class="stat-icon">${m.icon}</span><div class="stat-name" style="color:${m.color};font-weight:700">${m.label}</div><div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px"><div class="stat-lv" style="color:${bc}">Lv ${lv}</div></div><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div><div class="xp-text">${xp} XP · next ${xpNext(lv)-Math.max(0,xp-xpForLv(lv))} XP</div>${fb}</div>`;
   });
   html+=`</div>`;
   const motiv=getMotivationMsg(eng);
@@ -1302,6 +1404,116 @@ html+=rThrowback(eng);
   return html;
 }
 
+// ── PLANNING LIBRE PAR JOUR ── le joueur place ses tâches prévues jour par jour, semaine par semaine.
+// Un jour sans plan explicite = comportement inchangé (toutes les tâches actives comptent comme prévues).
+// Dès qu'un plan existe pour un jour, seules les tâches qu'il contient sont "prévues" ce jour-là — les autres
+// restent visibles et cochables (juste grisées), rien n'est bloqué ni pénalisé (pas de decay/fréquence touchées).
+function ymdKey(y,m,d){const mm=(m+1)<10?"0"+(m+1):""+(m+1);const dd=d<10?"0"+d:""+d;return y+"-"+mm+"-"+dd;}
+function getDayPlan(dateStr){return(ST.dayPlans&&ST.dayPlans[dateStr])||null;}
+function isPlannedForDay(slotId,dateStr){const p=getDayPlan(dateStr);if(!p)return true;return p.indexOf(slotId)>=0;}
+function tPlan(y,m,d,slotId){
+  const key=ymdKey(y,m,d);
+  const _scrollBox=document.querySelector('.table-scroll');
+  const _savedScrollLeft=_scrollBox?_scrollBox.scrollLeft:0;
+  const _savedScrollTop=_scrollBox?_scrollBox.scrollTop:0;
+  if(!ST.dayPlans)ST.dayPlans={};
+  if(!ST.dayPlans[key])ST.dayPlans[key]=[];
+  const arr=ST.dayPlans[key];
+  const idx=arr.indexOf(slotId);
+  const nowPlanned=idx<0; // true si on vient d'ajouter (donc désormais planifié)
+  if(idx>=0)arr.splice(idx,1);else arr.push(slotId);
+  if(arr.length===0)delete ST.dayPlans[key];
+  saveST();
+  // Mise à jour ciblée de la seule cellule cliquée — pas de render() complet, pas de saut de scroll.
+  const planSet=!!getDayPlan(key);
+  const planned=isPlannedForDay(slotId,key);
+  const cell=document.getElementById('tog-'+(d-1)+'-'+slotId);
+  if(cell){
+    const s=ST.slots.find(function(sl){return sl.id===slotId;});
+    const cls={intel:'ci',physique:'cp',craft:'cc',disc:'cd',bienetre:'cb'};
+    cell.className='tog'+(planSet&&planned&&s?' '+cls[s.stat]:'');
+    cell.textContent=planSet&&planned?'📌':'·';
+    cell.style.opacity=(planSet&&!planned)?'.3':'';
+    if(nowPlanned){
+      cell.classList.remove('tog-pulse');
+      void cell.offsetWidth;
+      cell.classList.add('tog-pulse');
+    }
+  }
+  // Restore horizontal/vertical scroll position — même verrou que tDay() : iOS Safari peut resetter
+  // le scroll (parfois avec un léger délai) après une modification du DOM dans une table scrollable.
+  if(_scrollBox){
+    _scrollBox.scrollLeft=_savedScrollLeft;
+    _scrollBox.scrollTop=_savedScrollTop;
+    var _lockDeadline=Date.now()+500;
+    var _scrollLockFn=function(){
+      if(Date.now()<_lockDeadline){
+        if(_scrollBox.scrollLeft!==_savedScrollLeft)_scrollBox.scrollLeft=_savedScrollLeft;
+        if(_scrollBox.scrollTop!==_savedScrollTop)_scrollBox.scrollTop=_savedScrollTop;
+      } else {
+        _scrollBox.removeEventListener('scroll',_scrollLockFn);
+      }
+    };
+    _scrollBox.addEventListener('scroll',_scrollLockFn,{passive:false});
+    [0,16,50,120,250,400].forEach(function(delay){
+      setTimeout(function(){
+        if(Date.now()<_lockDeadline+50){
+          if(_scrollBox.scrollLeft!==_savedScrollLeft)_scrollBox.scrollLeft=_savedScrollLeft;
+          if(_scrollBox.scrollTop!==_savedScrollTop)_scrollBox.scrollTop=_savedScrollTop;
+        }
+      },delay);
+    });
+  }
+}
+// ── DUPLICATION DE PLANNING ── pour ceux qui veulent répéter une semaine ou un mois type.
+// Copie simple et ponctuelle (pas de règle "liée" permanente) : une fois dupliqué, chaque jour
+// reste librement modifiable via tPlan (ajouter/enlever des tâches), exactement comme un jour planifié à la main.
+function duplicateWeekForward(){
+  const now=new Date();
+  const baseDate=(TRACKER_DAY!==null&&(!TRACKER_MONTH||!ST.history[TRACKER_MONTH]))?new Date(now.getFullYear(),now.getMonth(),TRACKER_DAY+1):now;
+  const dow=baseDate.getDay();
+  const mondayOffset=(dow===0?-6:1-dow);
+  const monday=new Date(baseDate.getFullYear(),baseDate.getMonth(),baseDate.getDate()+mondayOffset);
+  const pairs=[];
+  for(let i=0;i<7;i++){
+    const src=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i);
+    const dst=new Date(monday.getFullYear(),monday.getMonth(),monday.getDate()+i+7);
+    pairs.push({srcKey:ymdKey(src.getFullYear(),src.getMonth(),src.getDate()),dstKey:ymdKey(dst.getFullYear(),dst.getMonth(),dst.getDate())});
+  }
+  const hasAny=pairs.some(function(p){return !!getDayPlan(p.srcKey);});
+  if(!hasAny){alert("Aucune tâche planifiée cette semaine — planifie d'abord au moins un jour futur dans la grille avant de répéter la semaine.");return;}
+  if(!confirm("Répéter le planning de cette semaine sur la semaine prochaine ?\n\nLes jours déjà planifiés la semaine prochaine seront remplacés."))return;
+  if(!ST.dayPlans)ST.dayPlans={};
+  pairs.forEach(function(p){
+    const plan=getDayPlan(p.srcKey);
+    if(plan)ST.dayPlans[p.dstKey]=plan.slice();
+    else delete ST.dayPlans[p.dstKey];
+  });
+  saveST();render();
+}
+function duplicateMonthForward(){
+  const now=new Date();
+  const viewKey=TRACKER_MONTH&&ST.history[TRACKER_MONTH]?TRACKER_MONTH:mk(now.getFullYear(),now.getMonth());
+  const{year:vy,month:vm}=pk(viewKey);
+  const daysInMonth=dim(vy,vm);
+  const nextM=vm===11?0:vm+1,nextY=vm===11?vy+1:vy;
+  const daysInNextMonth=dim(nextY,nextM);
+  const pairs=[];
+  for(let day=1;day<=daysInMonth;day++){
+    const dstDay=Math.min(day,daysInNextMonth);
+    pairs.push({srcKey:ymdKey(vy,vm,day),dstKey:ymdKey(nextY,nextM,dstDay)});
+  }
+  const hasAny=pairs.some(function(p){return !!getDayPlan(p.srcKey);});
+  if(!hasAny){alert("Aucune tâche planifiée ce mois-ci — planifie d'abord au moins un jour futur dans la grille avant de dupliquer le mois.");return;}
+  if(!confirm("Dupliquer le planning de "+MFR[vm]+" vers "+MFR[nextM]+" ?\n\nLes jours déjà planifiés seront remplacés."))return;
+  if(!ST.dayPlans)ST.dayPlans={};
+  pairs.forEach(function(p){
+    const plan=getDayPlan(p.srcKey);
+    if(plan)ST.dayPlans[p.dstKey]=plan.slice();
+    else delete ST.dayPlans[p.dstKey];
+  });
+  saveST();render();
+}
 function rTracker(eng){
   const now=new Date(),realCurY=now.getFullYear(),realCurM=now.getMonth(),curD=now.getDate()-1,realCurKey=mk(realCurY,realCurM);
   const skeys=Object.keys(ST.history).sort();
@@ -1326,7 +1538,8 @@ function rTracker(eng){
   const monthIdx=skeys.indexOf(viewKey);
   const canGoPrev=monthIdx>0;
   const canGoNext=monthIdx<skeys.length-1;
-  const selDay=isCurrentMonth?(TRACKER_DAY!==null?Math.min(TRACKER_DAY,curD):curD):null;
+  const lastDayIdx=dim(curY,curM)-1;
+  const selDay=isCurrentMonth?(TRACKER_DAY!==null?TRACKER_DAY:curD):null;
   let todayTaskCount=0,todayTaskDone=0;
   if(isCurrentMonth&&selDay!==null){
     const selD=md.days[selDay]||{};
@@ -1336,21 +1549,27 @@ function rTracker(eng){
   let html='';
   if(isCurrentMonth&&todayTaskCount>0){
     const pctSel=Math.round(todayTaskDone/todayTaskCount*100);
+    const isFutureSel=selDay>curD;
     const remainingSlots=aSlots.filter(s=>{const td=md.days[selDay]||{};return !td[s.id];});
+    // Jour futur (mode planification) : on garde TOUTES les taches visibles (juste attenuees si pas encore
+    // planifiees) car il faut pouvoir taper dessus pour les ajouter au plan — sinon impossible d'en choisir de nouvelles.
+    // Aujourd'hui/passe (mode coche) : on masque completement les taches non prevues, c'est une vraie liste "a faire".
+    const plannedCount=remainingSlots.filter(s=>isPlannedForDay(s.id,ymdKey(curY,curM,selDay+1))).length;
+    const visibleRemaining=isFutureSel?remainingSlots:remainingSlots.filter(s=>isPlannedForDay(s.id,ymdKey(curY,curM,selDay+1)));
     const dowSel=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][new Date(curY,curM,selDay+1).getDay()];
     const dayLabel=selDay===curD?"AUJOURD'HUI":dowSel.toUpperCase()+" "+(selDay+1);
-    const canPrevDay=selDay>0,canNextDay=selDay<curD;
+    const canPrevDay=selDay>0,canNextDay=selDay<lastDayIdx;
     html+=`<div class="card" style="margin-bottom:12px;padding:12px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:8px">
           <button onclick="${canPrevDay?"navTrackerDay(-1)":""}" style="background:${canPrevDay?"#fff":"rgba(0,0,0,0.03)"};border:1px solid rgba(8,145,178,0.15);border-radius:10px;width:36px;height:36px;font-size:1.3rem;font-weight:700;color:${canPrevDay?"#0891b2":"#ccc"};cursor:${canPrevDay?"pointer":"default"};flex-shrink:0">‹</button>
-          <span id="today-label" style="font-size:.9rem;font-weight:700;color:#0e7490;font-family:'Anton',sans-serif;letter-spacing:1px;min-width:90px;text-align:center">${dayLabel}</span>
+          <span id="today-label" style="font-size:.9rem;font-weight:700;color:#0e7490;font-family:'Anton',sans-serif;letter-spacing:1px;min-width:90px;text-align:center">${dayLabel}${isFutureSel?" 📌":""}</span>
           <button onclick="${canNextDay?"navTrackerDay(1)":""}" style="background:${canNextDay?"#fff":"rgba(0,0,0,0.03)"};border:1px solid rgba(8,145,178,0.15);border-radius:10px;width:36px;height:36px;font-size:1.3rem;font-weight:700;color:${canNextDay?"#0891b2":"#ccc"};cursor:${canNextDay?"pointer":"default"};flex-shrink:0">›</button>
         </div>
-        <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctSel===100?"#10b981":"#8b5cf6"}">${todayTaskDone}/${todayTaskCount} t\u00e2ches</span>
+        <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctSel===100?"#10b981":"#8b5cf6"}">${isFutureSel?plannedCount+" pr\u00e9vue(s)":todayTaskDone+"/"+todayTaskCount+" t\u00e2ches"}</span>
       </div>
-      <div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px;margin-bottom:${remainingSlots.length>0?"10":"0"}px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctSel===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctSel}%;transition:width .4s ease"></div></div>
-      ${remainingSlots.length>0?`<div id="today-remaining" style="display:flex;flex-wrap:wrap;gap:6px">${remainingSlots.map(s=>`<span onclick="tDay(${selDay},'${s.id}')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:${SM[s.stat].dim};color:${SM[s.stat].color};border:1px solid ${SM[s.stat].color}40;cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name}</span>`).join("")}</div>`:""}
+      ${isFutureSel?`<div style="font-size:.66rem;color:#8b5cf6;margin-bottom:10px">📌 Touche une t\u00e2che pour la planifier ce jour-l\u00e0.</div>`:`<div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px;margin-bottom:${visibleRemaining.length>0?"10":"0"}px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctSel===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctSel}%;transition:width .4s ease"></div></div>`}
+      ${visibleRemaining.length>0?`<div id="today-remaining" style="display:flex;flex-wrap:wrap;gap:6px">${visibleRemaining.map(s=>{const _pl=isPlannedForDay(s.id,ymdKey(curY,curM,selDay+1));const _act=isFutureSel?`tPlan(${curY},${curM},${selDay+1},'${s.id}')`:`tDay(${selDay},'${s.id}')`;const _sty=isFutureSel&&!_pl?`background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)`:`background:${SM[s.stat].dim};color:${SM[s.stat].color};border:1px solid ${SM[s.stat].color}40`;return `<span onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name}${isFutureSel&&_pl?" 📌":""}</span>`;}).join("")}</div>`:""}
     </div>`;
   }
   html+=`<div class="card" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1366,6 +1585,10 @@ function rTracker(eng){
     html+=`<div style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.25);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.72rem;color:#6d28d9;display:flex;align-items:center;gap:8px"><span>✏️</span><span>Tu modifies un mois passé — les changements sont sauvegardés automatiquement.</span></div>`;
   }
   if(aSlots.length===0)return html+`<div class="card" style="text-align:center;padding:32px;border-style:dashed"><div style="font-size:1.5rem;margin-bottom:8px">⚙️</div><div style="color:#1e3a4a;font-size:.85rem">Aucune tâche active — va dans <strong style="color:#8b5cf6">Config → Tâches</strong></div></div>`;
+  html+=`<div class="card" style="margin-bottom:16px;padding:12px 16px;display:flex;gap:8px;flex-wrap:wrap">
+    <button onclick="duplicateWeekForward()" style="flex:1;min-width:150px;padding:10px 8px;border:1px solid rgba(139,92,246,0.35);border-radius:12px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">🔁 Répéter cette semaine</button>
+    <button onclick="duplicateMonthForward()" style="flex:1;min-width:150px;padding:10px 8px;border:1px solid rgba(139,92,246,0.35);border-radius:12px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">🔁 Dupliquer ce mois</button>
+  </div>`;
   const cls={intel:"ci",physique:"cp",craft:"cc",disc:"cd",bienetre:"cb"};
   html+=`<div class="table-wrap"><div class="table-scroll"><table style="min-width:${Math.max(700,aSlots.length*65+350)}px"><thead><tr><th class="th-left">Jour</th>${aSlots.map(s=>`<th style="color:${SM[s.stat].color}">${s.name}<br><span style="font-size:.58rem;color:#1e3a4a;opacity:.8;font-weight:700">${SM[s.stat].icon} +${s.xp}</span></th>`).join("")}${ST.malusList.map(m=>`<th style="color:#dc2626;font-weight:900">${m.icon} ${m.name}<br><span style="font-size:.46rem;color:#1e3a4a;opacity:.7">💀 ${m.xp}xp/${m.debtDays}j</span></th>`).join("")}<th style="color:#0e7490;min-width:50px">Malus <span onclick=\"showInfoTip(event,'Total des points perdus ce jour-l\u00e0 (somme de tous les malus coch\u00e9s).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="color:#0e7490;min-width:50px">Net</th><th>🔥</th><th>Niv <span onclick=\"showInfoTip(event,'R\u00e9sum\u00e9 visuel du jour : \ud83d\udd25 excellent, \u2705 bon, \u26aa correct, \ud83d\udc80 mauvais (bas\u00e9 sur ton score net).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="min-width:90px">Barre <span onclick=\"showInfoTip(event,'Ta progression du jour compar\u00e9e \u00e0 ton maximum possible si tu cochais tout.')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th></tr></thead><tbody>`;
   md.days.forEach((d,i)=>{
@@ -1377,18 +1600,38 @@ function rTracker(eng){
     const mt=ST.malusList.filter(m=>d[m.id]).reduce((s,m)=>s+Math.abs((typeof d[m.id]==="object")?d[m.id].xp:m.xp),0);
     const bl=isT?"3px solid #8b5cf6":hasM?"3px solid #ec4899":"3px solid transparent";
     const rc=`${hasM?"row-malus":isT?"row-today":""} ${isF?"row-future":""} ${dt.getDay()===1&&i>0?"week-sep":""}`;
+    const dateStr=ymdKey(curY,curM,i+1);
     html+=`<tr class="${rc}" id="row-${i}"><td class="td-left" style="border-left:${bl}"><div style="font-weight:700;font-size:.82rem;color:#1e3a4a">${isT?"⚡ ":hasM?"💀 ":""}Jour ${i+1}</div><div style="font-family:monospace;font-size:.54rem;color:#1e3a4a">${ds}</div>${debt>0?`<div style="font-size:.5rem;color:#ec4899;font-weight:700">dette -${debt}xp</div>`:""}</td>`;
-    aSlots.forEach(s=>{const chk=!!d[s.id];const mkArg=isCurrentMonth?"":(",'"+viewKey+"'");html+=`<td><div id="tog-${i}-${s.id}" class="tog ${chk?cls[s.stat]:""}" onclick="${isF?"":"tDay("+i+",'"+s.id+"'"+mkArg+")"}">${chk?"✓":"·"}</div></td>`;});
+    aSlots.forEach(s=>{
+      const chk=!!d[s.id];
+      const planned=isPlannedForDay(s.id,dateStr);
+      const mkArg=isCurrentMonth?"":(",'"+viewKey+"'");
+      if(isF){
+        const planSet=!!getDayPlan(dateStr);
+        if(planSet&&!planned){
+          html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="border-color:transparent;background:transparent;cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Planifier cette tâche ce jour-là"></div></td>`;
+        }else{
+          const sym=planSet&&planned?"📌":"·";
+          html+=`<td><div id="tog-${i}-${s.id}" class="tog ${planSet&&planned?cls[s.stat]:""}" style="cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Planifier cette tâche ce jour-là">${sym}</div></td>`;
+        }
+      }else{
+        if(!chk&&!planned){
+          html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="border-color:transparent;background:transparent" onclick="tDay(${i},'${s.id}'${mkArg})"></div></td>`;
+        }else{
+          html+=`<td><div id="tog-${i}-${s.id}" class="tog ${chk?cls[s.stat]:""}" onclick="tDay(${i},'${s.id}'${mkArg})">${chk?"✓":"·"}</div></td>`;
+        }
+      }
+    });
     ST.malusList.forEach(m=>{const chk=!!d[m.id];const mkArg2=isCurrentMonth?"":(",'"+viewKey+"'");html+=`<td><div id="tog-${i}-${m.id}" class="tog ${chk?"cm":""}" onclick="${isF?"":"tDay("+i+",'"+m.id+"'"+mkArg2+")"}">${chk?"❌":"·"}</div></td>`;});
     html+=`<td>${mt>0?`<span style="color:#ec4899;font-family:monospace;font-size:.75rem;font-weight:700">-${mt}</span>`:`<span style="color:#0e7490">—</span>`}</td><td id="xp-${i}" style="font-family:monospace;font-weight:700;font-size:.82rem;color:${nc}">${net}</td><td style="font-weight:700;font-size:.88rem;color:#0891b2">${str>0?str:"—"}</td><td id="lv-${i}" style="font-size:.95rem">${lvEmoji(net)}</td><td id="bar-${i}" style="padding:5px 10px"><div class="track"><div class="track-fill" style="width:${pct}%;background:${bc}"></div></div></td></tr>`;
   });
   html+=`</tbody></table></div></div>`;return html;
 }
 function navTrackerDay(dir){
-  const now=new Date(),curD=now.getDate()-1;
+  const now=new Date(),curD=now.getDate()-1,lastDayIdx=dim(now.getFullYear(),now.getMonth())-1;
   const cur=TRACKER_DAY!==null?TRACKER_DAY:curD;
   const next=cur+dir;
-  if(next<0||next>curD)return;
+  if(next<0||next>lastDayIdx)return;
   TRACKER_DAY=next===curD?null:next;
   render();
 }
@@ -1551,14 +1794,21 @@ function rConfig(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">⚡</span><span style="font-weight:700;color:#8b5cf6;font-size:.85rem">Boost XP x2</span></div>
       <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isBoostActive()?'Actif jusqu\'au '+new Date(ST.boostUntil).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Double tes gains XP pendant la dur\u00e9e choisie.'}</div>
       <div style="display:flex;gap:8px">
-        ${[1,3,24].map(h=>`<button onclick="buyBoost(${h})" style="flex:1;padding:8px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*3}</button>`).join('')}
+        ${[1,3,24].map(h=>`<button onclick="buyBoost(${h})" style="flex:1;padding:8px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*5}</button>`).join('')}
+      </div>
+    </div>`;
+    html+=`<div class="card" style="margin-bottom:10px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.25)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🔥</span><span style="font-weight:700;color:#dc2626;font-size:.85rem">Boost XP x3 (premium)</span></div>
+      <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isBoostActive()&&ST.boostMult===3?'Actif jusqu\'au '+new Date(ST.boostUntil).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Triple tes gains XP — plus court, plus fort.'}</div>
+      <div style="display:flex;gap:8px">
+        ${[1,3].map(h=>`<button onclick="buyBoostPremium(${h})" style="flex:1;padding:8px;border:1px solid rgba(220,38,38,0.3);border-radius:10px;background:#fff;color:#dc2626;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*14}</button>`).join('')}
       </div>
     </div>`;
     html+=`<div class="card" style="margin-bottom:16px;background:rgba(14,165,233,0.06);border-color:rgba(14,165,233,0.25)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🧊</span><span style="font-weight:700;color:#0ea5e9;font-size:.85rem">Artefact Gel</span></div>
       <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isFreezeActive()?'Gelé jusqu\'au '+new Date(ST.freezeUntil).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'Bloque toute dégradation (Physique/Disc/Bien-être) pendant la durée choisie — idéal en vacances.'}</div>
-      <div style="display:flex;gap:8px">
-        ${[1,3,7].map(d=>`<button onclick="buyFreeze(${d})" style="flex:1;padding:8px;border:1px solid rgba(14,165,233,0.3);border-radius:10px;background:#fff;color:#0ea5e9;font-size:.7rem;font-weight:700;cursor:pointer">${d}j · 💎${d*15}</button>`).join('')}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${[1,3,7,14,30].map(d=>`<button onclick="buyFreeze(${d})" style="flex:1;min-width:60px;padding:8px;border:1px solid rgba(14,165,233,0.3);border-radius:10px;background:#fff;color:#0ea5e9;font-size:.7rem;font-weight:700;cursor:pointer">${d}j · 💎${d*22}</button>`).join('')}
       </div>
     </div>`;
     html+=`<div class="sl" style="margin-bottom:10px">🎯 COMPÉTENCES ACTIVES</div>`;
@@ -1578,23 +1828,101 @@ function rConfig(){
         </div>`;
       });
     }
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">🎨 SKINS DE COMPÉTENCE</div>`;
-    STATS.forEach(stat=>{
-      const sk=SKINS[stat];if(!sk)return;
-      const owned=((ST.ownedSkins&&ST.ownedSkins[stat])||[]).includes(sk.id);
-      const equipped=equippedSkinId(stat)===sk.id;
-      html+=`<div class="card" style="margin-bottom:10px;background:${sk.color}0f;border-color:${sk.color}40">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${SM[stat].icon}</span><span style="font-weight:700;color:${sk.color};font-size:.85rem">${sk.name} · ${getStatLabel(stat)}</span></div>
-        <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Nouvelle couleur + noms de palier thématiques : ${sk.tiers[0]} → ${sk.tiers[sk.tiers.length-1]}.</div>
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">🎨 THÈMES</div>`;
+    html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Un seul thème actif à la fois — il change la couleur générale de l'app (nav, boutons, en-têtes) et les noms de rang, partout. Chaque thème affiche son prix dans sa propre monnaie (Graines, Or, Cristaux...) — ce sont toujours tes mêmes 💎.</div>`;
+    {
+      const activeThemeId=ST.activeTheme||'default';
+      html+=`<div class="card" style="margin-bottom:10px;background:rgba(8,145,178,0.05);border-color:rgba(8,145,178,0.3)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🐉</span><span style="font-weight:700;color:#0891b2;font-size:.85rem">Thème par défaut</span></div>
+        <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Le look d'origine (Terrien → Ultra Instinct).</div>
         <div style="display:flex;gap:8px">
-          ${owned?`<button onclick="toggleSkin('${stat}')" style="flex:1;padding:8px;border:1px solid ${sk.color}50;border-radius:10px;background:${equipped?sk.color:'#fff'};color:${equipped?'#fff':sk.color};font-size:.7rem;font-weight:700;cursor:pointer">${equipped?'✓ Équipé':'Activer'}</button>`:`<button onclick="buySkin('${stat}')" style="flex:1;padding:8px;border:1px solid ${sk.color}50;border-radius:10px;background:#fff;color:${sk.color};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${sk.cost}</button>`}
+          <button ${activeThemeId==='default'?'':`onclick="setActiveTheme('default')"`} style="flex:1;padding:8px;border:1px solid rgba(8,145,178,0.4);border-radius:10px;background:${activeThemeId==='default'?'#0891b2':'#fff'};color:${activeThemeId==='default'?'#fff':'#0891b2'};font-size:.7rem;font-weight:700;cursor:pointer">${activeThemeId==='default'?'✓ Actif':'Activer'}</button>
         </div>
       </div>`;
-    });
+      STATS.forEach(stat=>{
+        const th=THEMES[stat];if(!th)return;
+        const owned=(ST.ownedThemes||[]).includes(th.id);
+        const active=activeThemeId===stat;
+        html+=`<div class="card" style="margin-bottom:10px;background:${th.primary}0f;border-color:${th.primary}40">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${th.icon}</span><span style="font-weight:700;color:${th.primary};font-size:.85rem">${th.name}</span></div>
+          <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Couleur générale de l'app + rangs : ${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}. <span style="opacity:.75">Se paie en ${th.curIcon} ${th.curName}.</span></div>
+          <div style="display:flex;gap:8px">
+            ${owned?`<button onclick="setActiveTheme('${stat}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:${active?th.primary:'#fff'};color:${active?'#fff':th.primary};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyTheme('${stat}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:#fff;color:${th.primary};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · ${th.curIcon||"💎"}${th.cost}</button>`}
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:18px">✨ THÈMES PREMIUM</div>`;
+    html+=`<div style="background:rgba(124,58,237,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Des univers complets, sans lien avec une compétence en particulier — plus rares, plus chers.</div>`;
+    {
+      const activeThemeId2=ST.activeTheme||'default';
+      const premiumIds=Object.keys(THEMES).filter(function(k){return !STATS.includes(k);});
+      premiumIds.forEach(function(themeId){
+        const th=THEMES[themeId];if(!th)return;
+        const owned=(ST.ownedThemes||[]).includes(th.id);
+        const active=activeThemeId2===themeId;
+        html+=`<div class="card" style="margin-bottom:10px;background:${th.primary}0f;border-color:${th.primary}40">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${th.icon}</span><span style="font-weight:700;color:${th.primary};font-size:.85rem">${th.name}</span></div>
+          <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Couleur générale de l'app + rangs : ${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}. <span style="opacity:.75">Se paie en ${th.curIcon} ${th.curName}.</span></div>
+          <div style="display:flex;gap:8px">
+            ${owned?`<button onclick="setActiveTheme('${themeId}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:${active?th.primary:'#fff'};color:${active?'#fff':th.primary};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyTheme('${themeId}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:#fff;color:${th.primary};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · ${th.curIcon||"💎"}${th.cost}</button>`}
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:18px">🖼️ CADRES DE PROFIL</div>`;
+    html+=`<div style="background:rgba(255,215,0,0.08);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Une bordure cosmétique pour ta carte profil — purement visuel, un seul actif à la fois.</div>`;
+    {
+      const activeFrameId=ST.activeFrame||'default';
+      html+=`<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">⬜</span><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Cadre par défaut</span></div>
+        <div style="display:flex;gap:8px">
+          <button ${activeFrameId==='default'?'':`onclick="setActiveFrame('default')"`} style="flex:1;padding:8px;border:1px solid rgba(0,0,0,0.15);border-radius:10px;background:${activeFrameId==='default'?'#1e3a4a':'#fff'};color:${activeFrameId==='default'?'#fff':'#1e3a4a'};font-size:.7rem;font-weight:700;cursor:pointer">${activeFrameId==='default'?'✓ Actif':'Activer'}</button>
+        </div>
+      </div>`;
+      Object.keys(FRAMES).forEach(function(frameId){
+        const fr=FRAMES[frameId];
+        const owned=(ST.ownedFrames||[]).includes(fr.id);
+        const active=activeFrameId===frameId;
+        html+=`<div class="card" style="margin-bottom:10px;border:2px solid ${fr.border};box-shadow:0 0 10px ${fr.shadow}">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${fr.icon}</span><span style="font-weight:700;color:${fr.border};font-size:.85rem">${fr.name}</span></div>
+          <div style="display:flex;gap:8px">
+            ${owned?`<button onclick="setActiveFrame('${frameId}')" style="flex:1;padding:8px;border:1px solid ${fr.border}50;border-radius:10px;background:${active?fr.border:'#fff'};color:${active?'#fff':fr.border};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyFrame('${frameId}')" style="flex:1;padding:8px;border:1px solid ${fr.border}50;border-radius:10px;background:#fff;color:${fr.border};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${fr.cost}</button>`}
+          </div>
+        </div>`;
+      });
+    }
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:18px">🎉 SKINS DE CONFETTIS</div>`;
+    html+=`<div style="background:rgba(236,72,153,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">La couleur de la pluie de confettis quand tu débloques un badge.</div>`;
+    {
+      const activeConfId=ST.activeConfetti||'default';
+      html+=`<div class="card" style="margin-bottom:10px">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🎊</span><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Confettis par défaut</span></div>
+        <div style="display:flex;gap:8px">
+          <button ${activeConfId==='default'?'':`onclick="setActiveConfetti('default')"`} style="flex:1;padding:8px;border:1px solid rgba(0,0,0,0.15);border-radius:10px;background:${activeConfId==='default'?'#1e3a4a':'#fff'};color:${activeConfId==='default'?'#fff':'#1e3a4a'};font-size:.7rem;font-weight:700;cursor:pointer">${activeConfId==='default'?'✓ Actif':'Activer'}</button>
+        </div>
+      </div>`;
+      Object.keys(CONFETTI_SKINS).forEach(function(skinId){
+        const sk=CONFETTI_SKINS[skinId];
+        const owned=(ST.ownedConfetti||[]).includes(sk.id);
+        const active=activeConfId===skinId;
+        const mainColor=sk.colors[0];
+        html+=`<div class="card" style="margin-bottom:10px;background:${mainColor}0f;border-color:${mainColor}40">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${sk.icon}</span><span style="font-weight:700;color:${mainColor};font-size:.85rem">${sk.name}</span></div>
+          <div style="display:flex;gap:8px">
+            ${owned?`<button onclick="setActiveConfetti('${skinId}')" style="flex:1;padding:8px;border:1px solid ${mainColor}50;border-radius:10px;background:${active?mainColor:'#fff'};color:${active?'#fff':mainColor};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyConfettiSkin('${skinId}')" style="flex:1;padding:8px;border:1px solid ${mainColor}50;border-radius:10px;background:#fff;color:${mainColor};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${sk.cost}</button>`}
+          </div>
+        </div>`;
+      });
+    }
     html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">👤 PROFIL JOUEUR</div>`;
     html+=`<div class="card" style="margin-bottom:8px">
       <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">PRÉNOM</div>
       <input id="pf-name" type="text" value="${ST.playerName||''}" onblur="savePlayerField('playerName',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
+    </div>`;
+    html+=`<div class="card" style="margin-bottom:8px">
+      <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">TITRE PERSONNALISÉ <span style="opacity:.6;font-weight:400;text-transform:none;letter-spacing:0">(affiché sur ta carte profil)</span></div>
+      <input id="pf-title" type="text" maxlength="24" value="${ST.customTitle||''}" placeholder="ex: Le Bosseur, Team no sleep..." onblur="savePlayerField('customTitle',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
     </div>`;
     html+=`<div class="card" style="margin-bottom:8px">
       <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">ÂGE</div>
@@ -2317,8 +2645,9 @@ function render(){
   // Refresh SM labels from statLabels
   const _freshSM=getSM();
   Object.keys(_freshSM).forEach(k=>SM[k]=_freshSM[k]);
-  // Force correct colors always (skin-aware : couleur du skin équipé sinon couleur par défaut)
-  STATS.forEach(function(s){SM[s].color=statColorFor(s);SM[s].dim=statDimFor(s);});
+  // Force correct colors always (les 5 couleurs de compétence sont fixes, ne dépendent plus d'un skin)
+  STATS.forEach(function(s){SM[s].color=DEFAULT_STAT_COLORS[s];SM[s].dim=DEFAULT_STAT_DIMS[s];});
+  applyThemeCSSVars();
   ensureCurMonth();
   const eng=engine();
   const{totXP,warns,off}=eng;
@@ -2517,7 +2846,8 @@ function playCheckSound(isMalus){
   }catch(e){}
 }
 function showConfetti(){
-  var colors=['#8b5cf6','#ec4899','#f59e0b','#10b981','#0891b2','#ffd700'];
+  var skin=activeConfettiObj();
+  var colors=skin?skin.colors:['#8b5cf6','#ec4899','#f59e0b','#10b981','#0891b2','#ffd700'];
   for(var i=0;i<28;i++){
     (function(idx){
       var el=document.createElement('div');
@@ -2851,7 +3181,8 @@ function tDay(di,sid,monthKey){
       }
       const remainEl=document.getElementById('today-remaining');
       if(remainEl){
-        const remainSlotsTD=aSlotsTD.filter(function(s){return !md.days[di][s.id];});
+        const _selDateStr=ymdKey(pk(key).year,pk(key).month,di+1);
+        const remainSlotsTD=aSlotsTD.filter(function(s){return !md.days[di][s.id]&&isPlannedForDay(s.id,_selDateStr);});
         if(remainSlotsTD.length===0){
           remainEl.style.display='none';
         } else {
@@ -3411,7 +3742,6 @@ function openStatAnalytics(stat){
   var realToday=now.getDate()-1;
   var sxp=eng.sxp[stat]||0;
   var lv=Math.floor(sxp/100)+1;
-  var tierLbl=statTierLabel(stat,lv);
   var dow=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
   var skeys=Object.keys(ST.history).sort();
 
@@ -3472,7 +3802,7 @@ function openStatAnalytics(stat){
   html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
   html+="<span style='font-size:2rem'>"+m.icon+"</span>";
   html+="<div><div style='font-family:Anton,sans-serif;font-size:1.2rem;color:"+m.color+";letter-spacing:2px'>"+m.label+"</div>";
-  html+="<div style='font-size:.7rem;color:#0e7490'>"+(tierLbl?tierLbl+" · ":"")+"Lv "+lv+" · "+sxp+" XP total</div></div>";
+  html+="<div style='font-size:.7rem;color:#0e7490'>Lv "+lv+" · "+sxp+" XP total</div></div>";
   html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button>";
   html+="</div>";
 
@@ -3576,7 +3906,6 @@ function openStatPanel(stat,selectedDay,selectedKey){
   var d=md.days[selDay]||{};
   var sxp=eng.sxp[stat]||0;
   var lv=Math.floor(sxp/100)+1;
-  var tierLbl=statTierLabel(stat,lv);
   var dow=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"];
   var p=pk(key);
   var thisDate=new Date(p.year,p.month,selDay+1);
@@ -3589,7 +3918,7 @@ function openStatPanel(stat,selectedDay,selectedKey){
   html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
   html+="<span style='font-size:2rem'>"+m.icon+"</span>";
   html+="<div><div style='font-family:Anton,sans-serif;font-size:1.2rem;color:"+m.color+";letter-spacing:2px'>"+m.label+"</div>";
-  html+="<div style='font-size:.7rem;color:#0e7490'>"+(tierLbl?tierLbl+" · ":"")+"Lv "+lv+" · "+sxp+" XP total (à vie)</div></div>";
+  html+="<div style='font-size:.7rem;color:#0e7490'>Lv "+lv+" · "+sxp+" XP total (à vie)</div></div>";
   html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button>";
   html+="</div>";
 
@@ -3668,6 +3997,9 @@ function updateGokuAura(totXP){
   } else {
     color="#446688";color2="#223344";opacity=0.3;bgOpacity=0.02;
   }
+  // Thème actif = skin d'aura : on garde l'intensité/vitesse liées à l'XP mais on reteinte selon le thème choisi.
+  const th=activeThemeObj();
+  if(th){color=th.primary;color2=th.secondary;}
   ring.style.background=`radial-gradient(ellipse, ${color}${Math.round(opacity*255).toString(16).padStart(2,'0')} 0%, ${color2}44 50%, transparent 70%)`;
   ring.style.opacity="1";
   bg.style.background=`radial-gradient(ellipse 100% 50% at 50% 100%, ${color}${Math.round(bgOpacity*255).toString(16).padStart(2,'0')} 0%, transparent 70%)`;
