@@ -272,13 +272,51 @@ const FRAMES={
   royal:{id:"frame_royal",name:"Cadre royal",icon:"👑",cost:250,border:"#7c3aed",shadow:"rgba(124,58,237,0.4)"}
 };
 function activeFrameObj(){const id=ST&&ST.activeFrame;if(!id||id==="default")return null;return FRAMES[id]||null;}
+function playDeniedSound(){
+  if(ST.soundEnabled===false)return;
+  try{
+    if(!_audioCtx)_audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    var t=_audioCtx.currentTime;
+    var osc=_audioCtx.createOscillator();
+    var gain=_audioCtx.createGain();
+    osc.connect(gain);gain.connect(_audioCtx.destination);
+    osc.type='sawtooth';
+    osc.frequency.setValueAtTime(180,t);
+    osc.frequency.exponentialRampToValueAtTime(85,t+0.18);
+    gain.gain.setValueAtTime(0.001,t);
+    gain.gain.linearRampToValueAtTime(0.09,t+0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001,t+0.22);
+    osc.start(t);osc.stop(t+0.24);
+  }catch(e){}
+}
+function playPurchaseSound(){
+  if(ST.soundEnabled===false)return;
+  try{
+    if(!_audioCtx)_audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(_audioCtx.state==='suspended')_audioCtx.resume();
+    var t=_audioCtx.currentTime;
+    [[1050,0],[1580,0.07]].forEach(function(pair){
+      var osc=_audioCtx.createOscillator();
+      var gain=_audioCtx.createGain();
+      osc.connect(gain);gain.connect(_audioCtx.destination);
+      osc.type='sine';
+      osc.frequency.setValueAtTime(pair[0],t+pair[1]);
+      gain.gain.setValueAtTime(0.001,t+pair[1]);
+      gain.gain.linearRampToValueAtTime(0.12,t+pair[1]+0.008);
+      gain.gain.exponentialRampToValueAtTime(0.001,t+pair[1]+0.15);
+      osc.start(t+pair[1]);osc.stop(t+pair[1]+0.16);
+    });
+  }catch(e){}
+}
 function buyFrame(frameId){
   const fr=FRAMES[frameId];if(!fr)return;
   if(!Array.isArray(ST.ownedFrames))ST.ownedFrames=[];
   if(!ST.ownedFrames.includes(fr.id)){
-    if((ST.gems||0)<fr.cost)return;
+    if((ST.gems||0)<fr.cost){playDeniedSound();return;}
     ST.gems-=fr.cost;
     ST.ownedFrames.push(fr.id);
+    playPurchaseSound();
   }
   ST.activeFrame=frameId;
   saveST();render();
@@ -299,13 +337,89 @@ const CONFETTI_SKINS={
   sakura:{id:"confetti_sakura",name:"Sakura",icon:"🌸",cost:120,colors:["#f9a8d4","#fbcfe8","#ffffff","#f472b6"]}
 };
 function activeConfettiObj(){const id=ST&&ST.activeConfetti;if(!id||id==="default")return null;return CONFETTI_SKINS[id]||null;}
+// ── PROGRAMMES ── configuration prête à charger : remplace toutes les tâches actives d'un coup.
+// Pour ceux qui n'ont aucune idée de quoi faire pour commencer, ou qui veulent un objectif clé en main.
+const PROGRAMS={
+  starter:{id:"program_starter",name:"Débutant",icon:"🌱",cost:0,desc:"Un point de départ simple et équilibré si tu ne sais pas par où commencer — une tâche par compétence.",tasks:{
+    intel:[{n:"Lecture 15min",xp:1}],
+    physique:[{n:"Marche 20min",xp:1}],
+    craft:[{n:"Créer 15min",xp:1}],
+    disc:[{n:"Lever tôt",xp:1}],
+    bienetre:[{n:"Boire 2L d'eau",xp:1}]
+  }},
+  fitness:{id:"program_fitness",name:"Remise en forme totale",icon:"🏋️",cost:200,desc:"Cardio, muscu, sommeil et hydratation — pour repartir sur des bases solides.",tasks:{
+    physique:[{n:"Cardio 30min",xp:2},{n:"Musculation",xp:2},{n:"Étirements",xp:1},{n:"10 000 pas",xp:1}],
+    bienetre:[{n:"Sommeil 8h",xp:2},{n:"Boire 2L d'eau",xp:1}],
+    disc:[{n:"Lever tôt",xp:1}]
+  }},
+  student:{id:"program_student",name:"Étudiant en examens",icon:"📚",cost:200,desc:"Révisions, fiches, sommeil — pour tenir la cadence jusqu'aux résultats.",tasks:{
+    intel:[{n:"Révisions 1h",xp:3},{n:"Fiches de synthèse",xp:2},{n:"Lecture cours",xp:1},{n:"Quiz / exercices",xp:2}],
+    disc:[{n:"Pas de téléphone (étude)",xp:2},{n:"Pause écran",xp:1}],
+    bienetre:[{n:"Sommeil 8h",xp:2}]
+  }},
+  productivity:{id:"program_productivity",name:"Productivité pro",icon:"💼",cost:200,desc:"Routine matinale, deep work, no phone — pour une vraie journée de boulot efficace.",tasks:{
+    disc:[{n:"Routine matinale",xp:2},{n:"Deep work 1h",xp:3},{n:"No phone matin",xp:2},{n:"Journal du soir",xp:1}],
+    craft:[{n:"Avancer projet pro",xp:2}],
+    bienetre:[{n:"Pause déjeuner sans écran",xp:1}]
+  }},
+  creator:{id:"program_creator",name:"Créateur de contenu",icon:"🎨",cost:200,desc:"Créer, publier, apprendre, réseauter — pour faire grandir un projet créatif.",tasks:{
+    craft:[{n:"Créer du contenu",xp:3},{n:"Publier",xp:2},{n:"Apprendre une compétence",xp:2},{n:"Réseauter",xp:1}],
+    disc:[{n:"Routine soir",xp:1}],
+    bienetre:[{n:"Repos actif",xp:1}]
+  }},
+  reset:{id:"program_reset",name:"Reset mental & bien-être",icon:"🧘",cost:200,desc:"Méditation, gratitude, digital detox — pour souffler et repartir plus léger.",tasks:{
+    bienetre:[{n:"Méditation 10min",xp:2},{n:"Gratitude du soir",xp:1},{n:"Sommeil 8h",xp:2},{n:"Nature / extérieur",xp:1}],
+    disc:[{n:"Digital detox 1h",xp:2}],
+    physique:[{n:"Marche 20min",xp:1}]
+  }}
+};
+function _applyProgramCore(programId){
+  const prog=PROGRAMS[programId];if(!prog)return;
+  const now=new Date(),key=mk(now.getFullYear(),now.getMonth()),md=ST.history[key];
+  if(!md)return;
+  const defaults=mkSlots();
+  const activeIds=[];
+  STATS.forEach(function(stat){
+    const tasks=prog.tasks[stat]||[];
+    for(let i=0;i<7;i++){
+      const id=stat+"_"+i;
+      const slot=ST.slots.find(function(s){return s.id===id;});
+      if(!slot)continue;
+      if(tasks[i]){
+        slot.name=tasks[i].n;
+        slot.xp=tasks[i].xp;
+        activeIds.push(id);
+      }else{
+        const def=defaults.find(function(d){return d.id===id;});
+        if(def){slot.name=def.name;slot.xp=def.xp;}
+      }
+    }
+  });
+  md.activeSlots=activeIds;
+}
+function loadProgram(programId){
+  const prog=PROGRAMS[programId];if(!prog)return;
+  const owned=prog.cost===0||(Array.isArray(ST.ownedPrograms)&&ST.ownedPrograms.includes(prog.id));
+  if(!owned&&(ST.gems||0)<prog.cost){playDeniedSound();return;}
+  if(!confirm('Charger "'+prog.name+'" ?\n\nToutes tes tâches actuelles seront remplacées par celles du programme.'))return;
+  if(!owned){
+    ST.gems-=prog.cost;
+    if(!Array.isArray(ST.ownedPrograms))ST.ownedPrograms=[];
+    ST.ownedPrograms.push(prog.id);
+    playPurchaseSound();
+  }
+  _applyProgramCore(programId);
+  saveST();
+  render();
+}
 function buyConfettiSkin(skinId){
   const sk=CONFETTI_SKINS[skinId];if(!sk)return;
   if(!Array.isArray(ST.ownedConfetti))ST.ownedConfetti=[];
   if(!ST.ownedConfetti.includes(sk.id)){
-    if((ST.gems||0)<sk.cost)return;
+    if((ST.gems||0)<sk.cost){playDeniedSound();return;}
     ST.gems-=sk.cost;
     ST.ownedConfetti.push(sk.id);
+    playPurchaseSound();
   }
   ST.activeConfetti=skinId;
   saveST();render();
@@ -412,7 +526,7 @@ function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,boostMult:2,freezeUntil:null,ownedThemes:[],activeTheme:'default',dayPlans:{},customTitle:'',ownedFrames:[],activeFrame:'default',ownedConfetti:[],activeConfetti:'default',history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,boostMult:2,freezeUntil:null,ownedThemes:[],activeTheme:'default',dayPlans:{},customTitle:'',ownedFrames:[],activeFrame:'default',ownedConfetti:[],activeConfetti:'default',ownedPrograms:[],qaGemsGranted:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
 
 let ST=loadST()||initST();
 function migrateOnboarding(){
@@ -455,6 +569,7 @@ function migratePlayerProfile(){
   if(!ST.activeFrame)ST.activeFrame='default';
   if(!Array.isArray(ST.ownedConfetti))ST.ownedConfetti=[];
   if(!ST.activeConfetti)ST.activeConfetti='default';
+  if(!Array.isArray(ST.ownedPrograms))ST.ownedPrograms=[];
   if(ST.freezeUntil===undefined)ST.freezeUntil=null;
   // Ancien système de skins par compétence retiré (remplacé par les thèmes globaux) :
   // on rembourse les gemmes dépensées sur les skins déjà achetés, puis on efface les anciens champs.
@@ -475,6 +590,13 @@ function migratePlayerProfile(){
   if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
   if(!ST.activeTheme)ST.activeTheme='default';
   if(!ST.dayPlans)ST.dayPlans={};
+  // Cadeau ponctuel unique pour tester tout le shop (thèmes, cadres, confettis) sans avoir à farmer.
+  if(!ST.qaGemsGranted){
+    ST.gems=(ST.gems||0)+10000;
+    ST.gemsEarnedTotal=(ST.gemsEarnedTotal||0)+10000;
+    ST.qaGemsGranted=true;
+    saveST();
+  }
   // Existing users (onboarding already complete) never had a firstUseDate — backdate it so they
   // land straight in the normal tip phase instead of suddenly seeing a "welcome" message.
   if(ST.onboardingComplete&&!ST.firstUseDate){
@@ -485,40 +607,44 @@ function migratePlayerProfile(){
 const DIFFICULTY_MULT={easy:1.5,normal:1,hard:0.5};
 function buyBoost(hours){
   const cost=hours*5;
-  if((ST.gems||0)<cost)return;
+  if((ST.gems||0)<cost){playDeniedSound();return;}
   ST.gems-=cost;
   const base=isBoostActive()?new Date(ST.boostUntil):new Date();
   base.setHours(base.getHours()+hours);
   ST.boostUntil=base.toISOString();
   ST.boostMult=2;
+  playPurchaseSound();
   saveST();render();
 }
 function buyBoostPremium(hours){
   const cost=hours*14;
-  if((ST.gems||0)<cost)return;
+  if((ST.gems||0)<cost){playDeniedSound();return;}
   ST.gems-=cost;
   const base=isBoostActive()?new Date(ST.boostUntil):new Date();
   base.setHours(base.getHours()+hours);
   ST.boostUntil=base.toISOString();
   ST.boostMult=3;
+  playPurchaseSound();
   saveST();render();
 }
 function buyFreeze(days){
   const cost=days*22;
-  if((ST.gems||0)<cost)return;
+  if((ST.gems||0)<cost){playDeniedSound();return;}
   ST.gems-=cost;
   const base=isFreezeActive()?new Date(ST.freezeUntil):new Date();
   base.setDate(base.getDate()+days);
   ST.freezeUntil=base.toISOString();
+  playPurchaseSound();
   saveST();render();
 }
 function buyTheme(themeId){
   const th=THEMES[themeId];if(!th)return;
   if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
   if(!ST.ownedThemes.includes(th.id)){
-    if((ST.gems||0)<th.cost)return;
+    if((ST.gems||0)<th.cost){playDeniedSound();return;}
     ST.gems-=th.cost;
     ST.ownedThemes.push(th.id);
+    playPurchaseSound();
   }
   ST.activeTheme=themeId;
   saveST();render();
@@ -1071,7 +1197,11 @@ const TIP_BANK={
     "\u00c7a sert \u00e0 rien de cocher une t\u00e2che que t\u2019as pas faite. Tu ne trompes que toi.",
     "Personne ne v\u00e9rifie tes cases \u00e0 part toi. Autant qu\u2019elles disent la v\u00e9rit\u00e9.",
     "Les XP ne sont pas un troph\u00e9e, c\u2019est un miroir. Triche, et c\u2019est ton reflet qui perd.",
-    "Tricher ici, c\u2019est juste retarder le moment o\u00f9 tu te mens moins bien. C\u2019est toi contre toi."
+    "Tricher ici, c\u2019est juste retarder le moment o\u00f9 tu te mens moins bien. C\u2019est toi contre toi.",
+    "Chaque case que tu coches, c\u2019est un vote pour la personne que tu deviens. Choisis bien.",
+    "Ton futur ne se d\u00e9cide pas demain, il se d\u00e9cide maintenant, avec ce que tu fais l\u00e0.",
+    "Personne ne viendra vivre ta vie \u00e0 ta place. C\u2019est toi qui choisis ton futur, une case \u00e0 la fois.",
+    "Tu n\u2019es pas en comp\u00e9tition avec les autres ici. Juste avec la version d\u2019hier de toi."
   ],
   steps:[
     "Une t\u00e2che coch\u00e9e aujourd\u2019hui vaut plus que dix pr\u00e9vues pour demain.",
@@ -1411,6 +1541,87 @@ html+=rThrowback(eng);
 function ymdKey(y,m,d){const mm=(m+1)<10?"0"+(m+1):""+(m+1);const dd=d<10?"0"+d:""+d;return y+"-"+mm+"-"+dd;}
 function getDayPlan(dateStr){return(ST.dayPlans&&ST.dayPlans[dateStr])||null;}
 function isPlannedForDay(slotId,dateStr){const p=getDayPlan(dateStr);if(!p)return true;return p.indexOf(slotId)>=0;}
+// ── TÂCHES RÉPÉTÉES ── ex: boire de l'eau, respirer 10x. Un tap = +1 vers la cible. Une fois la cible
+// atteinte (ou décochée), on délègue entièrement à tDay() pour XP/badges/streak — zéro changement moteur.
+// La progression en cours est stockée en inline sous d[slotId+'_cnt'] (aucune migration nécessaire).
+function repeatTargetFor(slotId){
+  const s=ST.slots.find(function(x){return x.id===slotId;});
+  return (s&&s.repeat&&s.repeat>1)?s.repeat:1;
+}
+function progressColor(ratio){
+  ratio=Math.max(0,Math.min(1,ratio));
+  var r,g,b;
+  if(ratio<0.5){var t=ratio/0.5;r=Math.round(220+(245-220)*t);g=Math.round(38+(158-38)*t);b=Math.round(38+(11-38)*t);}
+  else{var t=(ratio-0.5)/0.5;r=Math.round(245+(16-245)*t);g=Math.round(158+(185-158)*t);b=Math.round(11+(129-11)*t);}
+  return 'rgb('+r+','+g+','+b+')';
+}
+function _tCounterStep(di,sid,monthKey){
+  const now=new Date(),key=monthKey||mk(now.getFullYear(),now.getMonth()),md=ST.history[key];
+  if(!md)return null;
+  const d=md.days[di];
+  if(!d)return null;
+  const target=repeatTargetFor(sid);
+  if(d[sid]){
+    delete d[sid+'_cnt'];
+    tDay(di,sid,monthKey);
+    return{done:false,reset:true,count:0,target:target};
+  }
+  const cur=Math.min(target,(d[sid+'_cnt']||0)+1);
+  if(cur>=target){
+    delete d[sid+'_cnt'];
+    tDay(di,sid,monthKey);
+    return{done:true,reset:false,count:target,target:target};
+  }
+  d[sid+'_cnt']=cur;
+  saveST();
+  playPlocSound();
+  return{done:false,reset:false,count:cur,target:target};
+}
+function tCounterGrid(di,sid,monthKey){
+  const res=_tCounterStep(di,sid,monthKey);
+  if(!res||res.done||res.reset)return; // tDay a déjà mis à jour la cellule (✓ ou ·)
+  if(monthKey){render();return;}
+  const cell=document.getElementById('tog-'+di+'-'+sid);
+  if(cell){
+    cell.className='tog';
+    cell.textContent=res.count+'/'+res.target;
+    cell.style.background=progressColor(res.count/res.target);
+    cell.style.color='#fff';
+    cell.style.fontSize='.46rem';
+    cell.style.fontWeight='800';
+    cell.classList.remove('tog-pulse');
+    void cell.offsetWidth;
+    cell.classList.add('tog-pulse');
+  }
+}
+function tCounterPill(di,sid){
+  const _scrollBox=document.querySelector('.table-scroll');
+  const _savedScrollLeft=_scrollBox?_scrollBox.scrollLeft:0;
+  const _savedScrollTop=_scrollBox?_scrollBox.scrollTop:0;
+  const res=_tCounterStep(di,sid);
+  if(!res||res.done||res.reset)return; // tDay gère déjà son propre rendu/son dans ce cas
+  render();
+  if(_scrollBox){
+    _scrollBox.scrollLeft=_savedScrollLeft;
+    _scrollBox.scrollTop=_savedScrollTop;
+    var _lockDeadline=Date.now()+500;
+    var _scrollLockFn=function(){
+      if(Date.now()<_lockDeadline){
+        if(_scrollBox.scrollLeft!==_savedScrollLeft)_scrollBox.scrollLeft=_savedScrollLeft;
+        if(_scrollBox.scrollTop!==_savedScrollTop)_scrollBox.scrollTop=_savedScrollTop;
+      } else { _scrollBox.removeEventListener('scroll',_scrollLockFn); }
+    };
+    _scrollBox.addEventListener('scroll',_scrollLockFn,{passive:false});
+    [0,16,50,120,250,400].forEach(function(delay){
+      setTimeout(function(){
+        if(Date.now()<_lockDeadline+50){
+          if(_scrollBox.scrollLeft!==_savedScrollLeft)_scrollBox.scrollLeft=_savedScrollLeft;
+          if(_scrollBox.scrollTop!==_savedScrollTop)_scrollBox.scrollTop=_savedScrollTop;
+        }
+      },delay);
+    });
+  }
+}
 function tPlan(y,m,d,slotId){
   const key=ymdKey(y,m,d);
   const _scrollBox=document.querySelector('.table-scroll');
@@ -1569,7 +1780,18 @@ function rTracker(eng){
         <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctSel===100?"#10b981":"#8b5cf6"}">${isFutureSel?plannedCount+" pr\u00e9vue(s)":todayTaskDone+"/"+todayTaskCount+" t\u00e2ches"}</span>
       </div>
       ${isFutureSel?`<div style="font-size:.66rem;color:#8b5cf6;margin-bottom:10px">📌 Touche une t\u00e2che pour la planifier ce jour-l\u00e0.</div>`:`<div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px;margin-bottom:${visibleRemaining.length>0?"10":"0"}px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctSel===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctSel}%;transition:width .4s ease"></div></div>`}
-      ${visibleRemaining.length>0?`<div id="today-remaining" style="display:flex;flex-wrap:wrap;gap:6px">${visibleRemaining.map(s=>{const _pl=isPlannedForDay(s.id,ymdKey(curY,curM,selDay+1));const _act=isFutureSel?`tPlan(${curY},${curM},${selDay+1},'${s.id}')`:`tDay(${selDay},'${s.id}')`;const _sty=isFutureSel&&!_pl?`background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)`:`background:${SM[s.stat].dim};color:${SM[s.stat].color};border:1px solid ${SM[s.stat].color}40`;return `<span onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name}${isFutureSel&&_pl?" 📌":""}</span>`;}).join("")}</div>`:""}
+      ${visibleRemaining.length>0?`<div id="today-remaining" style="display:flex;flex-wrap:wrap;gap:6px">${visibleRemaining.map(s=>{
+        const _pl=isPlannedForDay(s.id,ymdKey(curY,curM,selDay+1));
+        const _target=repeatTargetFor(s.id);
+        if(!isFutureSel&&_target>1){
+          const _cnt=Math.min(_target,(md.days[selDay]||{})[s.id+"_cnt"]||0);
+          const _gc=_cnt>0?progressColor(_cnt/_target):null;
+          return `<span onclick="tCounterPill(${selDay},'${s.id}')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:${_gc||SM[s.stat].dim};color:${_gc?"#fff":SM[s.stat].color};border:1px solid ${_gc||SM[s.stat].color+"40"};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name} · ${_cnt}/${_target}</span>`;
+        }
+        const _act=isFutureSel?`tPlan(${curY},${curM},${selDay+1},'${s.id}')`:`tDay(${selDay},'${s.id}')`;
+        const _sty=isFutureSel&&!_pl?`background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)`:`background:${SM[s.stat].dim};color:${SM[s.stat].color};border:1px solid ${SM[s.stat].color}40`;
+        return `<span onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name}${isFutureSel&&_pl?" 📌":""}</span>`;
+      }).join("")}</div>`:""}
     </div>`;
   }
   html+=`<div class="card" style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
@@ -1615,7 +1837,16 @@ function rTracker(eng){
           html+=`<td><div id="tog-${i}-${s.id}" class="tog ${planSet&&planned?cls[s.stat]:""}" style="cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Planifier cette tâche ce jour-là">${sym}</div></td>`;
         }
       }else{
-        if(!chk&&!planned){
+        const target=repeatTargetFor(s.id);
+        if(target>1&&!chk){
+          if(!planned){
+            html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="border-color:transparent;background:transparent" onclick="tCounterGrid(${i},'${s.id}'${mkArg})"></div></td>`;
+          }else{
+            const cnt=Math.min(target,d[s.id+"_cnt"]||0);
+            const gc=cnt>0?progressColor(cnt/target):null;
+            html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="background:${gc||"transparent"};border-color:${gc||"rgba(8,145,178,0.15)"};color:${gc?"#fff":"inherit"};font-size:.46rem;font-weight:800" onclick="tCounterGrid(${i},'${s.id}'${mkArg})">${cnt}/${target}</div></td>`;
+          }
+        } else if(!chk&&!planned){
           html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="border-color:transparent;background:transparent" onclick="tDay(${i},'${s.id}'${mkArg})"></div></td>`;
         }else{
           html+=`<td><div id="tog-${i}-${s.id}" class="tog ${chk?cls[s.stat]:""}" onclick="tDay(${i},'${s.id}'${mkArg})">${chk?"✓":"·"}</div></td>`;
@@ -1679,6 +1910,7 @@ function rConfig(){
         html+=`<div class="cfg-toggle" style="background:${ia?m.color+"30":"#e0f2f8"};border:1.5px solid ${ia?m.color:"#b0d8e8"}" onclick="tActive('${s.id}')">`;
         html+=`<div class="cfg-toggle-dot" style="left:${ia?"16":"2"}px;background:${ia?m.color:"#7dd3e8"}"></div></div>`;
         html+=`<span onclick="openFreqRule('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${hasRuleX?1:0.25};flex-shrink:0;margin-right:2px" title="${hasRuleX?slotRuleX.minPerWeek+'x/sem → -'+slotRuleX.malusXP+' XP':'Ajouter règle fréquence'}">⏰</span>`;
+        html+=`<span onclick="openRepeatRule('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${(s.repeat&&s.repeat>1)?1:0.25};flex-shrink:0;margin-right:2px" title="${(s.repeat&&s.repeat>1)?'Répéter '+s.repeat+'x/jour':'Rendre répétable (ex: boire de l’eau x10)'}">🔁</span>`;
         if(ie){
           html+=`<input class="cfg-input" id="edit-${s.id}" value="${s.name}" onblur="saveSN('${s.id}')" onkeydown="if(event.key==='Enter')saveSN('${s.id}')">`;
         } else {
@@ -1790,6 +2022,10 @@ function rConfig(){
       </div>
     </div>`;
     html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">💎 SHOP</div>`;
+    html+=`<div class="card" style="margin-bottom:10px;background:rgba(0,0,0,0.03);border-style:dashed">
+      <div style="font-size:.68rem;color:#0e7490;margin-bottom:8px">🧪 Mode test — pour essayer tout le shop sans grinder.</div>
+      <button onclick="grantTestGems()" style="width:100%;padding:10px;border:1px dashed rgba(0,0,0,0.25);border-radius:10px;background:#fff;color:#1e3a4a;font-size:.72rem;font-weight:700;cursor:pointer">+50 000 💎</button>
+    </div>`;
     html+=`<div class="card" style="margin-bottom:10px;background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.25)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">⚡</span><span style="font-weight:700;color:#8b5cf6;font-size:.85rem">Boost XP x2</span></div>
       <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isBoostActive()?'Actif jusqu\'au '+new Date(ST.boostUntil).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Double tes gains XP pendant la dur\u00e9e choisie.'}</div>
@@ -1915,6 +2151,17 @@ function rConfig(){
         </div>`;
       });
     }
+    html+=`<div class="sl" style="margin-bottom:10px;margin-top:18px">📋 PROGRAMMES</div>`;
+    html+=`<div style="background:rgba(16,185,129,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Charge une config de tâches prête à l'emploi — <strong>remplace toutes tes tâches actuelles</strong>. Utile pour démarrer, ou pour changer complètement de direction.</div>`;
+    Object.keys(PROGRAMS).forEach(function(progId){
+      const prog=PROGRAMS[progId];
+      const owned=prog.cost===0||(ST.ownedPrograms||[]).includes(prog.id);
+      html+=`<div class="card" style="margin-bottom:10px;background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.3)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${prog.icon}</span><span style="font-weight:700;color:#10b981;font-size:.85rem">${prog.name}</span>${prog.cost===0?`<span style="font-size:.6rem;color:#10b981;font-weight:700;background:rgba(16,185,129,0.15);padding:2px 8px;border-radius:99px;margin-left:auto">GRATUIT</span>`:""}</div>
+        <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${prog.desc}</div>
+        <button onclick="loadProgram('${progId}')" style="width:100%;padding:8px;border:1px solid rgba(16,185,129,0.4);border-radius:10px;background:#fff;color:#10b981;font-size:.7rem;font-weight:700;cursor:pointer">${owned?"Charger":"Charger · 💎"+prog.cost}</button>
+      </div>`;
+    });
     html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">👤 PROFIL JOUEUR</div>`;
     html+=`<div class="card" style="margin-bottom:8px">
       <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">PRÉNOM</div>
@@ -2480,6 +2727,14 @@ function skipOnboarding(){
   ONBOARD_STEP=0;
   render();
 }
+function loadStarterAndFinish(){
+  _applyProgramCore('starter');
+  ST.onboardingComplete=true;
+  ST.firstUseDate=new Date().toISOString().slice(0,10);
+  saveST();
+  ONBOARD_STEP=0;
+  render();
+}
 function renderOnboarding(){
   const app=document.getElementById("app");
   let html='<div style="min-height:100vh;padding:28px 20px;display:flex;flex-direction:column">';
@@ -2502,6 +2757,7 @@ function renderOnboarding(){
       <input id="ob-goal" type="text" placeholder="Ex: \u00eatre plus productif" value="${ST.playerGoal||''}" style="width:100%;padding:12px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.9rem;box-sizing:border-box">
     </div>`;
     html+=`<button onclick="onboardNext()" style="width:100%;padding:14px;border:none;border-radius:12px;background:linear-gradient(90deg,#0891b2,#8b5cf6);color:#fff;font-weight:700;font-size:.9rem;cursor:pointer">Continuer</button>`;
+    html+=`<button onclick="loadStarterAndFinish()" style="width:100%;padding:12px;border:2px dashed rgba(16,185,129,0.4);border-radius:12px;background:rgba(16,185,129,0.05);color:#10b981;font-weight:700;font-size:.8rem;cursor:pointer;margin-top:10px">🌱 Je ne sais pas par où commencer — charge-moi un programme</button>`;
     html+=`<div onclick="skipOnboarding()" style="text-align:center;margin-top:14px;font-size:.72rem;color:#999;cursor:pointer">Passer et tout d\u00e9couvrir moi-m\u00eame</div>`;
   }
 
@@ -3188,6 +3444,12 @@ function tDay(di,sid,monthKey){
         } else {
           remainEl.innerHTML=remainSlotsTD.map(function(s){
             const sm=SM[s.stat];
+            const target=repeatTargetFor(s.id);
+            if(target>1){
+              const cnt=Math.min(target,(md.days[di]||{})[s.id+'_cnt']||0);
+              const gc=cnt>0?progressColor(cnt/target):null;
+              return '<span onclick="tCounterPill('+di+',\''+s.id+'\')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:'+(gc||sm.dim)+';color:'+(gc?'#fff':sm.color)+';border:1px solid '+(gc||sm.color+'40')+';cursor:pointer;font-weight:600">'+sm.icon+' '+s.name+' · '+cnt+'/'+target+'</span>';
+            }
             return '<span onclick="tDay('+di+',\''+s.id+'\')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:'+sm.dim+';color:'+sm.color+';border:1px solid '+sm.color+'40;cursor:pointer;font-weight:600">'+sm.icon+' '+s.name+'</span>';
           }).join('');
         }
@@ -3326,6 +3588,58 @@ function openFreqRule(slotId){
   const cur=(ST.slotRules&&ST.slotRules[slotId])||{minPerWeek:1,malusXP:2};
   _freqRuleDraft={slotId:slotId,minPerWeek:cur.minPerWeek,malusXP:cur.malusXP};
   renderFreqRulePanel();
+}
+var _repeatRuleDraft=null;
+function dRepeatRule(delta){
+  if(!_repeatRuleDraft)return;
+  _repeatRuleDraft.target=Math.min(30,Math.max(1,_repeatRuleDraft.target+delta));
+  renderRepeatRulePanel();
+}
+function saveRepeatRule(){
+  if(!_repeatRuleDraft)return;
+  const s=ST.slots.find(function(x){return x.id===_repeatRuleDraft.slotId;});
+  if(s){if(_repeatRuleDraft.target>1)s.repeat=_repeatRuleDraft.target;else delete s.repeat;}
+  saveST();
+  closePanel();
+  render();
+}
+function removeRepeatRule(){
+  if(!_repeatRuleDraft)return;
+  const s=ST.slots.find(function(x){return x.id===_repeatRuleDraft.slotId;});
+  if(s)delete s.repeat;
+  saveST();
+  closePanel();
+  render();
+}
+function renderRepeatRulePanel(){
+  const s=ST.slots.find(function(x){return x.id===_repeatRuleDraft.slotId;});
+  if(!s)return;
+  const had=!!(s.repeat&&s.repeat>1);
+  let html='';
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>🔁</span>";
+  html+="<div><div style='font-family:Anton,sans-serif;font-size:1.05rem;color:#10b981;letter-spacing:1px'>TÂCHE RÉPÉTÉE</div>";
+  html+="<div style='font-size:.72rem;color:#0e7490'>"+s.name+"</div></div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+  html+="<div style='background:rgba(16,185,129,0.06);border-radius:14px;padding:16px;margin-bottom:16px'>";
+  html+="<div style='font-size:.6rem;color:#10b981;font-family:Anton,sans-serif;letter-spacing:1px;margin-bottom:10px'>NOMBRE DE FOIS PAR JOUR</div>";
+  html+="<div style='display:flex;align-items:center;gap:14px'>";
+  html+="<button class='btn-small' style='width:32px;height:32px;font-size:1.1rem' onclick='dRepeatRule(-1)'>−</button>";
+  html+="<span style='font-family:monospace;color:#10b981;font-weight:700;font-size:1.8rem;min-width:40px;text-align:center'>"+_repeatRuleDraft.target+"</span>";
+  html+="<button class='btn-small' style='width:32px;height:32px;font-size:1.1rem' onclick='dRepeatRule(1)'>+</button>";
+  html+="</div></div>";
+  html+="<div style='font-size:.75rem;color:#0e7490;background:#f0faff;border-radius:12px;padding:12px;margin-bottom:16px'>"+(_repeatRuleDraft.target>1?"Tu devras taper <strong>"+_repeatRuleDraft.target+" fois</strong> sur cette tâche dans la journée pour la valider (ex\u00a0: un verre d'eau à la fois).":"Tâche normale — un seul tap suffit pour la valider.")+"</div>";
+  html+="<button onclick='saveRepeatRule()' style='width:100%;padding:13px;border:none;border-radius:12px;background:#10b981;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>✓ Enregistrer</button>";
+  if(had)html+="<button onclick='removeRepeatRule()' style='width:100%;padding:11px;border:1px solid rgba(220,38,38,0.3);border-radius:12px;background:#fff;color:#dc2626;font-weight:700;font-size:.78rem;cursor:pointer'>Retirer la répétition</button>";
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+function openRepeatRule(slotId){
+  const s=ST.slots.find(s=>s.id===slotId);
+  if(!s)return;
+  _repeatRuleDraft={slotId:slotId,target:(s.repeat&&s.repeat>1)?s.repeat:1};
+  renderRepeatRulePanel();
 }
 function dStreakMin(delta){
   if(!ST.streakCfg)ST.streakCfg=mkStreakCfg();
@@ -3875,7 +4189,12 @@ function openStatAnalytics(stat){
 function checkStatDayTask(el){
   var now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
   var day=+el.dataset.today,sid=el.dataset.sid,stat=el.dataset.stat,key=el.dataset.key;
-  tDay(day,sid,key===curKey?undefined:key);
+  var monthArg=key===curKey?undefined:key;
+  if(repeatTargetFor(sid)>1){
+    _tCounterStep(day,sid,monthArg);
+  }else{
+    tDay(day,sid,monthArg);
+  }
   openStatPanel(stat,day,key);
 }
 function shiftStatDay(stat,curDay,curKey,delta){
@@ -3939,14 +4258,19 @@ function openStatPanel(stat,selectedDay,selectedKey){
   } else {
     statSlots.forEach(function(s){
       var checked=!!d[s.id];
-      var bg2=checked?m.color+"15":"rgba(0,0,0,0.03)";
-      var border2=checked?m.color+"50":"rgba(0,0,0,0.06)";
-      var dotBg=checked?m.color:"transparent";
-      var dotBorder=checked?m.color:"rgba(0,0,0,0.15)";
+      var target=repeatTargetFor(s.id);
+      var cnt=target>1?Math.min(target,d[s.id+"_cnt"]||0):0;
+      var gc=(target>1&&!checked&&cnt>0)?progressColor(cnt/target):null;
+      var bg2=checked?m.color+"15":(gc?gc+"22":"rgba(0,0,0,0.03)");
+      var border2=checked?m.color+"50":(gc||"rgba(0,0,0,0.06)");
+      var dotBg=checked?m.color:(gc||"transparent");
+      var dotBorder=checked?m.color:(gc||"rgba(0,0,0,0.15)");
       var nc=checked?m.color:"#1e3a4a";
+      var dotContent=checked?"✓":(target>1?cnt+"/"+target:"");
+      var dotFontSize=(target>1&&!checked)?".62rem":".8rem";
       html+="<div style='display:flex;align-items:center;gap:12px;padding:12px 14px;background:"+bg2+";border-radius:12px;margin-bottom:8px;border:1.5px solid "+border2+";cursor:pointer' data-sid='"+s.id+"' data-stat='"+stat+"' data-today='"+selDay+"' data-key='"+key+"' onclick='checkStatDayTask(this)'>";
-      html+="<div style='width:28px;height:28px;border-radius:8px;background:"+dotBg+";border:2px solid "+dotBorder+";display:flex;align-items:center;justify-content:center;font-size:.8rem;color:#fff;flex-shrink:0'>"+(checked?"✓":"")+"</div>";
-      html+="<div style='flex:1'><div style='font-size:.85rem;font-weight:600;color:"+nc+"'>"+s.name+"</div>";
+      html+="<div style='width:28px;height:28px;border-radius:8px;background:"+dotBg+";border:2px solid "+dotBorder+";display:flex;align-items:center;justify-content:center;font-size:"+dotFontSize+";font-weight:800;color:#fff;flex-shrink:0'>"+dotContent+"</div>";
+      html+="<div style='flex:1'><div style='font-size:.85rem;font-weight:600;color:"+nc+"'>"+s.name+(target>1?" <span style='font-size:.6rem;opacity:.6'>🔁×"+target+"</span>":"")+"</div>";
       html+="<div style='font-size:.6rem;color:#0e7490'>+"+s.xp+" XP</div></div>";
       html+="<div style='font-size:.8rem;font-weight:700;color:"+(checked?m.color:"#ccc")+"'>+"+s.xp+"</div>";
       html+="</div>";
