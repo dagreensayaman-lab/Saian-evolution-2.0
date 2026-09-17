@@ -25,15 +25,15 @@ const _iconSvg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'>
   <rect width='512' height='512' rx='100' fill='url(%23og)'/>
   <!-- Blue inner circle -->
   <circle cx='256' cy='220' r='160' fill='url(%23bl)' opacity='0.3'/>
-  <!-- Dragon emoji -->
-  <text x='256' y='280' font-size='220' text-anchor='middle' dominant-baseline='middle'>🐉</text>
-  <!-- SE text bottom -->
-  <text x='256' y='430' font-family='Impact,Arial Black,sans-serif' font-size='72' font-weight='900' text-anchor='middle' fill='%23fff' stroke='%23000' stroke-width='6' stroke-linejoin='round' letter-spacing='4'>SAIYAN</text>
+  <!-- Sword emoji -->
+  <text x='256' y='220' font-size='200' text-anchor='middle' dominant-baseline='middle'>⚔️</text>
+  <!-- GRIND text bottom -->
+  <text x='256' y='390' font-family='Arial,Impact,sans-serif' font-size='72' font-weight='900' text-anchor='middle' fill='%23818cf8' letter-spacing='4'>GRIND</text>
 </svg>`;
 const _iconUrl = 'data:image/svg+xml,' + _iconSvg;
 const _manifest = {
-  name: 'Saiyan Evolution',
-  short_name: 'SAIYAN',
+  name: 'Grind RPG',
+  short_name: 'Grind RPG',
   description: 'Repousse tes limites — chaque jour',
   start_url: '.',
   display: 'standalone',
@@ -44,8 +44,6 @@ const _manifest = {
 const _blob = new Blob([JSON.stringify(_manifest)], {type:'application/json'});
 document.getElementById('pwa-manifest').href = URL.createObjectURL(_blob);
 </script>
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23f07328'/%3E%3Ctext x='256' y='300' font-size='220' text-anchor='middle' dominant-baseline='middle'%3E🐉%3C/text%3E%3Ctext x='256' y='440' font-family='Impact' font-size='72' font-weight='900' text-anchor='middle' fill='%23fff' stroke='%23000' stroke-width='5'%3ESAIYAN%3C/text%3E%3C/svg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='100' fill='%23f07328'/%3E%3Ctext x='256' y='300' font-size='220' text-anchor='middle' dominant-baseline='middle'%3E🐉%3C/text%3E%3Ctext x='256' y='440' font-family='Impact' font-size='72' font-weight='900' text-anchor='middle' fill='%23fff' stroke='%23000' stroke-width='5'%3ESAIYAN%3C/text%3E%3C/svg%3E">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23070710'/%3E%3Ctext x='256' y='220' font-size='200' text-anchor='middle' dominant-baseline='middle'%3E⚔️%3C/text%3E%3Ctext x='256' y='390' font-size='72' text-anchor='middle' font-family='Arial' font-weight='900' fill='%23818cf8' letter-spacing='4'%3EGRIND%3C/text%3E%3C/svg%3E">
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='80' fill='%23070710'/%3E%3Ctext x='256' y='220' font-size='200' text-anchor='middle' dominant-baseline='middle'%3E⚔️%3C/text%3E%3Ctext x='256' y='390' font-size='72' text-anchor='middle' font-family='Arial' font-weight='900' fill='%23818cf8' letter-spacing='4'%3EGRIND%3C/text%3E%3C/svg%3E">
 <style>
@@ -73,9 +71,11 @@ document.getElementById('pwa-manifest').href = URL.createObjectURL(_blob);
   /* Thème global actif — piloté en JS via applyThemeCSSVars(), défaut = look d'origine */
   --theme-primary:#0891b2;
   --theme-secondary:#ec4899;
+  --theme-bg1:#e8f4fd;
+  --theme-bg2:#eef7ff;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{background:#e8f4fd;color:#1e3a4a;font-family:'Exo 2',system-ui,sans-serif;min-height:100vh;padding-bottom:80px;position:relative;overflow-x:hidden}
+body{background:linear-gradient(160deg,var(--theme-bg1,#e8f4fd),var(--theme-bg2,#eef7ff));color:#1e3a4a;font-family:'Exo 2',system-ui,sans-serif;min-height:100vh;padding-bottom:80px;position:relative;overflow-x:hidden}
 
 body::before{content:'';position:fixed;inset:0;background:
   radial-gradient(ellipse 80% 40% at 50% 100%, rgba(232,93,0,0.15) 0%, transparent 60%),
@@ -97,6 +97,8 @@ pointer-events:none;z-index:0}
 .tab.active{background:#fff;color:var(--theme-primary);border:1px solid rgba(8,145,178,0.3);font-family:'Anton',sans-serif;box-shadow:0 2px 8px rgba(8,145,178,0.12);opacity:1}
 @keyframes togPulse{0%{transform:scale(1);}40%{transform:scale(1.35);}100%{transform:scale(1);}}
 .tog-pulse{animation:togPulse .35s cubic-bezier(.34,1.56,.64,1);}
+@keyframes flashDenied{0%,100%{background:#fff;border-color:rgba(220,38,38,.3);transform:translateX(0);}20%{background:#fecaca;border-color:#dc2626;transform:translateX(-4px);}40%{background:#fecaca;border-color:#dc2626;transform:translateX(4px);}60%{background:#fecaca;border-color:#dc2626;transform:translateX(-3px);}80%{background:#fecaca;border-color:#dc2626;transform:translateX(3px);}}
+.flash-denied{animation:flashDenied .6s ease;color:#dc2626 !important;}
 @keyframes xpFloat{0%{opacity:0;transform:translate(-50%,0) scale(.6);}15%{opacity:1;transform:translate(-50%,-6px) scale(1.1);}80%{opacity:1;transform:translate(-50%,-28px) scale(1);}100%{opacity:0;transform:translate(-50%,-40px) scale(.9);}}
 .xp-float{position:absolute;left:50%;top:0;font-family:'Anton',sans-serif;font-size:.85rem;font-weight:700;pointer-events:none;animation:xpFloat 1s ease-out forwards;z-index:50;white-space:nowrap;}
 @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1;}100%{transform:translateY(100vh) rotate(720deg);opacity:0;}}
@@ -253,21 +255,22 @@ function mkThemes(){return{
   intel:{id:"theme_intel",name:"Génie",icon:"🧠",cost:250,curName:"Idées",curIcon:"💡",primary:"#6366f1",secondary:"#0891b2",tierNames:["Novice","Étudiant","Curieux","Érudit","Savant","Cerveau","Prodige","Génie","Génie absolu","Esprit supérieur","Einstein Mode","Esprit cosmique","Esprit cosmique maîtrisé","Esprit cosmique suprême","Esprit cosmique absolu","Esprit cosmique éternel","Esprit cosmique infini"]},
   disc:{id:"theme_disc",name:"Spartiate",icon:"⚡",cost:250,curName:"Boucliers",curIcon:"🛡️",primary:"#dc2626",secondary:"#f59e0b",tierNames:["Recrue","Soldat","Rigoureux","Discipliné","Vétéran","Spartiate","Stoïcien","Inflexible","Machine de discipline","Moine guerrier","Volonté de fer","Titan de discipline","Titan de discipline maîtrisé","Titan de discipline suprême","Titan de discipline absolu","Titan de discipline éternel","Titan de discipline infini"]},
   bienetre:{id:"theme_bienetre",name:"Zen",icon:"❤️",cost:250,curName:"Pétales",curIcon:"🌸",primary:"#14b8a6",secondary:"#10b981",tierNames:["Débutant","Apprenti zen","Équilibré","Serein","Harmonieux","Zen","Paisible","Maître zen","Éveillé","Illuminé","Nirvana","Éveil cosmique","Éveil cosmique maîtrisé","Éveil cosmique suprême","Éveil cosmique absolu","Éveil cosmique éternel","Éveil cosmique infini"]},
-  // ── THÈMES PREMIUM ── plus chers (500💎), pas liés à une compétence en particulier.
-  kawaii:{id:"theme_kawaii",name:"Kawaii",icon:"🎀",cost:500,curName:"Cœurs",curIcon:"💖",primary:"#f472b6",secondary:"#c084fc",tierNames:["Bébé chat","Peluche timide","Étoile filante","Licorne apprentie","Fée scintillante","Princesse pastel","Idole kawaii","Déesse sucrée","Star ultra-mignonne","Légende kawaii","Kawaii ultime","Esprit kawaii","Esprit kawaii maîtrisé","Esprit kawaii suprême","Esprit kawaii absolu","Esprit kawaii éternel","Esprit kawaii infini"]},
-  fantasy:{id:"theme_fantasy",name:"Fantastique",icon:"🧙",cost:500,curName:"Pièces d'or",curIcon:"🪙",primary:"#7c3aed",secondary:"#fbbf24",tierNames:["Paysan","Apprenti mage","Écuyer","Chevalier","Mage","Chevalier royal","Archimage","Seigneur de guerre","Héros légendaire","Champion du royaume","Maître des arcanes","Sorcier ancestral","Sorcier ancestral maîtrisé","Sorcier ancestral suprême","Sorcier ancestral absolu","Sorcier ancestral éternel","Sorcier ancestral infini"]},
-  future:{id:"theme_future",name:"Futuriste",icon:"🚀",cost:500,curName:"Cristaux",curIcon:"💠",primary:"#06b6d4",secondary:"#a855f7",tierNames:["Recrue cyber","Pilote novice","Ingénieur stellaire","Cyborg","Commandant","Capitaine spatial","Amiral galactique","Gardien des étoiles","Légende interstellaire","Titan cybernétique","Voyageur temporel","Noyau quantique","Noyau quantique maîtrisé","Noyau quantique suprême","Noyau quantique absolu","Noyau quantique éternel","Noyau quantique infini"]},
-  hero:{id:"theme_hero",name:"Super-héros",icon:"🦸",cost:500,curName:"Étoiles",curIcon:"⭐",primary:"#dc2626",secondary:"#2563eb",tierNames:["Citoyen ordinaire","Recrue masquée","Justicier débutant","Vigilant","Héros de quartier","Protecteur","Défenseur","Héros confirmé","Gardien de la ville","Icône héroïque","Légende vivante","Titan héroïque","Titan héroïque maîtrisé","Titan héroïque suprême","Titan héroïque absolu","Titan héroïque éternel","Titan héroïque infini"]},
-  nature:{id:"theme_nature",name:"Nature",icon:"🌿",cost:500,curName:"Graines",curIcon:"🌱",primary:"#16a34a",secondary:"#84cc16",tierNames:["Graine","Pousse","Bourgeon","Jeune arbre","Arbre robuste","Gardien de la forêt","Esprit des bois","Protecteur sylvestre","Ancien de la forêt","Sage de la nature","Force de Gaïa","Titan sylvestre","Titan sylvestre maîtrisé","Titan sylvestre suprême","Titan sylvestre absolu","Titan sylvestre éternel","Titan sylvestre infini"]},
-  ocean:{id:"theme_ocean",name:"Abysses",icon:"🌊",cost:500,curName:"Coquillages",curIcon:"🐚",primary:"#0369a1",secondary:"#06b6d4",tierNames:["Plongeur débutant","Nageur","Explorateur des récifs","Plongeur confirmé","Chasseur des profondeurs","Gardien du lagon","Seigneur des mers","Léviathan naissant","Maître des abysses","Titan océanique","Souverain des mers","Léviathan primordial","Léviathan primordial maîtrisé","Léviathan primordial suprême","Léviathan primordial absolu","Léviathan primordial éternel","Léviathan primordial infini"]},
-  ninja:{id:"theme_ninja",name:"Ninja",icon:"🥷",cost:500,curName:"Shurikens",curIcon:"🎯",primary:"#1e293b",secondary:"#dc2626",tierNames:["Villageois","Apprenti ninja","Genin","Chunin","Ronin","Samouraï","Samouraï d'élite","Maître d'armes","Ombre silencieuse","Assassin légendaire","Maître ninja","Esprit du katana","Esprit du katana maîtrisé","Esprit du katana suprême","Esprit du katana absolu","Esprit du katana éternel","Esprit du katana infini"]}
+  // ── THÈMES PREMIUM ── plus chers (700💎), pas liés à une compétence en particulier.
+  saiyan:{id:"theme_saiyan",name:"Saiyan",icon:"🐉",cost:700,primary:"#0891b2",secondary:"#ec4899",tierNames:["Terrien","Guerrier Z","Kaioken","Kaioken x2","Kaioken x3","Kaioken x4","Super Saiyan","SSJ2","SSJ3","SSJ God","SSJ Blue","Ultra Instinct","Ultra Instinct Maîtrisé","Ultra Instinct Suprême","Ultra Instinct Absolu","Ultra Instinct Éternel","Ultra Instinct Infini"]},
+  kawaii:{id:"theme_kawaii",name:"Kawaii",icon:"🎀",cost:700,curName:"Cœurs",curIcon:"💖",primary:"#f472b6",secondary:"#c084fc",tierNames:["Bébé chat","Peluche timide","Étoile filante","Licorne apprentie","Fée scintillante","Princesse pastel","Idole kawaii","Déesse sucrée","Star ultra-mignonne","Légende kawaii","Kawaii ultime","Esprit kawaii","Esprit kawaii maîtrisé","Esprit kawaii suprême","Esprit kawaii absolu","Esprit kawaii éternel","Esprit kawaii infini"]},
+  fantasy:{id:"theme_fantasy",name:"Fantastique",icon:"🧙",cost:700,curName:"Pièces d'or",curIcon:"🪙",primary:"#7c3aed",secondary:"#fbbf24",tierNames:["Paysan","Apprenti mage","Écuyer","Chevalier","Mage","Chevalier royal","Archimage","Seigneur de guerre","Héros légendaire","Champion du royaume","Maître des arcanes","Sorcier ancestral","Sorcier ancestral maîtrisé","Sorcier ancestral suprême","Sorcier ancestral absolu","Sorcier ancestral éternel","Sorcier ancestral infini"]},
+  future:{id:"theme_future",name:"Futuriste",icon:"🚀",cost:700,curName:"Cristaux",curIcon:"💠",primary:"#06b6d4",secondary:"#a855f7",tierNames:["Recrue cyber","Pilote novice","Ingénieur stellaire","Cyborg","Commandant","Capitaine spatial","Amiral galactique","Gardien des étoiles","Légende interstellaire","Titan cybernétique","Voyageur temporel","Noyau quantique","Noyau quantique maîtrisé","Noyau quantique suprême","Noyau quantique absolu","Noyau quantique éternel","Noyau quantique infini"]},
+  hero:{id:"theme_hero",name:"Super-héros",icon:"🦸",cost:700,curName:"Étoiles",curIcon:"⭐",primary:"#dc2626",secondary:"#2563eb",tierNames:["Citoyen ordinaire","Recrue masquée","Justicier débutant","Vigilant","Héros de quartier","Protecteur","Défenseur","Héros confirmé","Gardien de la ville","Icône héroïque","Légende vivante","Titan héroïque","Titan héroïque maîtrisé","Titan héroïque suprême","Titan héroïque absolu","Titan héroïque éternel","Titan héroïque infini"]},
+  nature:{id:"theme_nature",name:"Nature",icon:"🌿",cost:700,curName:"Graines",curIcon:"🌱",primary:"#16a34a",secondary:"#84cc16",tierNames:["Graine","Pousse","Bourgeon","Jeune arbre","Arbre robuste","Gardien de la forêt","Esprit des bois","Protecteur sylvestre","Ancien de la forêt","Sage de la nature","Force de Gaïa","Titan sylvestre","Titan sylvestre maîtrisé","Titan sylvestre suprême","Titan sylvestre absolu","Titan sylvestre éternel","Titan sylvestre infini"]},
+  ocean:{id:"theme_ocean",name:"Abysses",icon:"🌊",cost:700,curName:"Coquillages",curIcon:"🐚",primary:"#0369a1",secondary:"#06b6d4",tierNames:["Plongeur débutant","Nageur","Explorateur des récifs","Plongeur confirmé","Chasseur des profondeurs","Gardien du lagon","Seigneur des mers","Léviathan naissant","Maître des abysses","Titan océanique","Souverain des mers","Léviathan primordial","Léviathan primordial maîtrisé","Léviathan primordial suprême","Léviathan primordial absolu","Léviathan primordial éternel","Léviathan primordial infini"]},
+  ninja:{id:"theme_ninja",name:"Ninja",icon:"🥷",cost:700,curName:"Shurikens",curIcon:"🎯",primary:"#1e293b",secondary:"#dc2626",tierNames:["Villageois","Apprenti ninja","Genin","Chunin","Ronin","Samouraï","Samouraï d'élite","Maître d'armes","Ombre silencieuse","Assassin légendaire","Maître ninja","Esprit du katana","Esprit du katana maîtrisé","Esprit du katana suprême","Esprit du katana absolu","Esprit du katana éternel","Esprit du katana infini"]}
 };}
 const THEMES=mkThemes();
 function activeThemeObj(){const id=ST&&ST.activeTheme;if(!id||id==="default")return null;return THEMES[id]||null;}
 // ── CADRES DE PROFIL ── bordure cosmétique de la carte principale du profil, achetable et activable une par une.
 const FRAMES={
-  gold:{id:"frame_gold",name:"Liseré doré",icon:"✨",cost:150,border:"#ffd700",shadow:"rgba(255,215,0,0.4)"},
-  neon:{id:"frame_neon",name:"Contour néon",icon:"💠",cost:150,border:"#06b6d4",shadow:"rgba(6,182,212,0.45)"},
+  gold:{id:"frame_gold",name:"Liseré doré",icon:"✨",cost:65,border:"#ffd700",shadow:"rgba(255,215,0,0.4)"},
+  neon:{id:"frame_neon",name:"Contour néon",icon:"💠",cost:65,border:"#06b6d4",shadow:"rgba(6,182,212,0.45)"},
   fire:{id:"frame_fire",name:"Aura de feu",icon:"🔥",cost:200,border:"#f97316",shadow:"rgba(249,115,22,0.45)"},
   royal:{id:"frame_royal",name:"Cadre royal",icon:"👑",cost:250,border:"#7c3aed",shadow:"rgba(124,58,237,0.4)"}
 };
@@ -309,12 +312,23 @@ function playPurchaseSound(){
     });
   }catch(e){}
 }
-function buyFrame(frameId){
+// ⚠️ MODE TEST DU SHOP — achats gratuits (aucune gemme requise/déduite), pour valider tout le contenu
+// sans avoir à farmer. Les prix restent affichés normalement. Repasser à false pour réactiver le vrai coût.
+const SHOP_TEST_MODE=true;
+function denyPurchase(btnEl){
+  playDeniedSound();
+  if(!btnEl)return;
+  btnEl.classList.remove('flash-denied');
+  void btnEl.offsetWidth;
+  btnEl.classList.add('flash-denied');
+  setTimeout(function(){btnEl.classList.remove('flash-denied');},700);
+}
+function buyFrame(frameId,btnEl){
   const fr=FRAMES[frameId];if(!fr)return;
   if(!Array.isArray(ST.ownedFrames))ST.ownedFrames=[];
   if(!ST.ownedFrames.includes(fr.id)){
-    if((ST.gems||0)<fr.cost){playDeniedSound();return;}
-    ST.gems-=fr.cost;
+    if(!SHOP_TEST_MODE&&(ST.gems||0)<fr.cost){denyPurchase(btnEl);return;}
+    if(!SHOP_TEST_MODE)ST.gems-=fr.cost;
     ST.ownedFrames.push(fr.id);
     playPurchaseSound();
   }
@@ -332,9 +346,9 @@ function setActiveFrame(frameId){
 }
 // ── SKINS DE CONFETTIS ── palette de couleurs alternative pour l'animation de célébration (badges débloqués, etc.).
 const CONFETTI_SKINS={
-  fire:{id:"confetti_fire",name:"Feu",icon:"🔥",cost:120,colors:["#f97316","#dc2626","#fbbf24","#ea580c"]},
-  ice:{id:"confetti_ice",name:"Glace",icon:"❄️",cost:120,colors:["#06b6d4","#0ea5e9","#e0f2fe","#67e8f9"]},
-  sakura:{id:"confetti_sakura",name:"Sakura",icon:"🌸",cost:120,colors:["#f9a8d4","#fbcfe8","#ffffff","#f472b6"]}
+  fire:{id:"confetti_fire",name:"Feu",icon:"🔥",cost:65,colors:["#f97316","#dc2626","#fbbf24","#ea580c"]},
+  ice:{id:"confetti_ice",name:"Glace",icon:"❄️",cost:65,colors:["#06b6d4","#0ea5e9","#e0f2fe","#67e8f9"]},
+  sakura:{id:"confetti_sakura",name:"Sakura",icon:"🌸",cost:65,colors:["#f9a8d4","#fbcfe8","#ffffff","#f472b6"]}
 };
 function activeConfettiObj(){const id=ST&&ST.activeConfetti;if(!id||id==="default")return null;return CONFETTI_SKINS[id]||null;}
 // ── PROGRAMMES ── configuration prête à charger : remplace toutes les tâches actives d'un coup.
@@ -397,27 +411,52 @@ function _applyProgramCore(programId){
   });
   md.activeSlots=activeIds;
 }
-function loadProgram(programId){
+var _programLoadDraft=null;
+function loadProgram(programId,btnEl){
   const prog=PROGRAMS[programId];if(!prog)return;
   const owned=prog.cost===0||(Array.isArray(ST.ownedPrograms)&&ST.ownedPrograms.includes(prog.id));
-  if(!owned&&(ST.gems||0)<prog.cost){playDeniedSound();return;}
-  if(!confirm('Charger "'+prog.name+'" ?\n\nToutes tes tâches actuelles seront remplacées par celles du programme.'))return;
+  if(!SHOP_TEST_MODE&&!owned&&(ST.gems||0)<prog.cost){denyPurchase(btnEl);return;}
+  _programLoadDraft=programId;
+  renderProgramConfirmPanel();
+}
+function renderProgramConfirmPanel(){
+  const prog=PROGRAMS[_programLoadDraft];
+  if(!prog)return;
+  let html='';
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>"+prog.icon+"</span>";
+  html+="<div><div style='font-family:Anton,sans-serif;font-size:1.05rem;color:#10b981;letter-spacing:1px'>CHARGER CE PROGRAMME ?</div>";
+  html+="<div style='font-size:.72rem;color:#0e7490'>"+prog.name+"</div></div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+  html+="<div style='background:rgba(220,38,38,0.06);border-radius:12px;padding:14px;margin-bottom:16px;font-size:.75rem;color:#991b1b'>⚠️ Toutes tes tâches actuelles seront remplacées par celles de ce programme.</div>";
+  html+="<button onclick='confirmLoadProgram()' style='width:100%;padding:13px;border:none;border-radius:12px;background:#10b981;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>✓ Confirmer et charger</button>";
+  html+="<button onclick='closePanel()' style='width:100%;padding:11px;border:1px solid rgba(0,0,0,0.1);border-radius:12px;background:#fff;color:#1e3a4a;font-weight:700;font-size:.78rem;cursor:pointer'>Annuler</button>";
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+function confirmLoadProgram(){
+  const programId=_programLoadDraft;
+  const prog=PROGRAMS[programId];
+  if(!prog)return;
+  const owned=prog.cost===0||(Array.isArray(ST.ownedPrograms)&&ST.ownedPrograms.includes(prog.id));
   if(!owned){
-    ST.gems-=prog.cost;
+    if(!SHOP_TEST_MODE)ST.gems-=prog.cost;
     if(!Array.isArray(ST.ownedPrograms))ST.ownedPrograms=[];
     ST.ownedPrograms.push(prog.id);
     playPurchaseSound();
   }
   _applyProgramCore(programId);
   saveST();
+  closePanel();
   render();
 }
-function buyConfettiSkin(skinId){
+function buyConfettiSkin(skinId,btnEl){
   const sk=CONFETTI_SKINS[skinId];if(!sk)return;
   if(!Array.isArray(ST.ownedConfetti))ST.ownedConfetti=[];
   if(!ST.ownedConfetti.includes(sk.id)){
-    if((ST.gems||0)<sk.cost){playDeniedSound();return;}
-    ST.gems-=sk.cost;
+    if(!SHOP_TEST_MODE&&(ST.gems||0)<sk.cost){denyPurchase(btnEl);return;}
+    if(!SHOP_TEST_MODE)ST.gems-=sk.cost;
     ST.ownedConfetti.push(sk.id);
     playPurchaseSound();
   }
@@ -433,12 +472,27 @@ function setActiveConfetti(skinId){
   ST.activeConfetti=(ST.activeConfetti===skinId)?"default":skinId;
   saveST();render();
 }
+function lightenHex(hex,amount){
+  hex=(hex||"").replace("#","");
+  if(hex.length===3)hex=hex.split("").map(function(c){return c+c;}).join("");
+  if(hex.length!==6)return null;
+  var r=parseInt(hex.substring(0,2),16),g=parseInt(hex.substring(2,4),16),b=parseInt(hex.substring(4,6),16);
+  if(isNaN(r)||isNaN(g)||isNaN(b))return null;
+  r=Math.round(r+(255-r)*amount);
+  g=Math.round(g+(255-g)*amount);
+  b=Math.round(b+(255-b)*amount);
+  return "rgb("+r+","+g+","+b+")";
+}
 function applyThemeCSSVars(){
   const th=activeThemeObj();
   const root=document.documentElement;
   if(!root||!root.style)return;
   root.style.setProperty("--theme-primary",th?th.primary:"#0891b2");
   root.style.setProperty("--theme-secondary",th?th.secondary:"#ec4899");
+  // Fond très clair dérivé du thème (mélange à ~93% blanc) : garde toujours un contraste fort
+  // avec les titres/en-têtes qui utilisent la couleur pleine (--theme-primary), quel que soit le thème.
+  root.style.setProperty("--theme-bg1",(th&&lightenHex(th.primary,0.93))||"#e8f4fd");
+  root.style.setProperty("--theme-bg2",(th&&lightenHex(th.secondary,0.94))||"#eef7ff");
 }
 const DEFAULT_STAT_COLORS={intel:"#0891b2",physique:"#10b981",craft:"#8b5cf6",disc:"#f59e0b",bienetre:"#ec4899"};
 const DEFAULT_STAT_DIMS={intel:"rgba(8,145,178,0.08)",physique:"rgba(16,185,129,0.08)",craft:"rgba(139,92,246,0.08)",disc:"rgba(245,158,11,0.08)",bienetre:"rgba(236,72,153,0.08)"};
@@ -509,24 +563,31 @@ function ge(id){return document.getElementById(id);}
 
 function mkSlots(){
   const defs={
-    intel:   [{n:"Code",xp:2},{n:"Lecture",xp:1},{n:"Formation",xp:2},{n:"Apprentissage",xp:2},{n:"Réflexion",xp:1},{n:"Slot Intel 6",xp:1},{n:"Slot Intel 7",xp:1}],
-    physique:[{n:"Sport",xp:2},{n:"Étirements",xp:1},{n:"Course",xp:1},{n:"Marche",xp:1},{n:"Natation",xp:2},{n:"Slot Physique 6",xp:1},{n:"Slot Physique 7",xp:1}],
-    craft:   [{n:"Projet 1",xp:3},{n:"Projet 2",xp:2},{n:"Projet 3",xp:2},{n:"Projet 4",xp:1},{n:"Projet 5",xp:2},{n:"Slot Craft 6",xp:1},{n:"Slot Craft 7",xp:1}],
-    disc:    [{n:"No Phone matin",xp:2},{n:"Lever tôt",xp:2},{n:"Méditation",xp:1},{n:"Journal",xp:1},{n:"Routine soir",xp:1},{n:"Paperasse",xp:2},{n:"Slot Disc 7",xp:1}],
-    bienetre:[{n:"Eau 2L",xp:1},{n:"Sommeil 8h",xp:2},{n:"Alimentation",xp:1},{n:"Gratitude",xp:1},{n:"Repos actif",xp:1},{n:"Slot Bienetre 6",xp:1},{n:"Slot Bienetre 7",xp:1}]
+    intel:   [{n:"Lecture 15min",xp:1},{n:"Formation",xp:2},{n:"Apprentissage",xp:2},{n:"Réflexion",xp:1},{n:"Slot Intel 5",xp:1},{n:"Slot Intel 6",xp:1},{n:"Slot Intel 7",xp:1}],
+    physique:[{n:"Sport",xp:2},{n:"Étirements",xp:1},{n:"Marche 20min",xp:1},{n:"Musculation",xp:2},{n:"Slot Physique 5",xp:1},{n:"Slot Physique 6",xp:1},{n:"Slot Physique 7",xp:1}],
+    craft:   [{n:"Créer 30min",xp:2},{n:"Apprendre une compétence",xp:2},{n:"Avancer un projet",xp:2},{n:"Écriture / Contenu",xp:1},{n:"Slot Craft 5",xp:1},{n:"Slot Craft 6",xp:1},{n:"Slot Craft 7",xp:1}],
+    disc:    [{n:"Lever tôt",xp:2},{n:"Méditation",xp:1},{n:"Journal du soir",xp:1},{n:"No phone au réveil",xp:2},{n:"Slot Disc 5",xp:1},{n:"Slot Disc 6",xp:1},{n:"Slot Disc 7",xp:1}],
+    bienetre:[{n:"Boire 2L d'eau",xp:1},{n:"Sommeil 8h",xp:2},{n:"Gratitude",xp:1},{n:"Repos actif",xp:1},{n:"Slot Bienetre 5",xp:1},{n:"Slot Bienetre 6",xp:1},{n:"Slot Bienetre 7",xp:1}]
   };
   const slots=[];STATS.forEach(stat=>defs[stat].forEach((d,i)=>slots.push({id:stat+"_"+i,stat,name:d.n,xp:d.xp})));return slots;
 }
-function mkMalus(){return[{id:"m_teuf",name:"Teuf / Alcool",xp:-6,stat:"physique",debtDays:3,icon:"🍺"},{id:"m_sleep",name:"Mauvais sommeil",xp:-3,stat:"physique",debtDays:2,icon:"😴"},{id:"m_scroll",name:"Scroll / Télé",xp:-2,stat:"disc",debtDays:1,icon:"📱"},{id:"m_food",name:"Mauvaise alim.",xp:-2,stat:"bienetre",debtDays:2,icon:"🍔"},{id:"m_custom",name:"Malus custom",xp:-3,stat:"disc",debtDays:2,icon:"⚠️"}];}
+function mkMalus(){return[{id:"m_teuf",name:"Teuf / Alcool",xp:-6,stat:"physique",debtDays:3,icon:"🍺"},{id:"m_sleep",name:"Mauvais sommeil",xp:-3,stat:"physique",debtDays:2,icon:"😴"},{id:"m_scroll",name:"Scroll / Télé",xp:-2,stat:"disc",debtDays:1,icon:"📱"},{id:"m_food",name:"Mauvaise alim.",xp:-2,stat:"bienetre",debtDays:2,icon:"🍔"},{id:"m_custom",name:"Ta tentation perso",xp:-3,stat:"disc",debtDays:2,icon:"⚠️"}];}
 function mkDecay(){return{physique:{daysThreshold:10,xpPerDay:2,minPerWeek:2},disc:{daysThreshold:7,xpPerDay:1,minPerWeek:3},bienetre:{daysThreshold:14,xpPerDay:1,minPerWeek:2}};}
-function mkStreakCfg(){return{minXP:5,weeklyMalusSlotId:'disc_5',weeklyMalusXP:3,weeklyMalusSlot2Id:'',weeklyMalusXP2:3,comboStatId:'craft',comboMinSlots:3,comboBonus:5};}
+function mkStreakCfg(){return{minXP:5,weeklyMalusSlotId:'disc_0',weeklyMalusXP:3,weeklyMalusSlot2Id:'',weeklyMalusXP2:3,comboStatId:'craft',comboMinSlots:3,comboBonus:5};} // disc_0 = Lever tôt
 function mkSlotRules(){return{};} // {slotId: {minPerWeek:1, malusXP:2}}
-function mkStatLabels(){return{intel:'Intelligence',physique:'Physique',craft:'Craft',disc:'Discipline',bienetre:'Bien-être'};} // disc_5 = Paperasse slot
+function mkStatLabels(){return{intel:'Intelligence',physique:'Physique',craft:'Craft',disc:'Discipline',bienetre:'Bien-être'};}
 function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach(m=>d[m.id]=0);return d;}
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
 function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
-function initST(){const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,boostMult:2,freezeUntil:null,ownedThemes:[],activeTheme:'default',dayPlans:{},customTitle:'',ownedFrames:[],activeFrame:'default',ownedConfetti:[],activeConfetti:'default',ownedPrograms:[],qaGemsGranted:true,history:{[key]:mkMonth(y,m,slots,slots.map(s=>s.id),malus)}};}
+function initST(){
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);
+  // Par défaut (avant tout onboarding, ou si le joueur saute le guidage), seuls les 4 premiers slots
+  // de chaque compétence sont actifs — ce sont les exemples génériques. Les 3 autres restent des
+  // slots vides, prêts à être remplis plus tard dans Config → Tâches.
+  const defaultActive=slots.filter(function(s){return parseInt(s.id.split('_')[1],10)<4;}).map(function(s){return s.id;});
+  return{slots,malusList:malus,decayCfg:mkDecay(),streakCfg:mkStreakCfg(),statLabels:mkStatLabels(),slotRules:mkSlotRules(),soundEnabled:true,rewardSoundEnabled:true,playerName:'',playerAge:'',playerGoal:'',difficulty:'normal',gems:0,boostUntil:null,boostMult:2,freezeUntil:null,ownedThemes:[],activeTheme:'default',dayPlans:{},customTitle:'',ownedFrames:[],activeFrame:'default',ownedConfetti:[],activeConfetti:'default',ownedPrograms:[],qaGemsGranted:true,tutorialStep:null,streakShields:0,shieldedDates:{},streakBreaksSeen:{},history:{[key]:mkMonth(y,m,slots,defaultActive,malus)}};
+}
 
 let ST=loadST()||initST();
 function migrateOnboarding(){
@@ -570,6 +631,9 @@ function migratePlayerProfile(){
   if(!Array.isArray(ST.ownedConfetti))ST.ownedConfetti=[];
   if(!ST.activeConfetti)ST.activeConfetti='default';
   if(!Array.isArray(ST.ownedPrograms))ST.ownedPrograms=[];
+  if(ST.streakShields===undefined)ST.streakShields=0;
+  if(!ST.shieldedDates)ST.shieldedDates={};
+  if(!ST.streakBreaksSeen)ST.streakBreaksSeen={};
   if(ST.freezeUntil===undefined)ST.freezeUntil=null;
   // Ancien système de skins par compétence retiré (remplacé par les thèmes globaux) :
   // on rembourse les gemmes dépensées sur les skins déjà achetés, puis on efface les anciens champs.
@@ -589,6 +653,14 @@ function migratePlayerProfile(){
   }
   if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
   if(!ST.activeTheme)ST.activeTheme='default';
+  // Le look Saiyan/DBZ (ex-thème par défaut gratuit) devient un vrai skin premium du shop. Les joueurs
+  // déjà en cours de partie (onboarding déjà terminé) le reçoivent gratuitement en rétro-compatibilité,
+  // pour que leur apparence ne change pas d'un coup. Les nouveaux joueurs, eux, passent par le nouveau
+  // choix de skin de départ à l'onboarding, et pourront acheter le Saiyan comme n'importe quel premium.
+  if(ST.onboardingComplete&&ST.activeTheme==='default'&&!ST.ownedThemes.includes('theme_saiyan')){
+    ST.ownedThemes.push('theme_saiyan');
+    ST.activeTheme='saiyan';
+  }
   if(!ST.dayPlans)ST.dayPlans={};
   // Cadeau ponctuel unique pour tester tout le shop (thèmes, cadres, confettis) sans avoir à farmer.
   if(!ST.qaGemsGranted){
@@ -603,12 +675,14 @@ function migratePlayerProfile(){
     const past=new Date();past.setDate(past.getDate()-30);
     ST.firstUseDate=past.toISOString().slice(0,10);
   }
+  // Le tuto guidé est nouveau : les joueurs déjà en cours ne doivent jamais le voir apparaître d'un coup.
+  if(ST.tutorialStep===undefined)ST.tutorialStep=ST.onboardingComplete?null:0;
 }
 const DIFFICULTY_MULT={easy:1.5,normal:1,hard:0.5};
-function buyBoost(hours){
+function buyBoost(hours,btnEl){
   const cost=hours*5;
-  if((ST.gems||0)<cost){playDeniedSound();return;}
-  ST.gems-=cost;
+  if(!SHOP_TEST_MODE&&(ST.gems||0)<cost){denyPurchase(btnEl);return;}
+  if(!SHOP_TEST_MODE)ST.gems-=cost;
   const base=isBoostActive()?new Date(ST.boostUntil):new Date();
   base.setHours(base.getHours()+hours);
   ST.boostUntil=base.toISOString();
@@ -616,10 +690,10 @@ function buyBoost(hours){
   playPurchaseSound();
   saveST();render();
 }
-function buyBoostPremium(hours){
+function buyBoostPremium(hours,btnEl){
   const cost=hours*14;
-  if((ST.gems||0)<cost){playDeniedSound();return;}
-  ST.gems-=cost;
+  if(!SHOP_TEST_MODE&&(ST.gems||0)<cost){denyPurchase(btnEl);return;}
+  if(!SHOP_TEST_MODE)ST.gems-=cost;
   const base=isBoostActive()?new Date(ST.boostUntil):new Date();
   base.setHours(base.getHours()+hours);
   ST.boostUntil=base.toISOString();
@@ -627,22 +701,30 @@ function buyBoostPremium(hours){
   playPurchaseSound();
   saveST();render();
 }
-function buyFreeze(days){
+function buyFreeze(days,btnEl){
   const cost=days*22;
-  if((ST.gems||0)<cost){playDeniedSound();return;}
-  ST.gems-=cost;
+  if(!SHOP_TEST_MODE&&(ST.gems||0)<cost){denyPurchase(btnEl);return;}
+  if(!SHOP_TEST_MODE)ST.gems-=cost;
   const base=isFreezeActive()?new Date(ST.freezeUntil):new Date();
   base.setDate(base.getDate()+days);
   ST.freezeUntil=base.toISOString();
   playPurchaseSound();
   saveST();render();
 }
-function buyTheme(themeId){
+const STREAK_SHIELD_COST=300;
+function buyStreakShield(btnEl){
+  if(!SHOP_TEST_MODE&&(ST.gems||0)<STREAK_SHIELD_COST){denyPurchase(btnEl);return;}
+  if(!SHOP_TEST_MODE)ST.gems-=STREAK_SHIELD_COST;
+  ST.streakShields=(ST.streakShields||0)+1;
+  playPurchaseSound();
+  saveST();render();
+}
+function buyTheme(themeId,btnEl){
   const th=THEMES[themeId];if(!th)return;
   if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
   if(!ST.ownedThemes.includes(th.id)){
-    if((ST.gems||0)<th.cost){playDeniedSound();return;}
-    ST.gems-=th.cost;
+    if(!SHOP_TEST_MODE&&(ST.gems||0)<th.cost){denyPurchase(btnEl);return;}
+    if(!SHOP_TEST_MODE)ST.gems-=th.cost;
     ST.ownedThemes.push(th.id);
     playPurchaseSound();
   }
@@ -665,6 +747,16 @@ function addGems(n){
   saveST();
   const el=document.getElementById('gems-count');
   if(el)el.textContent=ST.gems.toLocaleString('fr-FR');
+}
+// Les gemmes de BASE (+1/tâche cochée) restent identiques quelle que soit la difficulté — l'effort est
+// reconnu pareil pour tous. Seuls les BONUS (badges, streak, combo, journée légendaire) suivent le même
+// multiplicateur que l'XP (😌1.5 / ⚖️1 / 🏆0.5) : en facile tu rushes le shop plus vite, en difficile
+// c'est un vrai marathon — cohérent avec le principe déjà en place pour l'XP.
+function addBonusGems(n){
+  const mult=DIFFICULTY_MULT[ST.difficulty]||1;
+  const amt=Math.max(1,Math.round(n*mult));
+  addGems(amt);
+  return amt;
 }
 function isBoostActive(){return !!(ST.boostUntil&&new Date(ST.boostUntil)>new Date());}
 function isFreezeActive(){return !!(ST.freezeUntil&&new Date(ST.freezeUntil)>new Date());}
@@ -711,7 +803,7 @@ migrateCombos();
 migratePlayerProfile();
 migrateOnboarding();
 let TAB="profile",CTAB="tasks",EDIT=null,HOPEN=null,TRACKER_MONTH=null,TRACKER_DAY=null,COLLAPSED_STATS={};
-let ONBOARD_STEP=0,ONBOARD_STATS=[],ONBOARD_MOTIVATION=null,ONBOARD_TASK_PICKS={};
+let ONBOARD_STEP=0,ONBOARD_STATS=[],ONBOARD_MOTIVATION=null,ONBOARD_TASK_PICKS={},ONBOARD_SKIN_PICK=null;
 
 function ensureCurMonth(){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth(),key=mk(y,m);
@@ -899,6 +991,22 @@ function engine(){
   let off=0;skeys.forEach(k=>{if(k<curKey)off+=ST.history[k].days.length;});
   const cstr=streaks[Math.min(off+curD,streaks.length-1)]||0;
   const rstr=streaks.length>0?Math.max(...streaks):0;
+  // Streaks par tâche (habitudes 🔥 verrouillées uniquement) — un jour "sauvé" par un bouclier
+  // (ST.shieldedDates) compte comme fait pour ne pas casser la série.
+  const taskStreaks={};
+  ST.slots.filter(function(s){return s.daily;}).forEach(function(slot){
+    const shieldedSet=(ST.shieldedDates&&ST.shieldedDates[slot.id])||[];
+    let cur2=0,rec2=0;
+    flat.forEach(function(item){
+      const pkk=pk(item.k);
+      const dateStr=ymdKey(pkk.year,pkk.month,item.i+1);
+      const done=!!item.d[slot.id];
+      const shielded=shieldedSet.indexOf(dateStr)>=0;
+      if(done||shielded)cur2++;else cur2=0;
+      if(cur2>rec2)rec2=cur2;
+    });
+    taskStreaks[slot.id]={current:cur2,record:rec2};
+  });
   const totXP=Math.max(0,Object.values(sxp).reduce((s,v)=>s+v,0));
   let adays=0,tdays=0;
   const _now2=new Date(),_cy2=_now2.getFullYear(),_cm2=_now2.getMonth(),_cd2=_now2.getDate()-1;
@@ -912,7 +1020,7 @@ function engine(){
       if(gxp(d,m.activeSlots||[],ST.slots)>0)adays++;
     });
   });
-  return{skeys,flat,streaks,netXP,dxp,bonXP,sxp,warns,wfreq,cstr,rstr,totXP,adays,tdays,off};
+  return{skeys,flat,streaks,netXP,dxp,bonXP,sxp,warns,wfreq,cstr,rstr,totXP,adays,tdays,off,taskStreaks};
 }
 
 function drawRadar(canvas,sts,sxp,warns,ghostSxp){
@@ -963,48 +1071,88 @@ function exportData(){
   const url=URL.createObjectURL(blob),a=document.createElement("a");
   a.href=url;a.download="grind-backup-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);
 }
+var _importDataPending=null;
 function importData(e){
   const file=e.target.files[0];if(!file)return;
-  const r=new FileReader();r.onload=ev=>{try{const p=JSON.parse(ev.target.result),data=p.data||p;if(!data.slots||!data.history){alert("❌ Fichier invalide");return;}if(confirm("⚠️ Importer cette sauvegarde ? Tes données actuelles seront remplacées.")){
-          localStorage.removeItem("grind-v6");
-          ST=data;
-          // Ensure malusList exists
-          if(!ST.malusList) ST.malusList = mkMalus();
-          if(!ST.decayCfg) ST.decayCfg = mkDecay();
-          if(!ST.streakCfg) ST.streakCfg = mkStreakCfg();
-          if(!ST.slotRules) ST.slotRules = mkSlotRules();
-          // MERGE: add any new slots from default that don't exist in backup
-          const defaultSlots = mkSlots();
-          defaultSlots.forEach(ds=>{
-            if(!ST.slots.find(s=>s.id===ds.id)){
-              ST.slots.push(ds);
-              // Add slot key to all existing days
-              Object.values(ST.history).forEach(m=>{
-                m.days.forEach(d=>{ if(d[ds.id]===undefined) d[ds.id]=0; });
-              });
-            }
-          });
-          // Force re-migration on freshly imported data (old backups store 1/0, not frozen XP)
-          ST.xpFrozen=false;
-          migrateXpFreeze();
-          ST.combosMigrated=false;
-          migrateCombos();
-          ST.weeklyMalusMigrated=false;
-          migrateWeeklyMalus();
-          saveST();
-          TAB="profile";
-          render();
-          alert("✅ Données restaurées ! Anciennes valeurs XP migrées automatiquement.");
-        }}catch(err){alert("❌ Erreur de lecture du fichier.");}};
+  const r=new FileReader();r.onload=ev=>{try{const p=JSON.parse(ev.target.result),data=p.data||p;if(!data.slots||!data.history){showInfoAlert("❌ Fichier invalide",false);return;}
+          _importDataPending=data;
+          showConfirmPanel("IMPORTER LA SAUVEGARDE","Importer cette sauvegarde ?\n\nTes données actuelles seront remplacées.","confirmImportData","📥 Importer");
+        }catch(err){showInfoAlert("❌ Erreur de lecture du fichier.",false);}};
   r.readAsText(file);e.target.value="";
+}
+function confirmImportData(){
+  if(!_importDataPending)return;
+  const data=_importDataPending;
+  _importDataPending=null;
+  localStorage.removeItem("grind-v6");
+  ST=data;
+  // Ensure malusList exists
+  if(!ST.malusList) ST.malusList = mkMalus();
+  if(!ST.decayCfg) ST.decayCfg = mkDecay();
+  if(!ST.streakCfg) ST.streakCfg = mkStreakCfg();
+  if(!ST.slotRules) ST.slotRules = mkSlotRules();
+  // MERGE: add any new slots from default that don't exist in backup
+  const defaultSlots = mkSlots();
+  defaultSlots.forEach(ds=>{
+    if(!ST.slots.find(s=>s.id===ds.id)){
+      ST.slots.push(ds);
+      // Add slot key to all existing days
+      Object.values(ST.history).forEach(m=>{
+        m.days.forEach(d=>{ if(d[ds.id]===undefined) d[ds.id]=0; });
+      });
+    }
+  });
+  // Force re-migration on freshly imported data (old backups store 1/0, not frozen XP)
+  ST.xpFrozen=false;
+  migrateXpFreeze();
+  ST.combosMigrated=false;
+  migrateCombos();
+  ST.weeklyMalusMigrated=false;
+  migrateWeeklyMalus();
+  saveST();
+  TAB="profile";
+  render();
+  showInfoAlert("✅ Données restaurées ! Anciennes valeurs XP migrées automatiquement.",true);
 }
 
 function randPick2(arr){return arr[Math.floor(Math.random()*arr.length)];}
+const MOTIV_BANK={
+  morning:[
+    "Bonne journée ! Une première tâche pour lancer la machine.",
+    "Le matin donne le ton de toute la journée — commence petit, mais commence.",
+    "Une tâche avant même le café, et la journée est déjà gagnée.",
+    "Chaque matin est une nouvelle chance de progresser. Utilise-la.",
+    "Les habitudes se construisent le matin, pas le soir.",
+    "Démarre doucement, mais démarre maintenant.",
+    "Une graine plantée tôt pousse toute la journée."
+  ],
+  afternoon:[
+    "Rien de coché encore aujourd’hui — il est temps.",
+    "L’après-midi est parfait pour une tâche qui compte vraiment.",
+    "Petite pause, grande tâche ensuite ?",
+    "Chaque heure qui passe est une heure pour progresser.",
+    "Ton énergie de l’après-midi vaut de l’or si tu l’investis bien.",
+    "Il n’est jamais trop tard dans la journée pour bien faire.",
+    "La journée n’est pas finie — ni tes chances d’avancer."
+  ],
+  evening:[
+    "La soirée approche, une tâche avant la fin du jour ?",
+    "Encore une petite tâche avant d’aller te coucher ?",
+    "Profite de ne pas regarder ton écran une heure avant de dormir — ton corps te remerciera.",
+    "Termine la journée sur une victoire, même petite.",
+    "Un bon sommeil commence par une soirée bien terminée.",
+    "Le soir est fait pour clore les choses, pas pour les reporter.",
+    "Une dernière tâche ce soir, et demain commence déjà gagné."
+  ]
+};
+function timePeriod(hour){return hour<12?"morning":hour<18?"afternoon":"evening";}
+function periodIcon(period){return period==="morning"?"☀️":period==="afternoon"?"⚡":"🌙";}
 function getMotivationMsg(eng){
   var now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
   var md=ST.history[curKey];
   var today=now.getDate()-1;
   var hour=now.getHours();
+  var period=timePeriod(hour);
   var aIds=(md&&md.activeSlots)||[];
   var activeSlots=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0;});
   var cstr=eng.cstr,rstr=eng.rstr,totXP=eng.totXP;
@@ -1014,16 +1162,20 @@ function getMotivationMsg(eng){
   var daysSinceActive=0;
   for(var i=today;i>=0;i--){var d=(md&&md.days[i])||{};if(activeSlots.some(function(s){return d[s.id];}))break;daysSinceActive++;}
 
-  var t=tier(totXP),ti=TIERS.indexOf(t),nt=TIERS[ti+1];
+  var t=tier(totXP),ti=TIERS.indexOf(t),nt=ti+1<TIERS.length?tierAt(ti+1):null;
   var xpToNext=nt?nt.min-totXP:0;
+
+  var yestIdx=eng.off+today-1;
+  var streakAtRisk=(yestIdx>=0&&eng.streaks[yestIdx])?eng.streaks[yestIdx]:0;
 
   if(daysSinceActive>=3){
     return{icon:"💀",color:"#dc2626",msg:randPick2([daysSinceActive+" jours sans rien. Un seul check suffit pour reprendre.","Ton perso s’affaiblit. Reviens aujourd’hui."])};
   }
   if(todayXP===0&&daysSinceActive<3){
-    if(hour<12)return{icon:"☀️",color:"#f59e0b",msg:"Bonne journée ! Une première tâche pour lancer la machine."};
-    if(hour<18)return{icon:"⚡",color:"#f59e0b",msg:"Rien de coché encore aujourd’hui — il est temps."};
-    return{icon:"🌙",color:"#8b5cf6",msg:cstr>0?"Dernière chance pour protéger ton streak de "+cstr+" jours !":"La soirée approche, une tâche avant la fin du jour ?"};
+    if(period==="evening"&&streakAtRisk>0){
+      return{icon:"🌙",color:"#8b5cf6",msg:"Dernière chance pour protéger ton streak de "+streakAtRisk+" jours !"};
+    }
+    return{icon:periodIcon(period),color:period==="evening"?"#8b5cf6":"#f59e0b",msg:randPick2(MOTIV_BANK[period])};
   }
   if(cstr>=7){
     return{icon:"🔥",color:"#f97316",msg:cstr+" jours de feu ! Record à "+rstr+" jours."};
@@ -1038,6 +1190,94 @@ function getMotivationMsg(eng){
     return{icon:"💪",color:"#10b981",msg:"Déjà +"+todayXP+" XP aujourd’hui — belle journée !"};
   }
   return{icon:"🐉",color:"#8b5cf6",msg:randPick2(["Chaque jour compte pour devenir "+ (nt?nt.title:"légende") +".","La régularité bat l’intensité.","Un check aujourd’hui, une version meilleure demain."])};
+}
+function streakBeforeDate(slotId,beforeDateStr){
+  // Compte combien de jours consécutifs (faits ou sauvés par un bouclier) juste AVANT cette date (exclue).
+  const skeys=Object.keys(ST.history).sort();
+  const flatDates=[];
+  skeys.forEach(function(k){
+    const m=ST.history[k],pkk=pk(k);
+    m.days.forEach(function(dd,i){flatDates.push({dateStr:ymdKey(pkk.year,pkk.month,i+1),d:dd,aIds:m.activeSlots||[]});});
+  });
+  const idx=flatDates.findIndex(function(x){return x.dateStr===beforeDateStr;});
+  if(idx<=0)return 0;
+  const shieldedSet=(ST.shieldedDates&&ST.shieldedDates[slotId])||[];
+  let count=0;
+  for(let j=idx-1;j>=0;j--){
+    const item=flatDates[j];
+    if(!item.aIds.includes(slotId))break;
+    const done=!!item.d[slotId];
+    const shielded=shieldedSet.indexOf(item.dateStr)>=0;
+    if(done||shielded)count++;else break;
+  }
+  return count;
+}
+var _streakBreakQueue=[];
+function checkStreakBreaks(){
+  const dailySlots=ST.slots.filter(function(s){return s.daily;});
+  if(dailySlots.length===0)return;
+  const yesterday=new Date();yesterday.setDate(yesterday.getDate()-1);
+  const yKey=mk(yesterday.getFullYear(),yesterday.getMonth());
+  const yDateStr=ymdKey(yesterday.getFullYear(),yesterday.getMonth(),yesterday.getDate());
+  const md=ST.history[yKey];
+  if(!md)return;
+  const d=md.days[yesterday.getDate()-1];
+  if(!d)return;
+  if(!ST.streakBreaksSeen)ST.streakBreaksSeen={};
+  if(!ST.shieldedDates)ST.shieldedDates={};
+  dailySlots.forEach(function(slot){
+    if(!(md.activeSlots||[]).includes(slot.id))return;
+    if(d[slot.id])return;
+    if((ST.shieldedDates[slot.id]||[]).includes(yDateStr))return;
+    if(ST.streakBreaksSeen[slot.id]===yDateStr)return;
+    const lost=streakBeforeDate(slot.id,yDateStr);
+    if(lost<=0){ST.streakBreaksSeen[slot.id]=yDateStr;return;}
+    _streakBreakQueue.push({slotId:slot.id,dateStr:yDateStr,lost:lost});
+  });
+  saveST();
+  if(_streakBreakQueue.length>0)showNextStreakBreak();
+}
+function showNextStreakBreak(){
+  if(_streakBreakQueue.length===0)return;
+  const item=_streakBreakQueue[0];
+  const slot=ST.slots.find(function(s){return s.id===item.slotId;});
+  if(!slot){_streakBreakQueue.shift();showNextStreakBreak();return;}
+  let html='';
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>💔</span>";
+  html+="<div><div style='font-family:Anton,sans-serif;font-size:1.05rem;color:#dc2626;letter-spacing:1px'>SÉRIE EN DANGER</div>";
+  html+="<div style='font-size:.72rem;color:#0e7490'>"+slot.name+"</div></div></div>";
+  html+="<div style='background:rgba(220,38,38,0.06);border-radius:12px;padding:14px;margin-bottom:16px;font-size:.8rem;color:#991b1b;line-height:1.5'>Tu as raté cette habitude hier. Ta série de <strong>"+item.lost+" jours</strong> va repartir à zéro"+((ST.streakShields||0)>0?" — sauf si tu utilises un bouclier.":".")+"</div>";
+  if((ST.streakShields||0)>0){
+    html+="<button onclick=\"useStreakShield('"+item.slotId+"','"+item.dateStr+"')\" style='width:100%;padding:13px;border:none;border-radius:12px;background:#dc2626;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>🛡️ Utiliser un bouclier ("+ST.streakShields+" restant"+(ST.streakShields>1?'s':'')+")</button>";
+  }
+  html+="<button onclick=\"dismissStreakBreak('"+item.slotId+"','"+item.dateStr+"')\" style='width:100%;padding:11px;border:1px solid rgba(0,0,0,0.1);border-radius:12px;background:#fff;color:#1e3a4a;font-weight:700;font-size:.78rem;cursor:pointer'>"+((ST.streakShields||0)>0?'Laisser filer':'Compris')+"</button>";
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+function useStreakShield(slotId,dateStr){
+  if((ST.streakShields||0)<=0)return;
+  ST.streakShields--;
+  if(!ST.shieldedDates)ST.shieldedDates={};
+  if(!ST.shieldedDates[slotId])ST.shieldedDates[slotId]=[];
+  ST.shieldedDates[slotId].push(dateStr);
+  if(!ST.streakBreaksSeen)ST.streakBreaksSeen={};
+  ST.streakBreaksSeen[slotId]=dateStr;
+  _streakBreakQueue.shift();
+  saveST();
+  closePanel();
+  showNextStreakBreak();
+  render();
+}
+function dismissStreakBreak(slotId,dateStr){
+  if(!ST.streakBreaksSeen)ST.streakBreaksSeen={};
+  ST.streakBreaksSeen[slotId]=dateStr;
+  _streakBreakQueue.shift();
+  saveST();
+  closePanel();
+  showNextStreakBreak();
+  render();
 }
 function checkSaveReminder(){
   var key="grind-last-save-remind";
@@ -1114,7 +1354,7 @@ const APP_TIPS=[
   "Dans le Tracker, utilise les flèches en haut pour naviguer entre les jours et les mois — tu peux corriger un oubli d'hier.",
   "Ta streak (jours consécutifs) rapporte un bonus XP qui grandit avec le temps — vise au moins l'XP minimum chaque jour pour ne pas la casser.",
   "L'onglet 📚 Historique garde une trace de tous tes mois passés, avec une carte de chaleur de ton activité.",
-  "Tu peux changer ton style de jeu (facile / équilibré / difficile) à tout moment dans Config → Général.",
+  "Tu peux changer ton style de jeu (facile / équilibré / difficile) à tout moment dans ⚙️ Paramètres.",
   "Coche toutes tes tâches actives le même jour pour déclencher une Journée Légendaire — un énorme bonus XP.",
 ];
 
@@ -1478,15 +1718,19 @@ html+=rDailyTip(eng);
 html+=rThrowback(eng);
   const activeFr=activeFrameObj();
   const cardBigStyle=activeFr?`border:2px solid ${activeFr.border};box-shadow:0 0 20px ${activeFr.shadow}`:`border-color:${t.color}30`;
-  html+=`<div class="card-big" style="${cardBigStyle}"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
+  html+=`<div id="profile-hero-card" class="card-big" style="${cardBigStyle}"><div class="card-top-bar" style="background:linear-gradient(90deg,${t.color},#ec4899,#10b981)"></div>
   <div style="display:grid;grid-template-columns:1fr auto;gap:20px;align-items:start">
   <div>
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
-    ${ST.playerName?`<div style="font-family:'Anton',sans-serif;font-size:.78rem;letter-spacing:2px;color:#8b5cf6;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">👤 ${ST.playerName}${ST.customTitle?` · <span style="color:#f59e0b">${ST.customTitle}</span>`:""}</div>`:(ST.customTitle?`<div style="font-family:'Anton',sans-serif;font-size:.78rem;letter-spacing:2px;color:#f59e0b;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:1">${ST.customTitle}</div>`:'<div style="flex:1"></div>')}
-    <div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(14,165,233,0.12),rgba(139,92,246,0.1));border:1px solid rgba(14,165,233,0.3);border-radius:99px;padding:5px 12px;flex-shrink:0">
+  ${(ST.playerName||ST.customTitle)?`<div style="font-family:'Anton',sans-serif;font-size:.78rem;letter-spacing:2px;color:#8b5cf6;text-transform:uppercase;white-space:normal;word-break:break-word;margin-bottom:8px">${ST.playerName?`👤 ${ST.playerName}`:""}${ST.playerName&&ST.customTitle?` · `:""}${ST.customTitle?`<span style="color:#f59e0b">${ST.customTitle}</span>`:""}</div>`:""}
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(14,165,233,0.12),rgba(139,92,246,0.1));border:1px solid rgba(14,165,233,0.3);border-radius:99px;padding:5px 12px">
       <span style="font-size:.9rem">💎</span>
       <span id="gems-count" style="font-weight:700;color:#0ea5e9;font-size:.8rem;font-variant-numeric:tabular-nums">${(ST.gems||0).toLocaleString('fr-FR')}</span>
     </div>
+    ${((ST.streakShields||0)>0||ST.slots.some(s=>s.daily))?`<div style="display:flex;align-items:center;gap:6px;background:linear-gradient(135deg,rgba(220,38,38,0.1),rgba(245,158,11,0.08));border:1px solid rgba(220,38,38,0.3);border-radius:99px;padding:5px 12px" title="Boucliers de série disponibles">
+      <span style="font-size:.9rem">🛡️</span>
+      <span style="font-weight:700;color:#dc2626;font-size:.8rem;font-variant-numeric:tabular-nums">${ST.streakShields||0}</span>
+    </div>`:""}
   </div>
   <div style="display:flex;align-items:center;gap:12px;margin-bottom:4px">
     <div style="font-size:1.4rem;font-weight:800;color:${t.color}">${t.title}</div>
@@ -1540,7 +1784,11 @@ html+=rThrowback(eng);
 // restent visibles et cochables (juste grisées), rien n'est bloqué ni pénalisé (pas de decay/fréquence touchées).
 function ymdKey(y,m,d){const mm=(m+1)<10?"0"+(m+1):""+(m+1);const dd=d<10?"0"+d:""+d;return y+"-"+mm+"-"+dd;}
 function getDayPlan(dateStr){return(ST.dayPlans&&ST.dayPlans[dateStr])||null;}
-function isPlannedForDay(slotId,dateStr){const p=getDayPlan(dateStr);if(!p)return true;return p.indexOf(slotId)>=0;}
+function isPlannedForDay(slotId,dateStr){
+  const s=ST.slots.find(function(x){return x.id===slotId;});
+  if(s&&s.daily)return true; // 🔥 verrouillée en habitude quotidienne : toujours au programme, jamais retirable
+  const p=getDayPlan(dateStr);if(!p)return true;return p.indexOf(slotId)>=0;
+}
 // ── TÂCHES RÉPÉTÉES ── ex: boire de l'eau, respirer 10x. Un tap = +1 vers la cible. Une fois la cible
 // atteinte (ou décochée), on délègue entièrement à tDay() pour XP/badges/streak — zéro changement moteur.
 // La progression en cours est stockée en inline sous d[slotId+'_cnt'] (aucune migration nécessaire).
@@ -1623,32 +1871,71 @@ function tCounterPill(di,sid){
   }
 }
 function tPlan(y,m,d,slotId){
+  const _slotDaily=ST.slots.find(function(x){return x.id===slotId;});
+  if(_slotDaily&&_slotDaily.daily){
+    showInfoAlert("🔥 Cette tâche est verrouillée en habitude quotidienne — elle reste toujours au programme. Va dans Config → Tâches pour la déverrouiller.",false);
+    return;
+  }
   const key=ymdKey(y,m,d);
   const _scrollBox=document.querySelector('.table-scroll');
   const _savedScrollLeft=_scrollBox?_scrollBox.scrollLeft:0;
   const _savedScrollTop=_scrollBox?_scrollBox.scrollTop:0;
   if(!ST.dayPlans)ST.dayPlans={};
-  if(!ST.dayPlans[key])ST.dayPlans[key]=[];
+  if(!ST.dayPlans[key]){
+    // Première interaction sur ce jour : on démarre avec TOUT ce qui est déjà actif (opt-out),
+    // pas d'une liste vide — sinon on perd de vue ce qui était déjà prévu par défaut et on ne peut
+    // que "rajouter", jamais "retirer" ce qui ne convient pas.
+    const monthKeyForDay=mk(y,m);
+    const mdForDay=ST.history[monthKeyForDay];
+    const activeIdsForDay=(mdForDay&&mdForDay.activeSlots)||[];
+    ST.dayPlans[key]=activeIdsForDay.slice();
+  }
   const arr=ST.dayPlans[key];
   const idx=arr.indexOf(slotId);
   const nowPlanned=idx<0; // true si on vient d'ajouter (donc désormais planifié)
   if(idx>=0)arr.splice(idx,1);else arr.push(slotId);
-  if(arr.length===0)delete ST.dayPlans[key];
   saveST();
   // Mise à jour ciblée de la seule cellule cliquée — pas de render() complet, pas de saut de scroll.
-  const planSet=!!getDayPlan(key);
   const planned=isPlannedForDay(slotId,key);
   const cell=document.getElementById('tog-'+(d-1)+'-'+slotId);
   if(cell){
     const s=ST.slots.find(function(sl){return sl.id===slotId;});
     const cls={intel:'ci',physique:'cp',craft:'cc',disc:'cd',bienetre:'cb'};
-    cell.className='tog'+(planSet&&planned&&s?' '+cls[s.stat]:'');
-    cell.textContent=planSet&&planned?'📌':'·';
-    cell.style.opacity=(planSet&&!planned)?'.3':'';
+    cell.className='tog'+(planned&&s?' '+cls[s.stat]:'');
+    cell.textContent=planned?'📌':'';
+    cell.style.borderColor='';
+    cell.style.background='';
+    cell.style.opacity='';
     if(nowPlanned){
       cell.classList.remove('tog-pulse');
       void cell.offsetWidth;
       cell.classList.add('tog-pulse');
+    }
+  }
+  // Rafraîchit aussi les pastilles "jour" affichées au-dessus de la grille — sans ça, la donnée change
+  // (la case de la grille en dessous, elle, se met à jour) mais la pastille elle-même reste figée à l'écran.
+  const selDayTD2=TRACKER_DAY!==null?TRACKER_DAY:(new Date().getDate()-1);
+  if(d-1===selDayTD2){
+    const countEl2=document.getElementById('today-count');
+    const md2=ST.history[mk(y,m)];
+    const aIds2=(md2&&md2.activeSlots)||[];
+    const aSlots2=ST.slots.filter(function(s){return aIds2.includes(s.id);});
+    const plannedCount2=aSlots2.filter(function(s){return isPlannedForDay(s.id,key);}).length;
+    if(countEl2)countEl2.textContent=plannedCount2+' pr\u00e9vue(s)';
+    const remainEl2=document.getElementById('today-remaining');
+    if(remainEl2){
+      if(aSlots2.length===0){
+        remainEl2.style.display='none';
+      }else{
+        remainEl2.style.display='flex';
+        remainEl2.innerHTML=aSlots2.map(function(s){
+          const _pl2=isPlannedForDay(s.id,key);
+          const sm2=SM[s.stat];
+          const sty2=!_pl2?'background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)':'background:'+sm2.dim+';color:'+sm2.color+';border:1px solid '+sm2.color+'40';
+          const mark2=_pl2?' <strong>\u2715</strong>':' <strong>+</strong>';
+          return '<span onclick="tPlan('+y+','+m+','+d+',\''+s.id+'\')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;'+sty2+';cursor:pointer;font-weight:600">'+sm2.icon+' '+s.name+mark2+'</span>';
+        }).join('');
+      }
     }
   }
   // Restore horizontal/vertical scroll position — même verrou que tDay() : iOS Safari peut resetter
@@ -1679,6 +1966,64 @@ function tPlan(y,m,d,slotId){
 // ── DUPLICATION DE PLANNING ── pour ceux qui veulent répéter une semaine ou un mois type.
 // Copie simple et ponctuelle (pas de règle "liée" permanente) : une fois dupliqué, chaque jour
 // reste librement modifiable via tPlan (ajouter/enlever des tâches), exactement comme un jour planifié à la main.
+// ── CONFIRMATION MAISON ── remplace window.confirm() (peu fiable en PWA sur iOS, comme découvert
+// pour "Charger un programme") par un panneau dans l'app, toujours affiché de façon garantie.
+var _pendingConfirmFn=null;
+function showConfirmPanel(title,message,onConfirmFnName,confirmLabel){
+  _pendingConfirmFn=onConfirmFnName;
+  let html='';
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>⚠️</span>";
+  html+="<div style='font-family:Anton,sans-serif;font-size:1rem;color:#dc2626;letter-spacing:1px'>"+title+"</div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+  html+="<div style='font-size:.8rem;color:#1e3a4a;background:#fef2f2;border-radius:12px;padding:14px;margin-bottom:18px;line-height:1.5;white-space:pre-line'>"+message+"</div>";
+  html+="<button onclick='runPendingConfirm()' style='width:100%;padding:13px;border:none;border-radius:12px;background:#dc2626;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>"+(confirmLabel||"✓ Confirmer")+"</button>";
+  html+="<button onclick='closePanel()' style='width:100%;padding:11px;border:1px solid rgba(0,0,0,0.1);border-radius:12px;background:#fff;color:#1e3a4a;font-weight:700;font-size:.78rem;cursor:pointer'>Annuler</button>";
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+function runPendingConfirm(){
+  const fnName=_pendingConfirmFn;
+  _pendingConfirmFn=null;
+  closePanel();
+  if(fnName&&typeof window[fnName]==='function')window[fnName]();
+}
+// ── MESSAGE MAISON ── remplace window.alert() (même souci de fiabilité en PWA) par un panneau
+// dans l'app, toujours affiché de façon garantie. success=true -> vert/✅, sinon violet/ℹ️.
+function showInfoAlert(message,success){
+  let html='';
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>"+(success?"✅":"ℹ️")+"</span>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+  html+="<div style='font-size:.82rem;color:#1e3a4a;background:"+(success?"#f0fdf4":"#f5f3ff")+";border-radius:12px;padding:16px;margin-bottom:18px;line-height:1.6;white-space:pre-line'>"+message+"</div>";
+  html+="<button onclick='closePanel()' style='width:100%;padding:13px;border:none;border-radius:12px;background:"+(success?"#10b981":"#8b5cf6")+";color:#fff;font-weight:700;font-size:.85rem;cursor:pointer'>Compris</button>";
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+var _dupDayPending=null;
+function duplicateDayForward(){
+  const now=new Date();
+  const baseDate=(TRACKER_DAY!==null&&(!TRACKER_MONTH||!ST.history[TRACKER_MONTH]))?new Date(now.getFullYear(),now.getMonth(),TRACKER_DAY+1):now;
+  const dst=new Date(baseDate.getFullYear(),baseDate.getMonth(),baseDate.getDate()+1);
+  const srcKey=ymdKey(baseDate.getFullYear(),baseDate.getMonth(),baseDate.getDate());
+  const dstKey=ymdKey(dst.getFullYear(),dst.getMonth(),dst.getDate());
+  const plan=getDayPlan(srcKey);
+  if(!plan){showInfoAlert("Ce jour n'a pas de planning explicite à dupliquer — tape d'abord une tâche pour en créer un (ou laisse tel quel, tout compte comme prévu par défaut).",false);return;}
+  _dupDayPending={srcKey:srcKey,dstKey:dstKey};
+  showConfirmPanel("DUPLIQUER CE JOUR","Dupliquer le planning de ce jour vers le jour suivant ?\n\nLe jour suivant sera remplacé.","confirmDuplicateDay","🔁 Dupliquer");
+}
+function confirmDuplicateDay(){
+  if(!_dupDayPending)return;
+  if(!ST.dayPlans)ST.dayPlans={};
+  const plan=getDayPlan(_dupDayPending.srcKey);
+  if(plan)ST.dayPlans[_dupDayPending.dstKey]=plan.slice();
+  else delete ST.dayPlans[_dupDayPending.dstKey];
+  _dupDayPending=null;
+  saveST();render();
+}
+var _dupWeekPending=null;
 function duplicateWeekForward(){
   const now=new Date();
   const baseDate=(TRACKER_DAY!==null&&(!TRACKER_MONTH||!ST.history[TRACKER_MONTH]))?new Date(now.getFullYear(),now.getMonth(),TRACKER_DAY+1):now;
@@ -1692,16 +2037,22 @@ function duplicateWeekForward(){
     pairs.push({srcKey:ymdKey(src.getFullYear(),src.getMonth(),src.getDate()),dstKey:ymdKey(dst.getFullYear(),dst.getMonth(),dst.getDate())});
   }
   const hasAny=pairs.some(function(p){return !!getDayPlan(p.srcKey);});
-  if(!hasAny){alert("Aucune tâche planifiée cette semaine — planifie d'abord au moins un jour futur dans la grille avant de répéter la semaine.");return;}
-  if(!confirm("Répéter le planning de cette semaine sur la semaine prochaine ?\n\nLes jours déjà planifiés la semaine prochaine seront remplacés."))return;
+  if(!hasAny){showInfoAlert("Aucune tâche planifiée cette semaine — planifie d'abord au moins un jour futur dans la grille avant de répéter la semaine.",false);return;}
+  _dupWeekPending=pairs;
+  showConfirmPanel("RÉPÉTER LA SEMAINE","Répéter le planning de cette semaine sur la semaine prochaine ?\n\nLes jours déjà planifiés la semaine prochaine seront remplacés.","confirmDuplicateWeek","🔁 Répéter");
+}
+function confirmDuplicateWeek(){
+  if(!_dupWeekPending)return;
   if(!ST.dayPlans)ST.dayPlans={};
-  pairs.forEach(function(p){
+  _dupWeekPending.forEach(function(p){
     const plan=getDayPlan(p.srcKey);
     if(plan)ST.dayPlans[p.dstKey]=plan.slice();
     else delete ST.dayPlans[p.dstKey];
   });
+  _dupWeekPending=null;
   saveST();render();
 }
+var _dupMonthPending=null;
 function duplicateMonthForward(){
   const now=new Date();
   const viewKey=TRACKER_MONTH&&ST.history[TRACKER_MONTH]?TRACKER_MONTH:mk(now.getFullYear(),now.getMonth());
@@ -1715,14 +2066,19 @@ function duplicateMonthForward(){
     pairs.push({srcKey:ymdKey(vy,vm,day),dstKey:ymdKey(nextY,nextM,dstDay)});
   }
   const hasAny=pairs.some(function(p){return !!getDayPlan(p.srcKey);});
-  if(!hasAny){alert("Aucune tâche planifiée ce mois-ci — planifie d'abord au moins un jour futur dans la grille avant de dupliquer le mois.");return;}
-  if(!confirm("Dupliquer le planning de "+MFR[vm]+" vers "+MFR[nextM]+" ?\n\nLes jours déjà planifiés seront remplacés."))return;
+  if(!hasAny){showInfoAlert("Aucune tâche planifiée ce mois-ci — planifie d'abord au moins un jour futur dans la grille avant de dupliquer le mois.",false);return;}
+  _dupMonthPending=pairs;
+  showConfirmPanel("DUPLIQUER LE MOIS","Dupliquer le planning de "+MFR[vm]+" vers "+MFR[nextM]+" ?\n\nLes jours déjà planifiés seront remplacés.","confirmDuplicateMonth","🔁 Dupliquer");
+}
+function confirmDuplicateMonth(){
+  if(!_dupMonthPending)return;
   if(!ST.dayPlans)ST.dayPlans={};
-  pairs.forEach(function(p){
+  _dupMonthPending.forEach(function(p){
     const plan=getDayPlan(p.srcKey);
     if(plan)ST.dayPlans[p.dstKey]=plan.slice();
     else delete ST.dayPlans[p.dstKey];
   });
+  _dupMonthPending=null;
   saveST();render();
 }
 function rTracker(eng){
@@ -1754,8 +2110,10 @@ function rTracker(eng){
   let todayTaskCount=0,todayTaskDone=0;
   if(isCurrentMonth&&selDay!==null){
     const selD=md.days[selDay]||{};
-    todayTaskCount=aSlots.length;
-    todayTaskDone=aSlots.filter(s=>selD[s.id]).length;
+    const selDateStr0=ymdKey(curY,curM,selDay+1);
+    const plannedToday=aSlots.filter(s=>isPlannedForDay(s.id,selDateStr0));
+    todayTaskCount=plannedToday.length;
+    todayTaskDone=plannedToday.filter(s=>selD[s.id]).length;
   }
   let html='';
   if(isCurrentMonth&&todayTaskCount>0){
@@ -1770,7 +2128,7 @@ function rTracker(eng){
     const dowSel=["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"][new Date(curY,curM,selDay+1).getDay()];
     const dayLabel=selDay===curD?"AUJOURD'HUI":dowSel.toUpperCase()+" "+(selDay+1);
     const canPrevDay=selDay>0,canNextDay=selDay<lastDayIdx;
-    html+=`<div class="card" style="margin-bottom:12px;padding:12px 16px">
+    html+=`<div id="tutorial-today-card" class="card" style="margin-bottom:12px;padding:12px 16px">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
         <div style="display:flex;align-items:center;gap:8px">
           <button onclick="${canPrevDay?"navTrackerDay(-1)":""}" style="background:${canPrevDay?"#fff":"rgba(0,0,0,0.03)"};border:1px solid rgba(8,145,178,0.15);border-radius:10px;width:36px;height:36px;font-size:1.3rem;font-weight:700;color:${canPrevDay?"#0891b2":"#ccc"};cursor:${canPrevDay?"pointer":"default"};flex-shrink:0">‹</button>
@@ -1779,7 +2137,7 @@ function rTracker(eng){
         </div>
         <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctSel===100?"#10b981":"#8b5cf6"}">${isFutureSel?plannedCount+" pr\u00e9vue(s)":todayTaskDone+"/"+todayTaskCount+" t\u00e2ches"}</span>
       </div>
-      ${isFutureSel?`<div style="font-size:.66rem;color:#8b5cf6;margin-bottom:10px">📌 Touche une t\u00e2che pour la planifier ce jour-l\u00e0.</div>`:`<div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px;margin-bottom:${visibleRemaining.length>0?"10":"0"}px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctSel===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctSel}%;transition:width .4s ease"></div></div>`}
+      ${isFutureSel?`<div style="font-size:.66rem;color:#8b5cf6;margin-bottom:8px">📌 Tout est pr\u00e9vu par d\u00e9faut — touche une t\u00e2che pour la retirer (✕), ou une t\u00e2che gris\u00e9e pour la rajouter (+).</div><button onclick="duplicateDayForward()" style="width:100%;padding:8px;border:1px dashed rgba(139,92,246,0.4);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.68rem;font-weight:700;cursor:pointer;margin-bottom:10px">🔁 Dupliquer ce jour → jour suivant</button>`:`<div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px;margin-bottom:${visibleRemaining.length>0?"10":"0"}px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctSel===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctSel}%;transition:width .4s ease"></div></div>`}
       ${visibleRemaining.length>0?`<div id="today-remaining" style="display:flex;flex-wrap:wrap;gap:6px">${visibleRemaining.map(s=>{
         const _pl=isPlannedForDay(s.id,ymdKey(curY,curM,selDay+1));
         const _target=repeatTargetFor(s.id);
@@ -1788,9 +2146,10 @@ function rTracker(eng){
           const _gc=_cnt>0?progressColor(_cnt/_target):null;
           return `<span onclick="tCounterPill(${selDay},'${s.id}')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:${_gc||SM[s.stat].dim};color:${_gc?"#fff":SM[s.stat].color};border:1px solid ${_gc||SM[s.stat].color+"40"};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name} · ${_cnt}/${_target}</span>`;
         }
-        const _act=isFutureSel?`tPlan(${curY},${curM},${selDay+1},'${s.id}')`:`tDay(${selDay},'${s.id}')`;
+        const _act=isFutureSel?(s.daily?"":`tPlan(${curY},${curM},${selDay+1},'${s.id}')`):`tDay(${selDay},'${s.id}')`;
         const _sty=isFutureSel&&!_pl?`background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)`:`background:${SM[s.stat].dim};color:${SM[s.stat].color};border:1px solid ${SM[s.stat].color}40`;
-        return `<span onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name}${isFutureSel&&_pl?" 📌":""}</span>`;
+        const _mark=isFutureSel?(s.daily?` <strong>🔥</strong>`:(_pl?` <strong>✕</strong>`:` <strong>+</strong>`)):"";
+        return `<span onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:${isFutureSel&&s.daily?"default":"pointer"};font-weight:600">${SM[s.stat].icon} ${s.name}${_mark}</span>`;
       }).join("")}</div>`:""}
     </div>`;
   }
@@ -1812,7 +2171,7 @@ function rTracker(eng){
     <button onclick="duplicateMonthForward()" style="flex:1;min-width:150px;padding:10px 8px;border:1px solid rgba(139,92,246,0.35);border-radius:12px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">🔁 Dupliquer ce mois</button>
   </div>`;
   const cls={intel:"ci",physique:"cp",craft:"cc",disc:"cd",bienetre:"cb"};
-  html+=`<div class="table-wrap"><div class="table-scroll"><table style="min-width:${Math.max(700,aSlots.length*65+350)}px"><thead><tr><th class="th-left">Jour</th>${aSlots.map(s=>`<th style="color:${SM[s.stat].color}">${s.name}<br><span style="font-size:.58rem;color:#1e3a4a;opacity:.8;font-weight:700">${SM[s.stat].icon} +${s.xp}</span></th>`).join("")}${ST.malusList.map(m=>`<th style="color:#dc2626;font-weight:900">${m.icon} ${m.name}<br><span style="font-size:.46rem;color:#1e3a4a;opacity:.7">💀 ${m.xp}xp/${m.debtDays}j</span></th>`).join("")}<th style="color:#0e7490;min-width:50px">Malus <span onclick=\"showInfoTip(event,'Total des points perdus ce jour-l\u00e0 (somme de tous les malus coch\u00e9s).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="color:#0e7490;min-width:50px">Net</th><th>🔥</th><th>Niv <span onclick=\"showInfoTip(event,'R\u00e9sum\u00e9 visuel du jour : \ud83d\udd25 excellent, \u2705 bon, \u26aa correct, \ud83d\udc80 mauvais (bas\u00e9 sur ton score net).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="min-width:90px">Barre <span onclick=\"showInfoTip(event,'Ta progression du jour compar\u00e9e \u00e0 ton maximum possible si tu cochais tout.')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th></tr></thead><tbody>`;
+  html+=`<div id="tutorial-table-card" class="table-wrap"><div class="table-scroll"><table style="min-width:${Math.max(700,aSlots.length*65+350)}px"><thead><tr><th class="th-left">Jour</th>${aSlots.map(s=>`<th style="color:${SM[s.stat].color}">${s.name}<br><span style="font-size:.58rem;color:#1e3a4a;opacity:.8;font-weight:700">${SM[s.stat].icon} +${s.xp}</span></th>`).join("")}${ST.malusList.map(m=>`<th style="color:#dc2626;font-weight:900">${m.icon} ${m.name}<br><span style="font-size:.46rem;color:#1e3a4a;opacity:.7">💀 ${m.xp}xp/${m.debtDays}j</span></th>`).join("")}<th style="color:#0e7490;min-width:50px">Malus <span onclick=\"showInfoTip(event,'Total des points perdus ce jour-l\u00e0 (somme de tous les malus coch\u00e9s).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="color:#0e7490;min-width:50px">Net</th><th>🔥</th><th>Niv <span onclick=\"showInfoTip(event,'R\u00e9sum\u00e9 visuel du jour : \ud83d\udd25 excellent, \u2705 bon, \u26aa correct, \ud83d\udc80 mauvais (bas\u00e9 sur ton score net).')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th><th style="min-width:90px">Barre <span onclick=\"showInfoTip(event,'Ta progression du jour compar\u00e9e \u00e0 ton maximum possible si tu cochais tout.')\" style=\"cursor:pointer;opacity:.6;font-size:.7em;margin-left:2px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none\" oncontextmenu=\"return false\">ⓘ</span></th></tr></thead><tbody>`;
   md.days.forEach((d,i)=>{
     const net=cn[i],str=cs[i],debt=cd[i],pct=Math.min(100,Math.max(0,(net/maxDXP)*100));
     const dt=new Date(curY,curM,i+1),ds=dt.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric"});
@@ -1829,12 +2188,12 @@ function rTracker(eng){
       const planned=isPlannedForDay(s.id,dateStr);
       const mkArg=isCurrentMonth?"":(",'"+viewKey+"'");
       if(isF){
-        const planSet=!!getDayPlan(dateStr);
-        if(planSet&&!planned){
-          html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="border-color:transparent;background:transparent;cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Planifier cette tâche ce jour-là"></div></td>`;
+        if(s.daily){
+          html+=`<td><div class="tog ${cls[s.stat]}" style="cursor:default" title="Verrouillée en habitude quotidienne">🔥</div></td>`;
+        }else if(!planned){
+          html+=`<td><div id="tog-${i}-${s.id}" class="tog" style="cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Ajouter cette tâche ce jour-là"></div></td>`;
         }else{
-          const sym=planSet&&planned?"📌":"·";
-          html+=`<td><div id="tog-${i}-${s.id}" class="tog ${planSet&&planned?cls[s.stat]:""}" style="cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Planifier cette tâche ce jour-là">${sym}</div></td>`;
+          html+=`<td><div id="tog-${i}-${s.id}" class="tog ${cls[s.stat]}" style="cursor:pointer" onclick="tPlan(${curY},${curM},${i+1},'${s.id}')" title="Retirer cette tâche ce jour-là">📌</div></td>`;
         }
       }else{
         const target=repeatTargetFor(s.id);
@@ -1882,7 +2241,7 @@ function navTrackerMonth(dir){
 
 function rConfig(){
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth()),md=ST.history[curKey],aIds=md?md.activeSlots||[]:[];
-  let html=`<div class="sub-tabs">${[["tasks","📋 Tâches"],["malus","💀 Malus"],["decay","📉 Decay"],["streak","🔥 Streak"],["general","⚙️ Général"]].map(([id,l])=>`<button class="sub-tab ${CTAB===id?"active":""}" onclick="setCTab('${id}')">${l}</button>`).join("")}</div>`;
+  let html=`<div class="sub-tabs">${[["tasks","📋 Tâches"],["malus","💀 Malus"],["decay","📉 Decay"],["streak","🔥 Streak"],["general","🛍️ Shop"]].map(([id,l])=>`<button id="subtab-${id}" class="sub-tab ${CTAB===id?"active":""}" onclick="setCTab('${id}')">${l}</button>`).join("")}</div>`;
   if(CTAB==="tasks"){
     html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.7rem;color:#1e3a4a;display:flex;align-items:flex-start;gap:8px">
       <span onclick="showInfoTip(event,'L\u2019ic\u00f4ne \u23f0 permet de fixer une fr\u00e9quence minimale par semaine pour une t\u00e2che. Si tu ne l\u2019atteins pas, un malus XP s\u2019applique automatiquement en fin de semaine.')" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:rgba(139,92,246,0.15);color:#8b5cf6;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;flex-shrink:0;margin-top:1px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false">i</span>
@@ -1911,6 +2270,7 @@ function rConfig(){
         html+=`<div class="cfg-toggle-dot" style="left:${ia?"16":"2"}px;background:${ia?m.color:"#7dd3e8"}"></div></div>`;
         html+=`<span onclick="openFreqRule('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${hasRuleX?1:0.25};flex-shrink:0;margin-right:2px" title="${hasRuleX?slotRuleX.minPerWeek+'x/sem → -'+slotRuleX.malusXP+' XP':'Ajouter règle fréquence'}">⏰</span>`;
         html+=`<span onclick="openRepeatRule('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${(s.repeat&&s.repeat>1)?1:0.25};flex-shrink:0;margin-right:2px" title="${(s.repeat&&s.repeat>1)?'Répéter '+s.repeat+'x/jour':'Rendre répétable (ex: boire de l’eau x10)'}">🔁</span>`;
+        html+=`<span onclick="toggleDailyLock('${s.id}')" style="font-size:.9rem;cursor:pointer;opacity:${s.daily?1:0.25};flex-shrink:0;margin-right:2px" title="${s.daily?'Verrouillée en habitude quotidienne — jamais retirable de l’agenda':'Verrouiller en habitude quotidienne (toujours au programme, streak dédié)'}">🔥</span>`;
         if(ie){
           html+=`<input class="cfg-input" id="edit-${s.id}" value="${s.name}" onblur="saveSN('${s.id}')" onkeydown="if(event.key==='Enter')saveSN('${s.id}')">`;
         } else {
@@ -2000,90 +2360,46 @@ function rConfig(){
     </div>`;
   }
   if(CTAB==="general"){
-    const soundOn=ST.soundEnabled!==false;
-    const rewardOn=ST.rewardSoundEnabled!==false;
-    html+=`<div class="sl" style="margin-bottom:10px">🔊 SONS</div>`;
-    html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:1.3rem">${soundOn?"🔊":"🔇"}</span>
-        <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons d’interaction</span><div style="font-size:.58rem;color:#0e7490">Check, ploc, clic de menu...</div></div>
-      </div>
-      <div class="cfg-toggle" style="background:${soundOn?"#8b5cf630":"#e0f2f8"};border:1px solid ${soundOn?"#8b5cf6":"rgba(8,145,178,0.2)"}" onclick="toggleSound()">
-        <div class="cfg-toggle-dot" style="left:${soundOn?"16":"2"}px;background:${soundOn?"#8b5cf6":"#7dd3e8"}"></div>
-      </div>
-    </div>`;
-    html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:1.3rem">${rewardOn?"🏆":"🔇"}</span>
-        <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons de récompense</span><div style="font-size:.58rem;color:#0e7490">Fanfare badges, journée légendaire...</div></div>
-      </div>
-      <div class="cfg-toggle" style="background:${rewardOn?"#f59e0b30":"#e0f2f8"};border:1px solid ${rewardOn?"#f59e0b":"rgba(8,145,178,0.2)"}" onclick="toggleRewardSound()">
-        <div class="cfg-toggle-dot" style="left:${rewardOn?"16":"2"}px;background:${rewardOn?"#f59e0b":"#7dd3e8"}"></div>
-      </div>
-    </div>`;
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">💎 SHOP</div>`;
-    html+=`<div class="card" style="margin-bottom:10px;background:rgba(0,0,0,0.03);border-style:dashed">
-      <div style="font-size:.68rem;color:#0e7490;margin-bottom:8px">🧪 Mode test — pour essayer tout le shop sans grinder.</div>
-      <button onclick="grantTestGems()" style="width:100%;padding:10px;border:1px dashed rgba(0,0,0,0.25);border-radius:10px;background:#fff;color:#1e3a4a;font-size:.72rem;font-weight:700;cursor:pointer">+50 000 💎</button>
-    </div>`;
+    html+=`<div id="shop-boost-header" class="sl" style="margin-bottom:10px">💎 SHOP</div>`;
     html+=`<div class="card" style="margin-bottom:10px;background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.25)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">⚡</span><span style="font-weight:700;color:#8b5cf6;font-size:.85rem">Boost XP x2</span></div>
       <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isBoostActive()?'Actif jusqu\'au '+new Date(ST.boostUntil).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Double tes gains XP pendant la dur\u00e9e choisie.'}</div>
       <div style="display:flex;gap:8px">
-        ${[1,3,24].map(h=>`<button onclick="buyBoost(${h})" style="flex:1;padding:8px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*5}</button>`).join('')}
+        ${[1,3,24].map(h=>`<button onclick="buyBoost(${h},this)" style="flex:1;padding:8px;border:1px solid rgba(139,92,246,0.3);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*5}</button>`).join('')}
       </div>
     </div>`;
     html+=`<div class="card" style="margin-bottom:10px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.25)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🔥</span><span style="font-weight:700;color:#dc2626;font-size:.85rem">Boost XP x3 (premium)</span></div>
       <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isBoostActive()&&ST.boostMult===3?'Actif jusqu\'au '+new Date(ST.boostUntil).toLocaleString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'Triple tes gains XP — plus court, plus fort.'}</div>
       <div style="display:flex;gap:8px">
-        ${[1,3].map(h=>`<button onclick="buyBoostPremium(${h})" style="flex:1;padding:8px;border:1px solid rgba(220,38,38,0.3);border-radius:10px;background:#fff;color:#dc2626;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*14}</button>`).join('')}
+        ${[1,3].map(h=>`<button onclick="buyBoostPremium(${h},this)" style="flex:1;padding:8px;border:1px solid rgba(220,38,38,0.3);border-radius:10px;background:#fff;color:#dc2626;font-size:.7rem;font-weight:700;cursor:pointer">${h}h · 💎${h*14}</button>`).join('')}
       </div>
     </div>`;
     html+=`<div class="card" style="margin-bottom:16px;background:rgba(14,165,233,0.06);border-color:rgba(14,165,233,0.25)">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🧊</span><span style="font-weight:700;color:#0ea5e9;font-size:.85rem">Artefact Gel</span></div>
       <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${isFreezeActive()?'Gelé jusqu\'au '+new Date(ST.freezeUntil).toLocaleDateString('fr-FR',{day:'numeric',month:'short'}):'Bloque toute dégradation (Physique/Disc/Bien-être) pendant la durée choisie — idéal en vacances.'}</div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
-        ${[1,3,7,14,30].map(d=>`<button onclick="buyFreeze(${d})" style="flex:1;min-width:60px;padding:8px;border:1px solid rgba(14,165,233,0.3);border-radius:10px;background:#fff;color:#0ea5e9;font-size:.7rem;font-weight:700;cursor:pointer">${d}j · 💎${d*22}</button>`).join('')}
+        ${[1,3,7,14,30].map(d=>`<button onclick="buyFreeze(${d},this)" style="flex:1;min-width:60px;padding:8px;border:1px solid rgba(14,165,233,0.3);border-radius:10px;background:#fff;color:#0ea5e9;font-size:.7rem;font-weight:700;cursor:pointer">${d}j · 💎${d*22}</button>`).join('')}
       </div>
     </div>`;
-    html+=`<div class="sl" style="margin-bottom:10px">🎯 COMPÉTENCES ACTIVES</div>`;
-    html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Désactive une compétence pour la masquer du Profil et du Tracker. Réactive-la ici quand tu veux t'y remettre.</div>`;
-    {
-      const _activeC=activeCompetencies();
-      STATS.forEach(stat=>{
-        const m=SM[stat],isOn=_activeC.includes(stat),isLast=isOn&&_activeC.length===1;
-        html+=`<div class="card" style="border:1px solid ${m.dim};margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:1.2rem">${m.icon}</span>
-            <div><span style="font-weight:700;color:#1e3a4a;font-size:.82rem">${m.label}</span>${isLast?`<div style="font-size:.55rem;color:#94a3b8">Dernière compétence active</div>`:''}</div>
-          </div>
-          <div class="cfg-toggle" style="background:${isOn?m.color+"30":"#e0f2f8"};border:1px solid ${isOn?m.color:"rgba(8,145,178,0.2)"};${isLast?"opacity:.5":""}" ${isLast?'':`onclick="toggleCompetencyActive('${stat}')"`}>
-            <div class="cfg-toggle-dot" style="left:${isOn?"16":"2"}px;background:${isOn?m.color:"#7dd3e8"}"></div>
-          </div>
-        </div>`;
-      });
-    }
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">🎨 THÈMES</div>`;
-    html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Un seul thème actif à la fois — il change la couleur générale de l'app (nav, boutons, en-têtes) et les noms de rang, partout. Chaque thème affiche son prix dans sa propre monnaie (Graines, Or, Cristaux...) — ce sont toujours tes mêmes 💎.</div>`;
+    html+=`<div class="card" style="margin-bottom:16px;background:rgba(220,38,38,0.06);border-color:rgba(220,38,38,0.25)">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🛡️</span><span style="font-weight:700;color:#dc2626;font-size:.85rem">Bouclier de série</span></div>
+      <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Sauve UNE fois une série 🔥 d'habitude quotidienne si tu rates un jour — tu choisis de l'utiliser ou non au moment venu. Cher exprès : ça doit rester un vrai regret d'en avoir besoin.${ST.streakShields?" <strong>Tu en as "+ST.streakShields+".</strong>":""}</div>
+      <button onclick="buyStreakShield(this)" style="width:100%;padding:8px;border:1px solid rgba(220,38,38,0.3);border-radius:10px;background:#fff;color:#dc2626;font-size:.7rem;font-weight:700;cursor:pointer">Acheter · 💎${STREAK_SHIELD_COST}</button>
+    </div>`;
+    html+=`<div id="shop-themes-header" class="sl" style="margin-bottom:10px;margin-top:16px">🎨 THÈMES</div>`;
+    html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Un seul thème actif à la fois — il change la couleur générale de l'app (nav, boutons, en-têtes) et les noms de rang, partout.</div>`;
     {
       const activeThemeId=ST.activeTheme||'default';
-      html+=`<div class="card" style="margin-bottom:10px;background:rgba(8,145,178,0.05);border-color:rgba(8,145,178,0.3)">
-        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">🐉</span><span style="font-weight:700;color:#0891b2;font-size:.85rem">Thème par défaut</span></div>
-        <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Le look d'origine (Terrien → Ultra Instinct).</div>
-        <div style="display:flex;gap:8px">
-          <button ${activeThemeId==='default'?'':`onclick="setActiveTheme('default')"`} style="flex:1;padding:8px;border:1px solid rgba(8,145,178,0.4);border-radius:10px;background:${activeThemeId==='default'?'#0891b2':'#fff'};color:${activeThemeId==='default'?'#fff':'#0891b2'};font-size:.7rem;font-weight:700;cursor:pointer">${activeThemeId==='default'?'✓ Actif':'Activer'}</button>
-        </div>
-      </div>`;
       STATS.forEach(stat=>{
         const th=THEMES[stat];if(!th)return;
         const owned=(ST.ownedThemes||[]).includes(th.id);
         const active=activeThemeId===stat;
         html+=`<div class="card" style="margin-bottom:10px;background:${th.primary}0f;border-color:${th.primary}40">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${th.icon}</span><span style="font-weight:700;color:${th.primary};font-size:.85rem">${th.name}</span></div>
-          <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Couleur générale de l'app + rangs : ${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}. <span style="opacity:.75">Se paie en ${th.curIcon} ${th.curName}.</span></div>
+          <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Couleur générale de l'app + rangs : ${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}.</div>
           <div style="display:flex;gap:8px">
-            ${owned?`<button onclick="setActiveTheme('${stat}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:${active?th.primary:'#fff'};color:${active?'#fff':th.primary};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyTheme('${stat}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:#fff;color:${th.primary};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · ${th.curIcon||"💎"}${th.cost}</button>`}
+            ${owned?`<button onclick="setActiveTheme('${stat}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:${active?th.primary:'#fff'};color:${active?'#fff':th.primary};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyTheme('${stat}',this)" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:#fff;color:${th.primary};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${th.cost}</button>`}
           </div>
         </div>`;
       });
@@ -2099,14 +2415,14 @@ function rConfig(){
         const active=activeThemeId2===themeId;
         html+=`<div class="card" style="margin-bottom:10px;background:${th.primary}0f;border-color:${th.primary}40">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${th.icon}</span><span style="font-weight:700;color:${th.primary};font-size:.85rem">${th.name}</span></div>
-          <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Couleur générale de l'app + rangs : ${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}. <span style="opacity:.75">Se paie en ${th.curIcon} ${th.curName}.</span></div>
+          <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Couleur générale de l'app + rangs : ${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}.</div>
           <div style="display:flex;gap:8px">
-            ${owned?`<button onclick="setActiveTheme('${themeId}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:${active?th.primary:'#fff'};color:${active?'#fff':th.primary};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyTheme('${themeId}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:#fff;color:${th.primary};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · ${th.curIcon||"💎"}${th.cost}</button>`}
+            ${owned?`<button onclick="setActiveTheme('${themeId}')" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:${active?th.primary:'#fff'};color:${active?'#fff':th.primary};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyTheme('${themeId}',this)" style="flex:1;padding:8px;border:1px solid ${th.primary}50;border-radius:10px;background:#fff;color:${th.primary};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${th.cost}</button>`}
           </div>
         </div>`;
       });
     }
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:18px">🖼️ CADRES DE PROFIL</div>`;
+    html+=`<div id="shop-frames-header" class="sl" style="margin-bottom:10px;margin-top:18px">🖼️ CADRES DE PROFIL</div>`;
     html+=`<div style="background:rgba(255,215,0,0.08);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Une bordure cosmétique pour ta carte profil — purement visuel, un seul actif à la fois.</div>`;
     {
       const activeFrameId=ST.activeFrame||'default';
@@ -2123,7 +2439,7 @@ function rConfig(){
         html+=`<div class="card" style="margin-bottom:10px;border:2px solid ${fr.border};box-shadow:0 0 10px ${fr.shadow}">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${fr.icon}</span><span style="font-weight:700;color:${fr.border};font-size:.85rem">${fr.name}</span></div>
           <div style="display:flex;gap:8px">
-            ${owned?`<button onclick="setActiveFrame('${frameId}')" style="flex:1;padding:8px;border:1px solid ${fr.border}50;border-radius:10px;background:${active?fr.border:'#fff'};color:${active?'#fff':fr.border};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyFrame('${frameId}')" style="flex:1;padding:8px;border:1px solid ${fr.border}50;border-radius:10px;background:#fff;color:${fr.border};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${fr.cost}</button>`}
+            ${owned?`<button onclick="setActiveFrame('${frameId}')" style="flex:1;padding:8px;border:1px solid ${fr.border}50;border-radius:10px;background:${active?fr.border:'#fff'};color:${active?'#fff':fr.border};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyFrame('${frameId}',this)" style="flex:1;padding:8px;border:1px solid ${fr.border}50;border-radius:10px;background:#fff;color:${fr.border};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${fr.cost}</button>`}
           </div>
         </div>`;
       });
@@ -2146,12 +2462,12 @@ function rConfig(){
         html+=`<div class="card" style="margin-bottom:10px;background:${mainColor}0f;border-color:${mainColor}40">
           <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${sk.icon}</span><span style="font-weight:700;color:${mainColor};font-size:.85rem">${sk.name}</span></div>
           <div style="display:flex;gap:8px">
-            ${owned?`<button onclick="setActiveConfetti('${skinId}')" style="flex:1;padding:8px;border:1px solid ${mainColor}50;border-radius:10px;background:${active?mainColor:'#fff'};color:${active?'#fff':mainColor};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyConfettiSkin('${skinId}')" style="flex:1;padding:8px;border:1px solid ${mainColor}50;border-radius:10px;background:#fff;color:${mainColor};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${sk.cost}</button>`}
+            ${owned?`<button onclick="setActiveConfetti('${skinId}')" style="flex:1;padding:8px;border:1px solid ${mainColor}50;border-radius:10px;background:${active?mainColor:'#fff'};color:${active?'#fff':mainColor};font-size:.7rem;font-weight:700;cursor:pointer">${active?'✓ Actif':'Activer'}</button>`:`<button onclick="buyConfettiSkin('${skinId}',this)" style="flex:1;padding:8px;border:1px solid ${mainColor}50;border-radius:10px;background:#fff;color:${mainColor};font-size:.7rem;font-weight:700;cursor:pointer">Débloquer · 💎${sk.cost}</button>`}
           </div>
         </div>`;
       });
     }
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:18px">📋 PROGRAMMES</div>`;
+    html+=`<div id="shop-programs-header" class="sl" style="margin-bottom:10px;margin-top:18px">📋 PROGRAMMES</div>`;
     html+=`<div style="background:rgba(16,185,129,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Charge une config de tâches prête à l'emploi — <strong>remplace toutes tes tâches actuelles</strong>. Utile pour démarrer, ou pour changer complètement de direction.</div>`;
     Object.keys(PROGRAMS).forEach(function(progId){
       const prog=PROGRAMS[progId];
@@ -2159,38 +2475,9 @@ function rConfig(){
       html+=`<div class="card" style="margin-bottom:10px;background:rgba(16,185,129,0.05);border-color:rgba(16,185,129,0.3)">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:1.3rem">${prog.icon}</span><span style="font-weight:700;color:#10b981;font-size:.85rem">${prog.name}</span>${prog.cost===0?`<span style="font-size:.6rem;color:#10b981;font-weight:700;background:rgba(16,185,129,0.15);padding:2px 8px;border-radius:99px;margin-left:auto">GRATUIT</span>`:""}</div>
         <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">${prog.desc}</div>
-        <button onclick="loadProgram('${progId}')" style="width:100%;padding:8px;border:1px solid rgba(16,185,129,0.4);border-radius:10px;background:#fff;color:#10b981;font-size:.7rem;font-weight:700;cursor:pointer">${owned?"Charger":"Charger · 💎"+prog.cost}</button>
+        <button onclick="loadProgram('${progId}',this)" style="width:100%;padding:8px;border:1px solid rgba(16,185,129,0.4);border-radius:10px;background:#fff;color:#10b981;font-size:.7rem;font-weight:700;cursor:pointer">${owned?"Charger":"Charger · 💎"+prog.cost}</button>
       </div>`;
     });
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">👤 PROFIL JOUEUR</div>`;
-    html+=`<div class="card" style="margin-bottom:8px">
-      <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">PRÉNOM</div>
-      <input id="pf-name" type="text" value="${ST.playerName||''}" onblur="savePlayerField('playerName',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
-    </div>`;
-    html+=`<div class="card" style="margin-bottom:8px">
-      <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">TITRE PERSONNALISÉ <span style="opacity:.6;font-weight:400;text-transform:none;letter-spacing:0">(affiché sur ta carte profil)</span></div>
-      <input id="pf-title" type="text" maxlength="24" value="${ST.customTitle||''}" placeholder="ex: Le Bosseur, Team no sleep..." onblur="savePlayerField('customTitle',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
-    </div>`;
-    html+=`<div class="card" style="margin-bottom:8px">
-      <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">ÂGE</div>
-      <input id="pf-age" type="number" value="${ST.playerAge||''}" onblur="savePlayerField('playerAge',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
-    </div>`;
-    html+=`<div class="card" style="margin-bottom:8px">
-      <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">OBJECTIF PRINCIPAL</div>
-      <input id="pf-goal" type="text" value="${ST.playerGoal||''}" onblur="savePlayerField('playerGoal',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
-    </div>`;
-    html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">🎮 STYLE DE JEU</div>`;
-    html+=`<div class="card" style="padding:12px">
-      <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Change la quantité d'XP gagnée sur chaque tâche.</div>
-      ${[['easy','😌','Max de dopamine'],['normal','⚖️','Équilibré'],['hard','🏆','Mériter ma victoire']].map(([lvl,icon,label])=>{
-        const selected=(ST.difficulty||'normal')===lvl;
-        return `<div onclick="setDifficulty('${lvl}')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${selected?'#8b5cf6':'rgba(0,0,0,0.08)'};background:${selected?'#8b5cf610':'#fff'};border-radius:12px;margin-bottom:8px;cursor:pointer">
-          <span style="font-size:1.1rem">${icon}</span>
-          <span style="font-size:.78rem;font-weight:${selected?'700':'400'};color:${selected?'#8b5cf6':'#1e3a4a'};flex:1">${label}</span>
-          ${selected?'<span style="color:#8b5cf6">✓</span>':''}
-        </div>`;
-      }).join('')}
-    </div>`;
   }
   if(CTAB==="decay"){
     html+=`<div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#f59e0b">📉 Configure la vitesse de dégradation. 🧠 Intel et 🎨 Craft ne se dégradent jamais.</div>`;
@@ -2368,10 +2655,11 @@ function computeBadges(eng){
   const rankIcons = ["🌍","⚔️","🔴","🔴","🔴","🔴","🌟","⚡","⚡","🔴","🔵","⚪","💠","✨","🌌","🌠","♾️"];
   TIERS.forEach((t,i)=>{
     const isFirst = i===0;
+    const tt=tierAt(i);
     earned.push({
       id:'b_tier_'+i,
       icon: rankIcons[i]||'🏅',
-      name: t.title,
+      name: tt.title,
       desc: isFirst ? 'Premier jour actif' : (t.min.toLocaleString('fr-FR')+' XP total'),
       rank: t.rank,
       unlocked: isFirst ? adays>0 : totXP>=t.min,
@@ -2488,6 +2776,16 @@ function computeBadges(eng){
   earned.push({id:'b_str730', icon:'🪐', name:'Deux ans de feu',  desc:'Streak de 730 jours', unlocked:rstr>=730, progress:Math.min(1,rstr/730), cat:'streak'});
   earned.push({id:'b_str1825', icon:'🌠', name:'Cinq ans légendaires', desc:'Streak de 1825 jours', unlocked:rstr>=1825, progress:Math.min(1,rstr/1825), cat:'streak'});
 
+  // ── BADGES À VIE — Streaks par habitude quotidienne 🔥 (mêmes paliers que le streak global) ──
+  const DAILY_STREAK_TIERS=[[7,'🔥','Semaine de feu'],[14,'🔑','Discipline de fer'],[30,'👑','Mois parfait'],[90,'💫','Indestructible'],[180,'🌗','Semestre parfait'],[365,'🌕','Année complète'],[730,'🪐','Deux ans de feu'],[1825,'🌠','Cinq ans légendaires']];
+  ST.slots.filter(function(s){return s.daily;}).forEach(function(slot){
+    const rec=(eng.taskStreaks&&eng.taskStreaks[slot.id])?eng.taskStreaks[slot.id].record:0;
+    DAILY_STREAK_TIERS.forEach(function(tier){
+      const thresh=tier[0];
+      earned.push({id:'b_dailystr_'+slot.id+'_'+thresh,icon:tier[1],name:tier[2]+' — '+slot.name,desc:'Streak de '+thresh+' jours sur « '+slot.name+' »',unlocked:rec>=thresh,progress:Math.min(1,rec/thresh),cat:'dailyStreak'});
+    });
+  });
+
   // ── BADGES À VIE — Polyvalent ──
   const minStat = Math.min(...Object.values(sxp));
   earned.push({id:'b_poly1',  icon:'🌱', name:'Éveil',     desc:'Toutes stats > 10 XP',   unlocked:minStat>=10,   progress:Math.min(1,minStat/10), cat:'poly'});
@@ -2558,8 +2856,10 @@ function rBadges(eng){
   const monthly = badges.filter(b=>b.cat==='monthly');
   const ranks = badges.filter(b=>b.rank);
   const streaks = badges.filter(b=>b.cat==='streak'&&!b.rank);
+  const dailyStreakBadges = badges.filter(b=>b.cat==='dailyStreak');
   const poly = badges.filter(b=>b.cat==='poly');
   const wealth = badges.filter(b=>b.cat==='wealth');
+  const dailySlots = ST.slots.filter(function(s){return s.daily;});
 
   let html='';
 
@@ -2578,11 +2878,12 @@ function rBadges(eng){
   const catCounts=[
     {label:'Rangs',items:ranks,color:'#8b5cf6'},
     {label:'Streaks',items:streaks,color:'#f97316'},
+    {label:'Habitudes 🔥',items:dailyStreakBadges,color:'#dc2626'},
     {label:'Polyvalence',items:poly,color:'#10b981'},
     {label:'Richesse',items:wealth,color:'#0ea5e9'},
     {label:'Mensuels',items:monthly,color:'#f59e0b'},
   ];
-  html+=`<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">${catCounts.map(c=>{
+  html+=`<div style="display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap">${catCounts.filter(c=>c.items.length>0).map(c=>{
     const u=c.items.filter(b=>b.unlocked).length;
     return `<div style="flex:1;min-width:70px;background:${c.color}10;border:1px solid ${c.color}30;border-radius:10px;padding:6px;text-align:center">
       <div style="font-size:.48rem;color:${c.color};font-weight:700;font-family:'Anton',sans-serif;letter-spacing:.5px">${c.label.toUpperCase()}</div>
@@ -2590,6 +2891,26 @@ function rBadges(eng){
     </div>`;
   }).join('')}</div>`;
   html+=`<button onclick="openBadgesReference()" style="width:100%;margin-bottom:20px;padding:10px;border:1px solid rgba(139,92,246,0.3);border-radius:12px;background:#fff;color:#8b5cf6;font-family:'Anton',sans-serif;font-size:.68rem;letter-spacing:1px;cursor:pointer">📖 VOIR TOUS LES PALIERS & BADGES</button>`;
+
+  if(dailySlots.length>0){
+    html+=`<div id="badges-daily-streaks-header" style="font-size:.7rem;font-family:'Anton',sans-serif;letter-spacing:3px;color:#dc2626;margin-bottom:10px">🔥 STREAKS QUOTIDIENS</div>`;
+    html+=`<div style="background:rgba(220,38,38,0.06);border-radius:12px;padding:10px 14px;margin-bottom:10px;font-size:.66rem;color:#1e3a4a">Ces tâches sont verrouillées sur ton agenda tous les jours. Un jour raté remet le streak à zéro — sauf si tu utilises un 🛡️ bouclier (Config → Shop).${(ST.streakShields||0)>0?' Tu as <strong>'+ST.streakShields+'</strong> bouclier'+(ST.streakShields>1?'s':'')+' en réserve.':''}</div>`;
+    dailySlots.forEach(function(slot){
+      const rec=(eng.taskStreaks&&eng.taskStreaks[slot.id])?eng.taskStreaks[slot.id]:{current:0,record:0};
+      const m=SM[slot.stat];
+      html+=`<div class="card" style="margin-bottom:8px;border:1px solid ${m.dim};display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.2rem">${m.icon}</span>
+          <span style="font-weight:700;color:#1e3a4a;font-size:.82rem">${slot.name}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:.95rem;font-weight:700;color:#dc2626">🔥 ${rec.current}j</div>
+          <div style="font-size:.55rem;color:#94a3b8">record : ${rec.record}j</div>
+        </div>
+      </div>`;
+    });
+    html+=`<div style="height:10px"></div>`;
+  }
 
   // "Presque débloqués" — top 3 closest, across all categories
   const almostThere=badges.filter(b=>!b.unlocked&&b.progress!==undefined&&b.progress>0.5).sort((a,b)=>b.progress-a.progress).slice(0,3);
@@ -2607,10 +2928,12 @@ function rBadges(eng){
   const badgeSections=[
     {key:'ranks',label:'🏆 RANGS',color:'#8b5cf6',items:ranks},
     {key:'streaks',label:'🔥 STREAKS',color:'#f97316',items:streaks},
+    {key:'dailyStreak',label:'🔥 HABITUDES QUOTIDIENNES',color:'#dc2626',items:dailyStreakBadges},
     {key:'poly',label:'🌱 POLYVALENCE',color:'#10b981',items:poly},
     {key:'wealth',label:'💎 RICHESSE',color:'#0ea5e9',items:wealth},
   ];
   badgeSections.forEach((sec,i)=>{
+    if(sec.items.length===0)return;
     const collapsed=!!COLLAPSED_STATS['badge_'+sec.key];
     const secUnlocked=sec.items.filter(b=>b.unlocked).length;
     html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;cursor:pointer" onclick="toggleStatCollapse('badge_${sec.key}')">
@@ -2695,6 +3018,20 @@ function onboardNext(){
 function onboardBack(){
   if(ONBOARD_STEP>0){ONBOARD_STEP--;renderOnboarding();}
 }
+function _applyOnboardSkinChoice(){
+  // Le joueur DOIT repartir avec un skin possédé (plus de "défaut" gratuit implicite pour les nouveaux
+  // joueurs). S'il a saute l'étape de choix (bouton "Passer"), repli automatique sur le premier skin de base.
+  const key=ONBOARD_SKIN_PICK||'physique';
+  const th=THEMES[key];
+  if(!th)return;
+  if(!Array.isArray(ST.ownedThemes))ST.ownedThemes=[];
+  if(!ST.ownedThemes.includes(th.id))ST.ownedThemes.push(th.id);
+  ST.activeTheme=key;
+}
+function pickOnboardSkin(key){
+  ONBOARD_SKIN_PICK=key;
+  render();
+}
 function finishOnboarding(){
   const now=new Date(),key=mk(now.getFullYear(),now.getMonth());
   const md=ST.history[key];
@@ -2714,23 +3051,29 @@ function finishOnboarding(){
     });
     if(activeIds.length>0)md.activeSlots=activeIds;
   }
+  _applyOnboardSkinChoice();
   ST.onboardingComplete=true;
   ST.firstUseDate=new Date().toISOString().slice(0,10);
+  ST.tutorialStep=0;
   saveST();
   ONBOARD_STEP=0;
   render();
 }
 function skipOnboarding(){
+  _applyOnboardSkinChoice();
   ST.onboardingComplete=true;
   ST.firstUseDate=new Date().toISOString().slice(0,10);
+  ST.tutorialStep=0;
   saveST();
   ONBOARD_STEP=0;
   render();
 }
 function loadStarterAndFinish(){
   _applyProgramCore('starter');
+  _applyOnboardSkinChoice();
   ST.onboardingComplete=true;
   ST.firstUseDate=new Date().toISOString().slice(0,10);
+  ST.tutorialStep=0;
   saveST();
   ONBOARD_STEP=0;
   render();
@@ -2741,7 +3084,7 @@ function renderOnboarding(){
 
   if(ONBOARD_STEP===0){
     html+=`<div style="text-align:center;margin-bottom:24px;margin-top:20px">
-      <div style="font-family:'Anton',sans-serif;font-size:1.8rem;letter-spacing:2px"><span style="color:#0891b2">SAIYAN</span> <span style="color:#ec4899">EVOLUTION</span></div>
+      <div style="font-family:'Anton',sans-serif;font-size:1.8rem;letter-spacing:2px"><span style="color:#0891b2">GRIND</span> <span style="color:#ec4899">RPG</span></div>
       <div style="font-size:.85rem;color:#0e7490;margin-top:8px">Bienvenue \u2014 quelques questions pour personnaliser ton exp\u00e9rience</div>
     </div>`;
     html+=`<div class="card" style="margin-bottom:14px">
@@ -2870,11 +3213,37 @@ function renderOnboarding(){
   }
 
   else if(ONBOARD_STEP===5){
+    const skinChoices=['physique','craft','intel','disc','bienetre'];
+    html+=`<div style="text-align:center;margin-bottom:20px;margin-top:10px">
+      <div style="font-family:'Anton',sans-serif;font-size:1.2rem;color:#8b5cf6">Choisis ton skin de d\u00e9part</div>
+      <div style="font-size:.75rem;color:#0e7490;margin-top:6px">Il change la couleur g\u00e9n\u00e9rale de l'app et les noms de rang \u2014 <strong>offert</strong>. Les 4 autres restent achetables normalement, et tu pourras en changer plus tard dans le Shop.</div>
+    </div>`;
+    skinChoices.forEach(function(key){
+      const th=THEMES[key];
+      const selected=ONBOARD_SKIN_PICK===key;
+      html+=`<div onclick="pickOnboardSkin('${key}')" style="display:flex;align-items:center;gap:12px;padding:14px;border:2px solid ${selected?th.primary:'rgba(0,0,0,0.08)'};background:${selected?th.primary+'12':'#fff'};border-radius:14px;margin-bottom:10px;cursor:pointer">
+        <span style="font-size:1.6rem">${th.icon}</span>
+        <div style="flex:1">
+          <div style="font-weight:700;color:${selected?th.primary:'#1e3a4a'};font-size:.85rem">${th.name}</div>
+          <div style="font-size:.62rem;color:#0e7490">${th.tierNames[0]} → ${th.tierNames[th.tierNames.length-1]}</div>
+        </div>
+        <div style="width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,${th.primary},${th.secondary})"></div>
+        ${selected?`<span style="color:${th.primary};font-size:1.1rem">✓</span>`:''}
+      </div>`;
+    });
+    html+=`<div style="flex:1"></div>`;
+    html+=`<div style="display:flex;gap:10px;margin-top:16px">
+      <button onclick="onboardBack()" style="padding:14px 20px;border:1px solid rgba(8,145,178,0.2);border-radius:12px;background:#fff;color:#0891b2;font-weight:700;font-size:.85rem;cursor:pointer">\u2039</button>
+      <button onclick="${ONBOARD_SKIN_PICK?'onboardNext()':''}" style="flex:1;padding:14px;border:none;border-radius:12px;background:${ONBOARD_SKIN_PICK?'linear-gradient(90deg,#0891b2,#8b5cf6)':'rgba(0,0,0,0.08)'};color:${ONBOARD_SKIN_PICK?'#fff':'#999'};font-weight:700;font-size:.9rem;cursor:${ONBOARD_SKIN_PICK?'pointer':'default'}">Continuer</button>
+    </div>`;
+  }
+
+  else if(ONBOARD_STEP===6){
     const tips=[
       {icon:'\uD83D\uDCC5',title:'Tracker',desc:'Coche tes t\u00e2ches chaque jour pour gagner de l\u2019XP. C\u2019est le c\u0153ur de l\u2019app.'},
       {icon:'\u2694\uFE0F',title:'Profil',desc:'Suis ta progression, ton rang, et compare-toi \u00e0 toi-m\u00eame dans le temps.'},
       {icon:'\uD83C\uDFC5',title:'Badges',desc:'D\u00e9bloque des r\u00e9compenses au fil de ta r\u00e9gularit\u00e9 \u2014 il y en a des dizaines \u00e0 collectionner.'},
-      {icon:'\u2699\uFE0F',title:'Config',desc:'Personnalise tout : tes t\u00e2ches, tes malus, tes sons, tes objectifs. Rien n\u2019est fig\u00e9.'},
+      {icon:'\uD83D\uDEE0\uFE0F',title:'Config',desc:'Personnalise tes t\u00e2ches, tes malus, et va dans le shop \uD83D\uDCA0 pour d\u00e9bloquer th\u00e8mes, cadres et programmes.'},
     ];
     html+=`<div style="text-align:center;margin-bottom:20px;margin-top:10px">
       <div style="font-family:'Anton',sans-serif;font-size:1.3rem;color:#0891b2">Comment \u00e7a marche</div>
@@ -2914,24 +3283,36 @@ function render(){
   const content={profile:rProfile(eng),tracker:rTracker(eng),badges:rBadges(eng),config:rConfig(),history:rHistory(eng)};
   ge("app").innerHTML=`
     <div style="margin-bottom:22px;position:relative">
-      <button onclick="openHelpGuide()" style="position:absolute;top:0;right:0;width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #8b5cf6;color:#8b5cf6;font-weight:900;font-size:1rem;cursor:pointer;box-shadow:0 2px 8px rgba(139,92,246,0.25);z-index:10">?${ST.onboardingSeen?'':'<span style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ec4899;border:2px solid #fff;animation:togPulse 1.6s ease-in-out infinite"></span>'}</button>
-      ${ST.onboardingSeen?'':`<div style="position:absolute;top:38px;right:0;background:#1e1e2e;color:#fff;font-size:.65rem;padding:8px 12px;border-radius:10px;max-width:180px;z-index:11;box-shadow:0 4px 14px rgba(0,0,0,0.25);cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false" onclick="dismissOnboarding()">👋 Nouveau ici ? Touche <strong>?</strong> pour tout comprendre <span style="position:absolute;top:-6px;right:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid #1e1e2e"></span></div>`}
+      <button id="settings-gear-btn" onclick="openSettingsPanel()" style="position:absolute;top:0;right:0;width:34px;height:34px;border-radius:50%;background:#fff;border:2px solid #8b5cf6;color:#8b5cf6;font-weight:900;font-size:1.05rem;cursor:pointer;box-shadow:0 2px 8px rgba(139,92,246,0.25);z-index:10">⚙️${ST.onboardingSeen?'':'<span style="position:absolute;top:-3px;right:-3px;width:11px;height:11px;border-radius:50%;background:#ec4899;border:2px solid #fff;animation:togPulse 1.6s ease-in-out infinite"></span>'}</button>
+      ${ST.onboardingSeen?'':`<div style="position:absolute;top:38px;right:0;background:#1e1e2e;color:#fff;font-size:.65rem;padding:8px 12px;border-radius:10px;max-width:180px;z-index:11;box-shadow:0 4px 14px rgba(0,0,0,0.25);cursor:pointer;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false" onclick="dismissOnboarding()">👋 Nouveau ici ? Touche <strong>⚙️</strong> pour les param\u00e8tres et le mode d\u2019emploi <span style="position:absolute;top:-6px;right:12px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-bottom:6px solid #1e1e2e"></span></div>`}
       <div style="font-family:'Anton',sans-serif;font-size:2rem;letter-spacing:4px;color:#fff;text-transform:uppercase;line-height:1;text-shadow:3px 3px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;margin-bottom:2px">
-        <span style="color:#0891b2">SAIYAN</span> <span style="color:#ec4899">EVOLUTION</span>
+        <span style="color:#0891b2">GRIND</span> <span style="color:#ec4899">RPG</span>
       </div>
       <div style="font-family:'Anton',sans-serif;font-size:.52rem;letter-spacing:3px;color:#0e7490;text-transform:uppercase">
         🐉 Repousse tes limites &nbsp;·&nbsp; Saison ${season} &nbsp;·&nbsp; ${MFR[curM]} ${curY} &nbsp;·&nbsp; Jour ${curD+1}/${dim(curY,curM)}
         ${wc>0?`&nbsp;·&nbsp; <span style="color:#f59e0b;font-weight:700">⚠️ ${wc} stat${wc>1?"s":""} en danger</span>`:""}
       </div>
     </div>
-    <div class="tabs">${[["profile","⚔️ Profil"],["tracker","📅 Tracker"],["badges","🏅 Badges"],["config","⚙️ Config"],["history","📚 Historique"]].map(([id,l])=>`<button class="tab ${TAB===id?"active":""}" onclick="setTab('${id}')">${l}${id==="profile"&&wc>0?`<span style="margin-left:4px;color:#059669">⚠️</span>`:""}</button>`).join("")}</div>
-    <div class="save-bar"><span class="save-label">💾 Sauvegarde</span><button class="btn-export" onclick="exportData()">⬇️ Exporter</button><label class="btn-import-label">⬆️ Importer<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label><button onclick="resetAll()" style="background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.4);border-radius:9px;color:#ff4444;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap">🗑️ RESET</button></div>
+    <div class="tabs">${[["profile","⚔️ Profil"],["tracker","📅 Tracker"],["badges","🏅 Badges"],["config","🛠️ Config"],["history","📚 Historique"]].map(([id,l])=>`<button id="tab-${id}" class="tab ${TAB===id?"active":""}" onclick="setTab('${id}')">${l}${id==="profile"&&wc>0?`<span style="margin-left:4px;color:#059669">⚠️</span>`:""}</button>`).join("")}</div>
+    <div id="save-bar" class="save-bar"><span class="save-label">💾 Sauvegarde</span><button class="btn-export" onclick="exportData()">⬇️ Exporter</button><label class="btn-import-label">⬆️ Importer<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label><button onclick="resetAll()" style="background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.4);border-radius:9px;color:#ff4444;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap">🗑️ RESET</button></div>
     <div id="tc">${content[TAB]}</div>`;
   if(TAB==="profile"){const c=ge("radar-canvas");const _actS=activeCompetencies();if(c&&_actS.length>=3)drawRadar(c,_actS,eng.sxp,eng.warns,window._radarGhost||null);}
   updateGokuAura(eng.totXP);
+  renderTutorialOverlay();
 }
 
-function setTab(t){playTabSound();TAB=t;render();}
+function setTab(t){
+  playTabSound();TAB=t;
+  if(ST.tutorialStep!==null&&ST.tutorialStep!==undefined){
+    const step=TUTORIAL_STEPS[ST.tutorialStep];
+    if(step&&step.gate==="tap-tab:"+t){
+      ST.tutorialStep=ST.tutorialStep+1;
+      if(ST.tutorialStep>=TUTORIAL_STEPS.length)ST.tutorialStep=null;
+      saveST();
+    }
+  }
+  render();
+}
 function setCTab(t){playTabSound();CTAB=t;render();}
 function tHist(k){HOPEN=HOPEN===k?null:k;render();}
 var _audioCtx=null;
@@ -2944,8 +3325,6 @@ function toggleSound(){
 function toggleRewardSound(){
   ST.rewardSoundEnabled=ST.rewardSoundEnabled===false?true:false;
   saveST();
-  if(ST.rewardSoundEnabled)addGems(15);
-        playBadgeFanfare();
   render();
 }
 function playTabSound(){
@@ -3145,7 +3524,7 @@ function showInfoTip(e,msg){
   },50);
   setTimeout(closeInfoTip,10000);
 }
-function showPopup(msg,icon,color,duration){
+function showPopup(msg,icon,color,duration,gemAmount){
   duration=duration||2800;
   var existing=ge("grind-popup");
   if(existing)existing.remove();
@@ -3157,6 +3536,22 @@ function showPopup(msg,icon,color,duration){
   document.body.appendChild(el);
   setTimeout(function(){el.style.opacity="1";el.style.transform="translateX(-50%) scale(1)";},20);
   _popupTimer=setTimeout(function(){el.style.opacity="0";el.style.transform="translateX(-50%) scale(0.85)";setTimeout(function(){if(el.parentNode)el.remove();},300);},duration);
+  // Chiffre de gemmes qui s'envole au-dessus du popup — même animation que le "+XP" sur une case cochée,
+  // pour que les bonus (journée légendaire, badges, streak...) suivent le même langage visuel.
+  if(gemAmount>0){
+    var fx=document.createElement('div');
+    fx.className='xp-float';
+    fx.textContent='+'+gemAmount+' 💎';
+    fx.style.color='#0ea5e9';
+    fx.style.fontSize='1.05rem';
+    fx.style.position='fixed';
+    fx.style.left='50%';
+    fx.style.top='auto';
+    fx.style.bottom='168px';
+    fx.style.zIndex='9999';
+    document.body.appendChild(fx);
+    setTimeout(function(){if(fx.parentElement)fx.remove();},1000);
+  }
 }
 function randPick(arr){return arr[Math.floor(Math.random()*arr.length)];}
 function checkPopupTriggers(di,sid,wasChecked){
@@ -3170,14 +3565,19 @@ function checkPopupTriggers(di,sid,wasChecked){
   var scfg=ST.streakCfg||{};
   var eng=engine();
 
-  // JOURNÉE LÉGENDAIRE : toutes les tâches actives cochées le même jour (vérifié en priorité absolue)
+  // JOURNÉE LÉGENDAIRE : toutes les tâches PRÉVUES ce jour-là cochées (pas forcément toutes les tâches actives —
+  // si le joueur a planifié un sous-ensemble via 📌, c'est ce sous-ensemble qui compte).
+  // Bonus proportionnel (2💎/tâche) — pas un forfait fixe, sinon 3 tâches planifiées rapportent
+  // autant que 25 : pas équilibré par rapport à l'effort réel fourni.
   if(wasChecked){
-    var _allSlotsToday=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0;});
+    var _selDateStr=ymdKey(now.getFullYear(),now.getMonth(),di+1);
+    var _allSlotsToday=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0&&isPlannedForDay(s.id,_selDateStr);});
     if(_allSlotsToday.length>0&&_allSlotsToday.every(function(s){return d[s.id];})){
+      var _legendaryBonus=Math.max(1,Math.round(_allSlotsToday.length*2*(DIFFICULTY_MULT[ST.difficulty]||1)));
       showConfetti();
-      addGems(50);
+      addGems(_legendaryBonus);
       playLegendaryFanfare();
-      showPopup("🌟🌟🌟 JOURNÉE LÉGENDAIRE ! Toutes tes tâches cochées aujourd’hui. +50 XP BONUS MASSIF !","🏆","#ffd700",6000);
+      showPopup("🌟🌟🌟 JOURNÉE LÉGENDAIRE ! Toutes tes tâches cochées aujourd’hui. +"+_legendaryBonus+" 💎 BONUS !","🏆","#ffd700",6000,_legendaryBonus);
       return;
     }
   }
@@ -3242,8 +3642,8 @@ function checkPopupTriggers(di,sid,wasChecked){
       var weekPerfectS=true;
       for(var wj=weekStart2;wj<weekEnd2;wj++){if(!md.days[wj][sid]){weekPerfectS=false;break;}}
       if(weekPerfectS){
-        addGems(10);
-        showPopup(randPick(["🔥 SEMAINE PARFAITE sur ‘"+slot.name+"’ ! Bonus x3 débloqué.","7/7 sur ‘"+slot.name+"’ cette semaine — bonus énorme !"]),"🏆","#f59e0b",4000);
+        var _weekBonus=addBonusGems(10);
+        showPopup(randPick(["🔥 SEMAINE PARFAITE sur ‘"+slot.name+"’ ! Bonus x3 débloqué.","7/7 sur ‘"+slot.name+"’ cette semaine — bonus énorme !"]),"🏆","#f59e0b",4000,_weekBonus);
         return;
       }
     }
@@ -3251,8 +3651,8 @@ function checkPopupTriggers(di,sid,wasChecked){
       var monthPerfectS=true;
       for(var dj=0;dj<md.days.length;dj++){if(!md.days[dj][sid]){monthPerfectS=false;break;}}
       if(monthPerfectS){
-        addGems(25);
-        showPopup("🐉🐉 MOIS PARFAIT sur ‘"+slot.name+"’ ! Bonus x10 — performance légendaire.","👑","#8b5cf6",5000);
+        var _monthBonus=addBonusGems(25);
+        showPopup("🐉🐉 MOIS PARFAIT sur ‘"+slot.name+"’ ! Bonus x10 — performance légendaire.","👑","#8b5cf6",5000,_monthBonus);
         return;
       }
     }
@@ -3286,13 +3686,13 @@ function checkPopupTriggers(di,sid,wasChecked){
     if(statChecked===comboForThisStat.minSlots){
       var statLabel2=SM[slot.stat]?SM[slot.stat].label:slot.stat;
       var cBonus=comboForThisStat.bonus||5;
-      addGems(5);
-      showPopup(randPick(["COMBO "+statLabel2.toUpperCase()+" ! +"+cBonus+" XP bonus 🔥",comboForThisStat.minSlots+" t\u00e2ches "+statLabel2+" — combo activ\u00e9 !"]),"🔥","#8b5cf6",3000);
+      var _comboBonus=addBonusGems(cBonus);
+      showPopup(randPick(["COMBO "+statLabel2.toUpperCase()+" ! +"+_comboBonus+" 💎 bonus 🔥",comboForThisStat.minSlots+" t\u00e2ches "+statLabel2+" — combo activ\u00e9 !"]),"🔥","#8b5cf6",3000,_comboBonus);
       return;
     }
   }
 
-  var statSlots=ST.slots.filter(function(s){return s.stat===slot.stat&&aIds.indexOf(s.id)>=0;});
+  var statSlots=ST.slots.filter(function(s){return s.stat===slot.stat&&aIds.indexOf(s.id)>=0&&isPlannedForDay(s.id,_selDateStr);});
   var allStatDone=statSlots.every(function(s){return d[s.id];});
   if(allStatDone&&wasChecked&&statSlots.length>=2){
     var m2=SM[slot.stat];
@@ -3304,8 +3704,8 @@ function checkPopupTriggers(di,sid,wasChecked){
   if(wasChecked){
     var cstr2=eng.cstr;
     if(cstr2===7||cstr2===14||cstr2===30||cstr2===60||cstr2===90){
-      addGems(10);
-      showPopup(randPick(["⚡ "+cstr2+" JOURS DE STREAK !","🔥 "+cstr2+" jours consécutifs !"]),"⚡","#f59e0b",3500);
+      var _streakBonus=addBonusGems(10);
+      showPopup(randPick(["⚡ "+cstr2+" JOURS DE STREAK !","🔥 "+cstr2+" jours consécutifs !"]),"⚡","#f59e0b",3500,_streakBonus);
       return;
     }
   }
@@ -3323,6 +3723,13 @@ function tDay(di,sid,monthKey){
     var slotDef=ST.slots.find(function(s){return s.id===sid;});
     md.days[di][sid]=slotDef?scaledXP(slotDef.xp):1;
     if(slotDef)addGems(1);
+    if(ST.tutorialStep!==null&&ST.tutorialStep!==undefined){
+      var _tutStep=TUTORIAL_STEPS[ST.tutorialStep];
+      if(_tutStep&&_tutStep.gate==="check-task"){
+        ST.tutorialStep=ST.tutorialStep+1;
+        if(ST.tutorialStep>=TUTORIAL_STEPS.length)ST.tutorialStep=null;
+      }
+    }
   } else if(wasChecked&&isMalusSlot){
     var malusDef=ST.malusList.find(function(m){return m.id===sid;});
     md.days[di][sid]=malusDef?{xp:malusDef.xp,debtDays:malusDef.debtDays}:1;
@@ -3342,10 +3749,10 @@ function tDay(di,sid,monthKey){
       var _newlyUnlocked=_badgesAfter.filter(function(b){return b.unlocked&&_badgesBefore[b.id]===false;});
       if(_newlyUnlocked.length>0){
         var _b=_newlyUnlocked[0];
-        addGems(15);
+        var _badgeBonus=addBonusGems(15);
         showConfetti();
         playBadgeFanfare();
-        showPopup("BADGE D\u00c9BLOQU\u00c9 : "+_b.icon+" "+_b.name+" \u2014 "+_b.desc,"\u{1F3C6}","#8b5cf6",4500);
+        showPopup("BADGE D\u00c9BLOQU\u00c9 : "+_b.icon+" "+_b.name+" \u2014 "+_b.desc,"\u{1F3C6}","#8b5cf6",4500,_badgeBonus);
       }
     }catch(e){}
   },250);
@@ -3442,6 +3849,7 @@ function tDay(di,sid,monthKey){
         if(remainSlotsTD.length===0){
           remainEl.style.display='none';
         } else {
+          remainEl.style.display='flex';
           remainEl.innerHTML=remainSlotsTD.map(function(s){
             const sm=SM[s.stat];
             const target=repeatTargetFor(s.id);
@@ -3483,6 +3891,7 @@ function tDay(di,sid,monthKey){
     });
     setTimeout(function(){_scrollBox.removeEventListener('scroll',_scrollLockFn);},550);
   }
+  renderTutorialOverlay();
 }
 function setDifficulty(level){
   ST.difficulty=level;
@@ -3515,10 +3924,16 @@ function addMalus(){
   render();
   EDIT='malus_'+newId;
 }
+var _delMalusPending=null;
 function deleteMalus(id){
   if(ST.malusList.length<=1)return;
-  if(!confirm('Supprimer ce malus ? Cette action est irr\u00e9versible.'))return;
-  ST.malusList=ST.malusList.filter(m=>m.id!==id);
+  _delMalusPending=id;
+  showConfirmPanel("SUPPRIMER CE MALUS","Supprimer ce malus ?\n\nCette action est irréversible.","confirmDeleteMalus","🗑️ Supprimer");
+}
+function confirmDeleteMalus(){
+  if(!_delMalusPending)return;
+  ST.malusList=ST.malusList.filter(m=>m.id!==_delMalusPending);
+  _delMalusPending=null;
   saveST();
   render();
 }
@@ -3635,6 +4050,13 @@ function renderRepeatRulePanel(){
   document.getElementById("stat-panel").style.display="block";
   document.body.style.overflow="hidden";
 }
+function toggleDailyLock(slotId){
+  const s=ST.slots.find(function(x){return x.id===slotId;});
+  if(!s)return;
+  s.daily=!s.daily;
+  saveST();
+  render();
+}
 function openRepeatRule(slotId){
   const s=ST.slots.find(s=>s.id===slotId);
   if(!s)return;
@@ -3676,14 +4098,18 @@ function dCombo(field,delta,mn,mx){
   saveST();render();
 }
 function resetAll(){
-  if(!confirm("⚠️ RESET COMPLET\n\nTu vas effacer TOUTES tes données :\n• Tout l’historique\n• Tous les niveaux\n• Tous les XP\n\nCette action est IRRÉVERSIBLE.\n\nTu es sûr ?")) return;
-  if(!confirm("Dernière chance — confirme le reset total.")) return;
+  showConfirmPanel("⚠️ RESET COMPLET","Tu vas effacer TOUTES tes données :\n• Tout l'historique\n• Tous les niveaux\n• Tous les XP\n\nCette action est IRRÉVERSIBLE.","resetAllStep2","Continuer");
+}
+function resetAllStep2(){
+  showConfirmPanel("DERNIÈRE CHANCE","Confirme le reset total.\n\nIl n'y aura pas de retour en arrière possible.","resetAllConfirmed","🗑️ Tout effacer");
+}
+function resetAllConfirmed(){
   localStorage.removeItem("grind-v6");
   ST = initST();
   saveST();
   TAB = "profile";
   render();
-  alert("✅ Reset effectué. Nouvelle partie lancée ! 🐉");
+  showInfoAlert("✅ Reset effectué. Nouvelle partie lancée ! 🐉",true);
 }
 function computeStatBreakdown(){
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
@@ -3909,8 +4335,14 @@ function openStatPanelDay(stat,dayIdx){openStatPanel(stat,dayIdx);}
 function helpSection(title,color,items){
   var h="<div style='margin-bottom:18px'><div style='font-size:.65rem;font-family:Anton,sans-serif;letter-spacing:2px;color:"+color+";margin-bottom:8px'>"+title+"</div>";
   items.forEach(function(it){
+    var infoBtn="";
+    if(it.show){
+      var idx=_infoPoints.length;
+      _infoPoints.push({tab:it.show.tab||null,ctab:it.show.ctab||null,targetId:it.show.targetId||null,text:"<strong>"+it.t+"</strong><br>"+it.d});
+      infoBtn="<span onclick='showInfoSpotlight("+idx+")' title='Voir sur l\u2019\u00e9cran' style='display:inline-flex;align-items:center;justify-content:center;width:15px;height:15px;border-radius:50%;background:"+color+";color:#fff;font-size:.58rem;font-weight:900;font-style:italic;cursor:pointer;flex-shrink:0;margin-left:6px'>i</span>";
+    }
     h+="<div style='margin-bottom:10px;padding-left:2px'>";
-    h+="<div style='font-size:.78rem;font-weight:700;color:#1e3a4a;margin-bottom:2px'>"+it.t+"</div>";
+    h+="<div style='font-size:.78rem;font-weight:700;color:#1e3a4a;margin-bottom:2px;display:flex;align-items:center'><span>"+it.t+"</span>"+infoBtn+"</div>";
     h+="<div style='font-size:.72rem;color:#0e7490;line-height:1.4'>"+it.d+"</div>";
     h+="</div>";
   });
@@ -3922,27 +4354,245 @@ function dismissOnboarding(){
   saveST();
   render();
 }
+// ── TUTO GUIDÉ (style jeu vidéo) ── une étape à la fois, avec un spotlight sur l'élément concerné.
+// Certaines étapes sont "gate" (il faut vraiment taper le bon onglet pour avancer), les autres ont un
+// bouton "Suivant". ST.tutorialStep=null -> pas de tuto affiché. Jamais forcé sur un joueur déjà existant.
+// ── POINTS D'INFO CONTEXTUELS ── boutons "i" dans le mode d'emploi, qui emmènent directement sur
+// l'écran concerné et surlignent le vrai élément (même mécanique que le tuto d'onboarding, réutilisable
+// à la demande). _infoPoints est reconstruit à chaque ouverture du mode d'emploi (voir helpSection()).
+var _infoPoints=[];
+var _infoSpotlight=null;
+function showInfoSpotlight(idx){
+  const pt=_infoPoints[idx];
+  if(!pt)return;
+  closePanel();
+  _infoSpotlight={targetId:pt.targetId,text:pt.text};
+  if(pt.tab)TAB=pt.tab;
+  if(pt.ctab)CTAB=pt.ctab;
+  render();
+}
+function dismissInfoSpotlight(){
+  _infoSpotlight=null;
+  _lastScrolledTargetKey=null;
+  render();
+  openHelpGuide();
+}
+const TUTORIAL_STEPS=[
+  {tab:"profile",targetId:"profile-hero-card",text:"👋 Bienvenue sur ton Profil ! C'est ici que sont notées toutes tes statistiques : ton rang, ta progression, et tes 5 compétences en un coup d'œil."},
+  {tab:"profile",targetId:"tab-tracker",text:"Direction le Tracker — c'est là que tu coches tes tâches chaque jour pour gagner de l'XP.",gate:"tap-tab:tracker",gateLabel:"Appuie sur Tracker"},
+  {tab:"tracker",targetId:"tutorial-today-card",text:"Voici tes tâches du jour. Tape sur une tâche pour la valider — vas-y, essaie !",gate:"check-task",gateLabel:"Tape sur une tâche pour la valider"},
+  {tab:"tracker",targetId:"tutorial-table-card",text:"Bien joué, elle est validée ✓ ! En dessous, ce grand tableau te permet de cocher n'importe quel jour du mois — pratique pour valider un oubli, rajouter une tâche ou programmer un jour à venir."},
+  {tab:"tracker",targetId:"tab-config",text:"Dans Config, tu actives tes tâches, ajustes leur XP, et configures tout à ta façon.",gate:"tap-tab:config",gateLabel:"Appuie sur Config"},
+  {tab:"config",targetId:"subtab-general",text:"Et voici le Shop — dépense tes gemmes en thèmes, cadres de profil, skins de confettis et bien plus."},
+  {tab:"config",targetId:"settings-gear-btn",text:"Le ⚙️ en haut à droite, c'est tes Paramètres — et le mode d'emploi complet si jamais tu as un doute.",last:true}
+];
+function tutorialNext(){
+  if(ST.tutorialStep===null||ST.tutorialStep===undefined)return;
+  const step=TUTORIAL_STEPS[ST.tutorialStep];
+  if(step&&step.last){ST.tutorialStep=null;_lastScrolledTargetKey=null;}
+  else{
+    ST.tutorialStep=(ST.tutorialStep||0)+1;
+    if(ST.tutorialStep>=TUTORIAL_STEPS.length){ST.tutorialStep=null;_lastScrolledTargetKey=null;}
+  }
+  saveST();
+  render();
+}
+function tutorialSkip(){
+  ST.tutorialStep=null;
+  _lastScrolledTargetKey=null;
+  saveST();
+  render();
+}
+var _lastScrolledTargetKey=null;
+function scrollTargetIntoViewOnce(key,target){
+  if(!target||_lastScrolledTargetKey===key)return;
+  _lastScrolledTargetKey=key;
+  if(typeof target.scrollIntoView==="function")target.scrollIntoView({behavior:"smooth",block:"center"});
+}
+function renderTutorialOverlay(){
+  let layer=document.getElementById("tutorial-layer");
+  // Priorité au spotlight d'aide contextuelle (boutons "i" du mode d'emploi) — même mécanique visuelle
+  // que le tuto d'onboarding, mais déclenchable à la demande sur n'importe quel point du mode d'emploi.
+  if(_infoSpotlight){
+    if(!layer){
+      layer=document.createElement("div");
+      layer.id="tutorial-layer";
+      layer.style.position="fixed";layer.style.top="0";layer.style.left="0";layer.style.right="0";layer.style.bottom="0";layer.style.zIndex="9000";layer.style.pointerEvents="none";
+      document.body.appendChild(layer);
+    }
+    const target=_infoSpotlight.targetId?document.getElementById(_infoSpotlight.targetId):null;
+    scrollTargetIntoViewOnce("info:"+_infoSpotlight.targetId,target);
+    const okBtn=`<button onclick="dismissInfoSpotlight()" style="margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;background:#8b5cf6;color:#fff;font-weight:700;font-size:.78rem;cursor:pointer;pointer-events:auto">✓ Compris</button>`;
+    let out2="";
+    if(target){
+      const r2=target.getBoundingClientRect();
+      const pad2=6;
+      out2+=`<div style="position:fixed;top:${r2.top-pad2}px;left:${r2.left-pad2}px;width:${r2.width+pad2*2}px;height:${r2.height+pad2*2}px;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none"></div>`;
+      out2+=`<div style="position:fixed;top:${r2.top-pad2}px;left:${r2.left-pad2}px;width:${r2.width+pad2*2}px;height:${r2.height+pad2*2}px;border-radius:14px;border:3px solid #8b5cf6;pointer-events:none;animation:togPulse 1.4s ease-in-out infinite"></div>`;
+      const spaceBelow2=window.innerHeight-r2.bottom;
+      const below2=spaceBelow2>140;
+      const vAnchor2=below2?`top:${r2.bottom+14}px`:`bottom:${window.innerHeight-r2.top+14}px`;
+      out2+=`<div style="position:fixed;${vAnchor2};left:16px;right:16px;max-width:400px;margin:0 auto;background:#1e1e2e;color:#fff;padding:16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;font-size:.8rem;line-height:1.5">
+        ${_infoSpotlight.text}
+        ${okBtn}
+      </div>`;
+    }else{
+      out2+=`<div style="position:fixed;top:50%;left:16px;right:16px;transform:translateY(-50%);max-width:400px;margin:0 auto;background:#1e1e2e;color:#fff;padding:18px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;font-size:.85rem;line-height:1.6">
+        ${_infoSpotlight.text}
+        ${okBtn}
+      </div>`;
+    }
+    layer.innerHTML=out2;
+    return;
+  }
+  const step=(ST.tutorialStep!==null&&ST.tutorialStep!==undefined)?TUTORIAL_STEPS[ST.tutorialStep]:null;
+  if(!step||step.tab!==TAB){
+    if(layer)layer.innerHTML="";
+    return;
+  }
+  if(!layer){
+    layer=document.createElement("div");
+    layer.id="tutorial-layer";
+    layer.style.position="fixed";layer.style.top="0";layer.style.left="0";layer.style.right="0";layer.style.bottom="0";layer.style.zIndex="9000";layer.style.pointerEvents="none";
+    document.body.appendChild(layer);
+  }
+  const target=step.targetId?document.getElementById(step.targetId):null;
+  scrollTargetIntoViewOnce("tuto:"+ST.tutorialStep,target);
+  const skipBtn=`<div onclick="tutorialSkip()" style="margin-top:8px;text-align:center;font-size:.65rem;color:#bbb;cursor:pointer;pointer-events:auto">Passer le tutoriel</div>`;
+  let out="";
+  if(target){
+    const r=target.getBoundingClientRect();
+    const pad=6;
+    out+=`<div style="position:fixed;top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;border-radius:14px;box-shadow:0 0 0 9999px rgba(0,0,0,0.72);pointer-events:none"></div>`;
+    out+=`<div style="position:fixed;top:${r.top-pad}px;left:${r.left-pad}px;width:${r.width+pad*2}px;height:${r.height+pad*2}px;border-radius:14px;border:3px solid #f59e0b;pointer-events:none;animation:togPulse 1.4s ease-in-out infinite"></div>`;
+    const spaceBelow=window.innerHeight-r.bottom;
+    const below=spaceBelow>140;
+    const vAnchor=below?`top:${r.bottom+14}px`:`bottom:${window.innerHeight-r.top+14}px`;
+    out+=`<div style="position:fixed;${vAnchor};left:16px;right:16px;max-width:400px;margin:0 auto;background:#1e1e2e;color:#fff;padding:16px;border-radius:14px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;font-size:.8rem;line-height:1.5">
+      ${step.text}
+      ${step.gate?`<div style="margin-top:10px;font-size:.7rem;color:#f59e0b;font-weight:700">👆 ${step.gateLabel}</div>`:`<button onclick="tutorialNext()" style="margin-top:12px;width:100%;padding:10px;border:none;border-radius:10px;background:#8b5cf6;color:#fff;font-weight:700;font-size:.78rem;cursor:pointer">${step.last?"Termin\u00e9 !":"Suivant →"}</button>`}
+      ${skipBtn}
+    </div>`;
+  }else{
+    out+=`<div style="position:fixed;top:50%;left:16px;right:16px;transform:translateY(-50%);max-width:400px;margin:0 auto;background:#1e1e2e;color:#fff;padding:18px;border-radius:16px;box-shadow:0 8px 24px rgba(0,0,0,0.4);pointer-events:auto;font-size:.85rem;line-height:1.6">
+      ${step.text}
+      <button onclick="tutorialNext()" style="margin-top:14px;width:100%;padding:11px;border:none;border-radius:10px;background:#8b5cf6;color:#fff;font-weight:700;font-size:.8rem;cursor:pointer">${step.last?"Termin\u00e9 !":"Suivant →"}</button>
+      ${skipBtn}
+    </div>`;
+  }
+  layer.innerHTML=out;
+}
+function openSettingsPanel(){
+  const soundOn=ST.soundEnabled!==false;
+  const rewardOn=ST.rewardSoundEnabled!==false;
+  let html='';
+  html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
+  html+="<span style='font-size:1.8rem'>⚙️</span>";
+  html+="<div style='font-family:Anton,sans-serif;font-size:1.1rem;color:#8b5cf6;letter-spacing:2px'>PARAMÈTRES</div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
+
+  html+=`<button onclick="openHelpGuide()" style="width:100%;padding:12px;border:1px solid rgba(139,92,246,0.3);border-radius:12px;background:rgba(139,92,246,0.06);color:#8b5cf6;font-family:'Anton',sans-serif;font-size:.72rem;letter-spacing:1px;cursor:pointer;margin-bottom:20px;text-align:left;display:flex;align-items:center;gap:10px"><span style="font-size:1.3rem">📖</span> MODE D'EMPLOI — comment marche l'app</button>`;
+
+  html+=`<div class="sl" style="margin-bottom:10px">🔊 SONS</div>`;
+  html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:1.3rem">${soundOn?"🔊":"🔇"}</span>
+      <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons d’interaction</span><div style="font-size:.58rem;color:#0e7490">Check, ploc, clic de menu...</div></div>
+    </div>
+    <div class="cfg-toggle" style="background:${soundOn?"#8b5cf630":"#e0f2f8"};border:1px solid ${soundOn?"#8b5cf6":"rgba(8,145,178,0.2)"}" onclick="toggleSound();openSettingsPanel()">
+      <div class="cfg-toggle-dot" style="left:${soundOn?"16":"2"}px;background:${soundOn?"#8b5cf6":"#7dd3e8"}"></div>
+    </div>
+  </div>`;
+  html+=`<div class="card" style="border:1px solid rgba(8,145,178,0.15);margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;padding:14px 18px">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:1.3rem">${rewardOn?"🏆":"🔇"}</span>
+      <div><span style="font-weight:700;color:#1e3a4a;font-size:.85rem">Sons de récompense</span><div style="font-size:.58rem;color:#0e7490">Fanfare badges, journée légendaire...</div></div>
+    </div>
+    <div class="cfg-toggle" style="background:${rewardOn?"#f59e0b30":"#e0f2f8"};border:1px solid ${rewardOn?"#f59e0b":"rgba(8,145,178,0.2)"}" onclick="toggleRewardSound();openSettingsPanel()">
+      <div class="cfg-toggle-dot" style="left:${rewardOn?"16":"2"}px;background:${rewardOn?"#f59e0b":"#7dd3e8"}"></div>
+    </div>
+  </div>`;
+
+  html+=`<div class="sl" style="margin-bottom:10px">🎯 COMPÉTENCES ACTIVES</div>`;
+  html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Désactive une compétence pour la masquer du Profil et du Tracker. Réactive-la ici quand tu veux t'y remettre.</div>`;
+  {
+    const _activeC=activeCompetencies();
+    STATS.forEach(stat=>{
+      const m=SM[stat],isOn=_activeC.includes(stat),isLast=isOn&&_activeC.length===1;
+      html+=`<div class="card" style="border:1px solid ${m.dim};margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <span style="font-size:1.2rem">${m.icon}</span>
+          <div><span style="font-weight:700;color:#1e3a4a;font-size:.82rem">${m.label}</span>${isLast?`<div style="font-size:.55rem;color:#94a3b8">Dernière compétence active</div>`:''}</div>
+        </div>
+        <div class="cfg-toggle" style="background:${isOn?m.color+"30":"#e0f2f8"};border:1px solid ${isOn?m.color:"rgba(8,145,178,0.2)"};${isLast?"opacity:.5":""}" ${isLast?'':`onclick="toggleCompetencyActive('${stat}');openSettingsPanel()"`}>
+          <div class="cfg-toggle-dot" style="left:${isOn?"16":"2"}px;background:${isOn?m.color:"#7dd3e8"}"></div>
+        </div>
+      </div>`;
+    });
+  }
+
+  html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">👤 PROFIL JOUEUR</div>`;
+  html+=`<div class="card" style="margin-bottom:8px">
+    <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">PRÉNOM</div>
+    <input id="pf-name" type="text" value="${ST.playerName||''}" onblur="savePlayerField('playerName',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
+  </div>`;
+  html+=`<div class="card" style="margin-bottom:8px">
+    <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">TITRE PERSONNALISÉ <span style="opacity:.6;font-weight:400;text-transform:none;letter-spacing:0">(affiché sur ta carte profil)</span></div>
+    <input id="pf-title" type="text" maxlength="24" value="${ST.customTitle||''}" placeholder="ex: Le Bosseur, Team no sleep..." onblur="savePlayerField('customTitle',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
+  </div>`;
+  html+=`<div class="card" style="margin-bottom:8px">
+    <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">ÂGE</div>
+    <input id="pf-age" type="number" value="${ST.playerAge||''}" onblur="savePlayerField('playerAge',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
+  </div>`;
+  html+=`<div class="card" style="margin-bottom:8px">
+    <div style="font-size:.6rem;font-family:'Anton',sans-serif;letter-spacing:1px;color:#0e7490;margin-bottom:6px">OBJECTIF PRINCIPAL</div>
+    <input id="pf-goal" type="text" value="${ST.playerGoal||''}" onblur="savePlayerField('playerGoal',this.value)" style="width:100%;padding:10px;border:1px solid rgba(8,145,178,0.2);border-radius:10px;font-size:.85rem;box-sizing:border-box">
+  </div>`;
+
+  html+=`<div class="sl" style="margin-bottom:10px;margin-top:16px">🎮 STYLE DE JEU</div>`;
+  html+=`<div class="card" style="padding:12px">
+    <div style="font-size:.68rem;color:#0e7490;margin-bottom:10px">Change la quantité d'XP gagnée sur chaque tâche.</div>
+    ${[['easy','😌','Max de dopamine'],['normal','⚖️','Équilibré'],['hard','🏆','Mériter ma victoire']].map(([lvl,icon,label])=>{
+      const selected=(ST.difficulty||'normal')===lvl;
+      return `<div onclick="setDifficulty('${lvl}');openSettingsPanel()" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:1.5px solid ${selected?'#8b5cf6':'rgba(0,0,0,0.08)'};background:${selected?'#8b5cf610':'#fff'};border-radius:12px;margin-bottom:8px;cursor:pointer">
+        <span style="font-size:1.1rem">${icon}</span>
+        <span style="font-size:.78rem;font-weight:${selected?'700':'400'};color:${selected?'#8b5cf6':'#1e3a4a'};flex:1">${label}</span>
+        ${selected?'<span style="color:#8b5cf6">✓</span>':''}
+      </div>`;
+    }).join('')}
+  </div>`;
+
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
 function openHelpGuide(){
   ST.onboardingSeen=true;
   saveST();
+  _infoPoints=[];
   var html="";
   html+="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'>";
   html+="<span style='font-size:1.8rem'>📖</span>";
   html+="<div style='font-family:Anton,sans-serif;font-size:1.1rem;color:#8b5cf6;letter-spacing:2px'>MODE D’EMPLOI</div>";
   html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>✕</button></div>";
 
-  html+="<div style='font-size:.75rem;color:#1e3a4a;background:#f8f4ff;border-radius:12px;padding:12px;margin-bottom:18px;line-height:1.5'>Saiyan Evolution transforme tes objectifs de vie en jeu de rôle Dragon Ball. Chaque tâche accomplie rapporte de l’XP. Progresse de Terrien à Ultra Instinct.</div>";
+  html+="<div style='font-size:.72rem;color:#4c1d95;background:#f8f4ff;border-radius:12px;padding:12px;margin-bottom:18px;line-height:1.5'>💡 Touche un rond <strong>i</strong> à côté d’un titre pour voir directement l’endroit concerné, surligné sur l’écran réel.</div>";
+
+  html+="<div style='font-size:.75rem;color:#1e3a4a;background:#f8f4ff;border-radius:12px;padding:12px;margin-bottom:18px;line-height:1.5'>Grind RPG transforme tes objectifs de vie en jeu de rôle Dragon Ball. Chaque tâche accomplie rapporte de l’XP. Progresse de Terrien à Ultra Instinct.</div>";
 
   html+=helpSection("⚔️ PROFIL",'#0891b2',[
-    {t:"Rang & barre XP",d:"Ton niveau global (Terrien → Ultra Instinct) et ta progression vers le prochain palier."},
+    {t:"Rang & barre XP",d:"Ton niveau global et ta progression vers le prochain palier — les noms changent selon le thème actif (Terrien → Ultra Instinct par défaut).",show:{tab:"profile",targetId:"profile-hero-card"}},
     {t:"Streak / Record / Actifs / Total",d:"Clique dessus pour voir le détail — jours consécutifs, historique, taux d’activité."},
-    {t:"Toile d’araignée",d:"Vue d’ensemble de tes 5 stats. Clique une icône pour voir records et progression. Maintiens le doigt appuyé pour comparer avec le mois dernier."},
+    {t:"Toile d’araignée",d:"Vue d’ensemble de tes compétences actives (3 à 5). Clique une icône pour voir records et progression. Maintiens le doigt appuyé pour comparer avec le mois dernier.",show:{tab:"profile",targetId:"radar-canvas"}},
     {t:"Cartes Compétences",d:"Clique une carte pour ouvrir le panneau et cocher directement les tâches du jour."},
     {t:"Message du jour",d:"Un message adapté à ta situation — streak, stat faible, palier proche, etc."},
   ]);
 
   html+=helpSection("📅 TRACKER",'#f59e0b',[
-    {t:"Tableau mensuel",d:"Une ligne par jour, une colonne par tâche. Coche en tapant sur la case."},
+    {t:"Tableau mensuel",d:"Une ligne par jour, une colonne par tâche. Coche en tapant sur la case.",show:{tab:"tracker",targetId:"tutorial-table-card"}},
+    {t:"🔁 Tâche répétée",d:"Si une tâche demande plusieurs répétitions (ex : boire de l’eau x10), la case affiche ta progression (3/10) avec un dégradé rouge → vert.",show:{tab:"tracker",targetId:"tutorial-today-card"}},
+    {t:"📌 Planifier un jour futur",d:"Toutes tes tâches actives sont prévues par défaut chaque jour. Tape une case dans un jour à venir pour la retirer (✕) si tu ne veux pas la faire ce jour-là — retape pour la remettre (+)."},
+    {t:"🔁 Dupliquer ce jour / la semaine / le mois",d:"Trois boutons pour copier ton planning déjà fait sur le lendemain, la semaine suivante ou le mois suivant, en un tap."},
     {t:"Colonne Malus",d:"Coche si tu fais un truc que tu veux limiter (alcool, scroll...). Ça retire de l’XP."},
     {t:"Bouton Aujourd’hui",d:"Te ramène instantanément au jour actuel dans le tableau."},
     {t:"Flèches ‹ ›",d:"Navigue vers les mois passés pour corriger un oubli — les changements sont sauvegardés automatiquement."},
@@ -3950,25 +4600,36 @@ function openHelpGuide(){
 
   html+=helpSection("🏅 BADGES",'#8b5cf6',[
     {t:"Badges du mois",d:"Objectifs à atteindre chaque mois — Beast Mode, Combo Master, Admin King..."},
-    {t:"Badges à vie",d:"Rangs, streaks, et polyvalence (toutes stats équilibrées). Certains prennent des années à débloquer."},
+    {t:"Badges à vie",d:"Rangs, streaks, et polyvalence (toutes stats équilibrées). Certains prennent des années à débloquer.",show:{tab:"badges",targetId:"tab-badges"}},
+    {t:"🔥 Streaks quotidiens",d:"Si tu as verrouillé des habitudes (Config → Tâches), leur streak actuel et leur record s’affichent ici, avec leurs propres badges par palier.",show:{tab:"badges",targetId:"badges-daily-streaks-header"}},
   ]);
 
-  html+=helpSection("⚙️ CONFIG",'#10b981',[
-    {t:"Tâches",d:"Active/désactive tes tâches, change leur XP (1 à 5), renomme-les avec ✏️."},
-    {t:"⏰ Fréquence minimale",d:"Clique l’horloge sur une tâche pour forcer une fréquence (ex : 3x/semaine) — malus auto si pas atteint en fin de semaine."},
-    {t:"Malus",d:"Crée tes propres malus (alcool, mauvais sommeil...) avec XP perdu et durée d’effet."},
-    {t:"Decay",d:"Certaines stats perdent des points si tu restes inactif trop longtemps."},
-    {t:"Streak",d:"Configure le combo bonus (ex : 3 tâches Craft = +5 XP), le malus hebdo automatique."},
+  html+=helpSection("🛠️ CONFIG",'#10b981',[
+    {t:"Tâches",d:"Active/désactive tes tâches, change leur XP (1 à 5), renomme-les avec ✏️.",show:{tab:"config",ctab:"tasks",targetId:"subtab-tasks"}},
+    {t:"⏰ Fréquence minimale",d:"Clique l’horloge sur une tâche pour forcer une fréquence (ex : 3x/semaine) — malus auto si pas atteint en fin de semaine.",show:{tab:"config",ctab:"tasks",targetId:"subtab-tasks"}},
+    {t:"🔁 Tâche répétée",d:"Pour les tâches à faire plusieurs fois par jour (boire de l’eau, respirer...) — fixe un nombre de répétitions.",show:{tab:"config",ctab:"tasks",targetId:"subtab-tasks"}},
+    {t:"🔥 Habitude quotidienne",d:"Verrouille une tâche sur l’agenda tous les jours, impossible à retirer. Elle a son propre streak (record affiché dans Badges) — un jour raté remet à zéro, sauf si tu utilises un 🛡️ Bouclier de série (Shop).",show:{tab:"config",ctab:"tasks",targetId:"subtab-tasks"}},
+    {t:"Malus",d:"Crée tes propres malus (alcool, mauvais sommeil...) avec XP perdu et durée d’effet.",show:{tab:"config",ctab:"malus",targetId:"subtab-malus"}},
+    {t:"Decay",d:"Certaines stats perdent des points si tu restes inactif trop longtemps.",show:{tab:"config",ctab:"decay",targetId:"subtab-decay"}},
+    {t:"Streak",d:"Configure le combo bonus (ex : 3 tâches Craft = +5 XP), le malus hebdo automatique.",show:{tab:"config",ctab:"streak",targetId:"subtab-streak"}},
+    {t:"💎 Shop",d:"12 thèmes (couleur générale + noms de rang), cadres de profil, skins de confettis, boosts XP, freeze anti-decay, boucliers de série, et programmes de tâches prêts à charger — tout s’achète en gemmes ici.",show:{tab:"config",ctab:"general",targetId:"shop-boost-header"}},
+  ]);
+
+  html+=helpSection("⚙️ PARAMÈTRES",'#8b5cf6',[
+    {t:"Sons",d:"Active/désactive les sons d’interaction et de récompense."},
+    {t:"Compétences actives",d:"Masque ou réaffiche une compétence entière sur le Profil et le Tracker."},
+    {t:"Profil joueur",d:"Prénom, âge, objectif, titre personnalisé affiché sur ta carte."},
+    {t:"Style de jeu",d:"Facile / équilibré / difficile — change la quantité d’XP gagnée."},
   ]);
 
   html+=helpSection("📚 HISTORIQUE",'#ec4899',[
-    {t:"Vue par mois",d:"Clique un mois pour voir le détail complet — XP par stat, jour par jour, tâches cochées."},
+    {t:"Vue par mois",d:"Clique un mois pour voir le détail complet — XP par stat, jour par jour, tâches cochées.",show:{tab:"history",targetId:"tab-history"}},
   ]);
 
   html+=helpSection("💾 SAUVEGARDE",'#dc2626',[
-    {t:"Exporter",d:"Génère un fichier JSON avec toute ta progression. À faire régulièrement, à mettre sur iCloud ou Drive."},
-    {t:"Importer",d:"Recharge une sauvegarde JSON — utile après une mise à jour ou un changement de téléphone."},
-    {t:"Reset",d:"Efface tout. Irréversible — exporte avant si besoin."},
+    {t:"Exporter",d:"Génère un fichier JSON avec toute ta progression. À faire régulièrement, à mettre sur iCloud ou Drive.",show:{targetId:"save-bar"}},
+    {t:"Importer",d:"Recharge une sauvegarde JSON — utile après une mise à jour ou un changement de téléphone.",show:{targetId:"save-bar"}},
+    {t:"Reset",d:"Efface tout. Irréversible — exporte avant si besoin.",show:{targetId:"save-bar"}},
   ]);
 
   html+="<div style='font-size:.68rem;color:#999;text-align:center;margin-top:16px;padding-top:12px;border-top:1px solid rgba(0,0,0,0.06)'>Créé avec Claude · Version évolutive</div>";
@@ -3999,7 +4660,8 @@ function openBadgesReference(){
 
   var rankIcons = ["🌍","⚔️","🔴","🔴","🔴","🔴","🌟","⚡","⚡","🔴","🔵","⚪","💠","✨","🌌","🌠","♾️"];
   var tierRows = TIERS.map(function(t,i){
-    return{icon:rankIcons[i]||"🏅",name:t.title,desc:(i===0?"Premier jour actif":t.min.toLocaleString("fr-FR")+" XP total"),badge:t.rank};
+    var tt=tierAt(i);
+    return{icon:rankIcons[i]||"🏅",name:tt.title,desc:(i===0?"Premier jour actif":t.min.toLocaleString("fr-FR")+" XP total"),badge:t.rank};
   });
   html+=refSection("🏆 PALIERS (RANGS)",'#8b5cf6',tierRows);
 
@@ -4333,6 +4995,8 @@ function updateGokuAura(totXP){
 
 render();
 checkSaveReminder();
+checkStreakBreaks();
+window.addEventListener('scroll',function(){renderTutorialOverlay();},true);
 
   // Update Goku aura after render
   setTimeout(()=>updateGokuAura(engine().totXP), 50);
