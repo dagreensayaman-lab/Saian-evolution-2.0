@@ -109,7 +109,7 @@ pointer-events:none;z-index:0}
 .badge-unlock-flash{animation:badgeFlash .5s cubic-bezier(.34,1.56,.64,1);}
 
 /* Save bar */
-.save-bar{display:flex;gap:8px;align-items:center;margin-bottom:22px;padding:9px 14px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:12px}
+.save-bar{display:flex;gap:8px;align-items:center;margin-bottom:22px;padding:9px 14px;background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:12px;position:sticky;top:88px;z-index:99}
 .save-label{font-size:.58rem;text-transform:uppercase;letter-spacing:2px;color:var(--theme-primary);flex:1;font-family:'Anton',sans-serif}
 .btn-export{background:var(--green-dim);border:1px solid var(--green)60;border-radius:9px;color:var(--green);padding:6px 14px;font-family:'Exo 2',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer}
 .btn-import-label{background:var(--blue-dim);border:1px solid var(--blue)60;border-radius:9px;color:var(--blue);padding:6px 14px;font-family:'Exo 2',sans-serif;font-size:.7rem;font-weight:700;cursor:pointer}
@@ -565,7 +565,7 @@ function mkSlots(){
   const defs={
     intel:   [{n:"Lecture 15min",xp:1},{n:"Formation",xp:2},{n:"Apprentissage",xp:2},{n:"Réflexion",xp:1},{n:"Slot Intel 5",xp:1},{n:"Slot Intel 6",xp:1},{n:"Slot Intel 7",xp:1}],
     physique:[{n:"Sport",xp:2},{n:"Étirements",xp:1},{n:"Marche 20min",xp:1},{n:"Musculation",xp:2},{n:"Slot Physique 5",xp:1},{n:"Slot Physique 6",xp:1},{n:"Slot Physique 7",xp:1}],
-    craft:   [{n:"Créer 30min",xp:2},{n:"Apprendre une compétence",xp:2},{n:"Avancer un projet",xp:2},{n:"Écriture / Contenu",xp:1},{n:"Slot Craft 5",xp:1},{n:"Slot Craft 6",xp:1},{n:"Slot Craft 7",xp:1}],
+    craft:   [{n:"Avancer mon projet principal",xp:3},{n:"Avancer mon projet secondaire",xp:2},{n:"Apprendre une compétence",xp:2},{n:"Bricolage",xp:2},{n:"Slot Créativité 5",xp:1},{n:"Slot Créativité 6",xp:1},{n:"Slot Créativité 7",xp:1}],
     disc:    [{n:"Lever tôt",xp:2},{n:"Méditation",xp:1},{n:"Journal du soir",xp:1},{n:"No phone au réveil",xp:2},{n:"Slot Disc 5",xp:1},{n:"Slot Disc 6",xp:1},{n:"Slot Disc 7",xp:1}],
     bienetre:[{n:"Boire 2L d'eau",xp:1},{n:"Sommeil 8h",xp:2},{n:"Gratitude",xp:1},{n:"Repos actif",xp:1},{n:"Slot Bienetre 5",xp:1},{n:"Slot Bienetre 6",xp:1},{n:"Slot Bienetre 7",xp:1}]
   };
@@ -575,7 +575,7 @@ function mkMalus(){return[{id:"m_teuf",name:"Teuf / Alcool",xp:-6,stat:"physique
 function mkDecay(){return{physique:{daysThreshold:10,xpPerDay:2,minPerWeek:2},disc:{daysThreshold:7,xpPerDay:1,minPerWeek:3},bienetre:{daysThreshold:14,xpPerDay:1,minPerWeek:2}};}
 function mkStreakCfg(){return{minXP:5,weeklyMalusSlotId:'disc_0',weeklyMalusXP:3,weeklyMalusSlot2Id:'',weeklyMalusXP2:3,comboStatId:'craft',comboMinSlots:3,comboBonus:5};} // disc_0 = Lever tôt
 function mkSlotRules(){return{};} // {slotId: {minPerWeek:1, malusXP:2}}
-function mkStatLabels(){return{intel:'Intelligence',physique:'Physique',craft:'Craft',disc:'Discipline',bienetre:'Bien-être'};}
+function mkStatLabels(){return{intel:'Intelligence',physique:'Physique',craft:'Créativité',disc:'Discipline',bienetre:'Bien-être'};}
 function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach(m=>d[m.id]=0);return d;}
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
@@ -634,6 +634,9 @@ function migratePlayerProfile(){
   if(ST.streakShields===undefined)ST.streakShields=0;
   if(!ST.shieldedDates)ST.shieldedDates={};
   if(!ST.streakBreaksSeen)ST.streakBreaksSeen={};
+  // "Craft" renommé en "Créativité" (nom plus large) — on met à jour les sauvegardes existantes qui
+  // ont encore l'ancien nom par défaut, sans toucher à un renommage personnel que le joueur aurait fait.
+  if(ST.statLabels&&ST.statLabels.craft==='Craft')ST.statLabels.craft='Créativité';
   if(ST.freezeUntil===undefined)ST.freezeUntil=null;
   // Ancien système de skins par compétence retiré (remplacé par les thèmes globaux) :
   // on rembourse les gemmes dépensées sur les skins déjà achetés, puis on efface les anciens champs.
@@ -852,8 +855,11 @@ function toggleCompetencyActive(stat){
     if(otherActive.length===0)return; // on ne désactive jamais la dernière compétence active
     md.activeSlots=aIds.filter(function(id){return statSlotIds.indexOf(id)<0;});
   } else {
-    const toAdd=statSlotIds.filter(function(id){return aIds.indexOf(id)<0;});
-    md.activeSlots=aIds.concat(toAdd);
+    // Réactivation : seule la 1ère tâche revient active (minimum pour que la compétence réapparaisse) —
+    // les 6 autres restent désactivées par défaut, à reconfigurer soi-même dans Config → Tâches.
+    if(statSlotIds.length>0&&aIds.indexOf(statSlotIds[0])<0){
+      md.activeSlots=aIds.concat([statSlotIds[0]]);
+    }
   }
   saveST();render();
 }
@@ -1189,7 +1195,18 @@ function getMotivationMsg(eng){
   if(todayXP>=20){
     return{icon:"💪",color:"#10b981",msg:"Déjà +"+todayXP+" XP aujourd’hui — belle journée !"};
   }
-  return{icon:"🐉",color:"#8b5cf6",msg:randPick2(["Chaque jour compte pour devenir "+ (nt?nt.title:"légende") +".","La régularité bat l’intensité.","Un check aujourd’hui, une version meilleure demain."])};
+  return{icon:"🐉",color:"#8b5cf6",msg:randPick2([
+    "Chaque jour compte pour devenir "+ (nt?nt.title:"légende") +".",
+    "La régularité bat l’intensité.",
+    "Un check aujourd’hui, une version meilleure demain.",
+    "Petit pas aujourd’hui, grand chemin parcouru.",
+    "Tu avances, c’est tout ce qui compte.",
+    "Continue comme ça, la machine tourne.",
+    "Chaque tâche cochée est un vote pour qui tu veux devenir.",
+    "Pas besoin d’être parfait, juste présent.",
+    "Le progrès ne fait pas de bruit, mais il s’accumule.",
+    "Bien joué pour aujourd’hui — et demain ?"
+  ])};
 }
 function streakBeforeDate(slotId,beforeDateStr){
   // Compte combien de jours consécutifs (faits ou sauvés par un bouclier) juste AVANT cette date (exclue).
@@ -2107,13 +2124,14 @@ function rTracker(eng){
   const canGoNext=monthIdx<skeys.length-1;
   const lastDayIdx=dim(curY,curM)-1;
   const selDay=isCurrentMonth?(TRACKER_DAY!==null?TRACKER_DAY:curD):null;
-  let todayTaskCount=0,todayTaskDone=0;
+  let todayTaskCount=0,todayTaskDone=0,todayXPScore=0;
   if(isCurrentMonth&&selDay!==null){
     const selD=md.days[selDay]||{};
     const selDateStr0=ymdKey(curY,curM,selDay+1);
     const plannedToday=aSlots.filter(s=>isPlannedForDay(s.id,selDateStr0));
     todayTaskCount=plannedToday.length;
     todayTaskDone=plannedToday.filter(s=>selD[s.id]).length;
+    todayXPScore=plannedToday.reduce((sum,s)=>sum+(typeof selD[s.id]==="number"?selD[s.id]:0),0);
   }
   let html='';
   if(isCurrentMonth&&todayTaskCount>0){
@@ -2135,7 +2153,7 @@ function rTracker(eng){
           <span id="today-label" style="font-size:.9rem;font-weight:700;color:#0e7490;font-family:'Anton',sans-serif;letter-spacing:1px;min-width:90px;text-align:center">${dayLabel}${isFutureSel?" 📌":""}</span>
           <button onclick="${canNextDay?"navTrackerDay(1)":""}" style="background:${canNextDay?"#fff":"rgba(0,0,0,0.03)"};border:1px solid rgba(8,145,178,0.15);border-radius:10px;width:36px;height:36px;font-size:1.3rem;font-weight:700;color:${canNextDay?"#0891b2":"#ccc"};cursor:${canNextDay?"pointer":"default"};flex-shrink:0">›</button>
         </div>
-        <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctSel===100?"#10b981":"#8b5cf6"}">${isFutureSel?plannedCount+" pr\u00e9vue(s)":todayTaskDone+"/"+todayTaskCount+" t\u00e2ches"}</span>
+        <span id="today-count" style="font-size:.85rem;font-weight:700;color:${pctSel===100?"#10b981":"#8b5cf6"}">${isFutureSel?plannedCount+" pr\u00e9vue(s)":todayTaskDone+"/"+todayTaskCount+" t\u00e2ches<span id=\"today-xp-score\" style=\"margin-left:6px;font-size:.7rem;color:#10b981\"> · +"+todayXPScore+" XP</span>"}</span>
       </div>
       ${isFutureSel?`<div style="font-size:.66rem;color:#8b5cf6;margin-bottom:8px">📌 Tout est pr\u00e9vu par d\u00e9faut — touche une t\u00e2che pour la retirer (✕), ou une t\u00e2che gris\u00e9e pour la rajouter (+).</div><button onclick="duplicateDayForward()" style="width:100%;padding:8px;border:1px dashed rgba(139,92,246,0.4);border-radius:10px;background:#fff;color:#8b5cf6;font-size:.68rem;font-weight:700;cursor:pointer;margin-bottom:10px">🔁 Dupliquer ce jour → jour suivant</button>`:`<div style="background:rgba(0,0,0,.06);border-radius:99px;height:8px;margin-bottom:${visibleRemaining.length>0?"10":"0"}px"><div id="today-bar" style="height:100%;border-radius:99px;background:${pctSel===100?"linear-gradient(90deg,#10b981,#0891b2)":"linear-gradient(90deg,#8b5cf6,#ec4899)"};width:${pctSel}%;transition:width .4s ease"></div></div>`}
       ${visibleRemaining.length>0?`<div id="today-remaining" style="display:flex;flex-wrap:wrap;gap:6px">${visibleRemaining.map(s=>{
@@ -2480,7 +2498,7 @@ function rConfig(){
     });
   }
   if(CTAB==="decay"){
-    html+=`<div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#f59e0b">📉 Configure la vitesse de dégradation. 🧠 Intel et 🎨 Craft ne se dégradent jamais.</div>`;
+    html+=`<div style="background:rgba(255,215,0,0.06);border:1px solid rgba(255,215,0,0.2);border-radius:14px;padding:12px 18px;margin-bottom:16px;font-size:.8rem;color:#f59e0b">📉 Configure la vitesse de dégradation. 🧠 Intel et 🎨 Créativité ne se dégradent jamais.</div>`;
     ["physique","disc","bienetre"].forEach(stat=>{
       const m=SM[stat],cfg=ST.decayCfg[stat]||{daysThreshold:14,xpPerDay:1,minPerWeek:2};
       html+=`<div class="card" style="border:1px solid ${m.dim};margin-bottom:12px">
@@ -2556,10 +2574,57 @@ function rHeatmap(eng){
   html+=`</div>`;
   return html;
 }
+function computeTaskRecap(eng){
+  const flat=eng.flat;
+  if(!flat||flat.length===0)return[];
+  const now=new Date();
+  const curKey=mk(now.getFullYear(),now.getMonth());
+  const lastIdx=flat.length-1; // aujourd'hui (flat s'arrête toujours à aujourd'hui inclus)
+  const dow=now.getDay(); // 0=dimanche
+  const daysSinceMonday=(dow+6)%7;
+  const weekStartIdx=Math.max(0,lastIdx-daysSinceMonday); // lundi de la semaine en cours, même si ça chevauche le mois précédent
+  let monthStartIdx=flat.findIndex(function(item){return item.k===curKey;});
+  if(monthStartIdx<0)monthStartIdx=lastIdx;
+
+  const md=ST.history[curKey];
+  const aIds=(md&&md.activeSlots)||[];
+  const activeSlots=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0;});
+
+  return activeSlots.map(function(s){
+    let weekCount=0,monthCount=0;
+    for(let i=monthStartIdx;i<=lastIdx;i++){
+      if(flat[i].d[s.id]){
+        monthCount++;
+        if(i>=weekStartIdx)weekCount++;
+      }
+    }
+    return{id:s.id,name:s.name,stat:s.stat,weekCount:weekCount,monthCount:monthCount};
+  });
+}
 function rHistory(eng){
   const{skeys,streaks,netXP,totXP,rstr,adays,tdays}=eng;
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth());
   let html=`<div class="quick-grid">${[{l:"XP Net",v:totXP,c:"#a78bfa"},{l:"Jours joués",v:tdays,c:"#10b981"},{l:"Streak record",v:rstr,c:"#f59e0b"},{l:"Mois joués",v:skeys.length,c:"#ec4899"}].map(x=>`<div class="quick-card"><div class="quick-label">${x.l}</div><div class="quick-val" style="color:${x.c}">${x.v}</div></div>`).join("")}</div>`;
+  {
+    const recap=computeTaskRecap(eng);
+    if(recap.length>0){
+      html+=`<div id="history-task-recap-header" class="sl" style="margin-top:4px">📊 Récap par tâche</div>`;
+      html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.66rem;color:#1e3a4a">Combien de fois chaque tâche active a été cochée, cette semaine (depuis lundi) et ce mois-ci.</div>`;
+      recap.forEach(function(r){
+        const m=SM[r.stat];
+        html+=`<div class="card" style="margin-bottom:8px;border:1px solid ${m.dim};display:flex;align-items:center;justify-content:space-between;padding:10px 16px">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span style="font-size:1.1rem">${m.icon}</span>
+            <span style="font-weight:700;color:#1e3a4a;font-size:.8rem">${r.name}</span>
+          </div>
+          <div style="display:flex;gap:14px;text-align:center">
+            <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.weekCount}</div><div style="font-size:.5rem;color:#94a3b8">cette sem.</div></div>
+            <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.monthCount}</div><div style="font-size:.5rem;color:#94a3b8">ce mois</div></div>
+          </div>
+        </div>`;
+      });
+    }
+  }
   html+=rHeatmap(eng);
   html+=`<div class="sl">Mois joués</div>`;
   [...skeys].reverse().forEach(k=>{
@@ -2958,8 +3023,8 @@ function rBadges(eng){
 
 const TASK_SUGGESTIONS={
   intel:[{n:"Lecture",xp:1},{n:"Formation en ligne",xp:2},{n:"Podcast \u00e9ducatif",xp:1},{n:"Apprentissage langue",xp:2},{n:"\u00c9criture / journal r\u00e9flexif",xp:1},{n:"Cours en ligne",xp:2}],
-  physique:[{n:"Pompes",xp:1},{n:"Gainage",xp:1},{n:"Course \u00e0 pied",xp:2},{n:"\u00c9tirements",xp:1},{n:"Squats",xp:1},{n:"Yoga",xp:2}],
-  craft:[{n:"Avancer mon projet",xp:2},{n:"\u00c9criture cr\u00e9ative",xp:2},{n:"Dessin",xp:2},{n:"Musique",xp:2},{n:"Bricolage",xp:2},{n:"Apprendre un outil",xp:2}],
+  physique:[{n:"Pompes",xp:1},{n:"Gainage",xp:1},{n:"Musculation",xp:2},{n:"\u00c9tirements",xp:1},{n:"Squats",xp:1},{n:"Abdos",xp:1}],
+  craft:[{n:"Avancer mon projet principal",xp:3},{n:"Avancer mon projet secondaire",xp:2},{n:"Apprendre un outil",xp:2},{n:"Bricolage",xp:2},{n:"\u00c9criture cr\u00e9ative",xp:2},{n:"Musique",xp:2}],
   disc:[{n:"Lever t\u00f4t",xp:2},{n:"No phone le matin",xp:2},{n:"M\u00e9ditation",xp:1},{n:"Rangement",xp:1},{n:"Routine du soir",xp:1},{n:"Paperasse",xp:2}],
   bienetre:[{n:"Sommeil 8h",xp:2},{n:"Marche en nature",xp:1},{n:"Hydratation",xp:1},{n:"Temps social",xp:1},{n:"Gratitude",xp:1},{n:"Repos actif",xp:1}]
 };
@@ -3032,6 +3097,20 @@ function pickOnboardSkin(key){
   ONBOARD_SKIN_PICK=key;
   render();
 }
+function _startTutorialSnapshot(){
+  // Le tuto sert à explorer — rien de ce qui est touché pendant (cases cochées, planning) ne doit
+  // compter pour de vrai. On "photographie" l'état juste avant, restauré tel quel à la fin (voir
+  // tutorialNext/tutorialSkip). XP, streaks et badges se recalculent toujours depuis ces données
+  // brutes, donc les restaurer suffit à tout annuler proprement, sans état "collé" en dur.
+  const now=new Date(),key=mk(now.getFullYear(),now.getMonth());
+  ST._tutorialSnapshot={
+    monthKey:key,
+    days:JSON.parse(JSON.stringify((ST.history[key]&&ST.history[key].days)||[])),
+    dayPlans:JSON.parse(JSON.stringify(ST.dayPlans||{})),
+    gems:ST.gems||0,
+    gemsEarnedTotal:ST.gemsEarnedTotal||0
+  };
+}
 function finishOnboarding(){
   const now=new Date(),key=mk(now.getFullYear(),now.getMonth());
   const md=ST.history[key];
@@ -3055,6 +3134,7 @@ function finishOnboarding(){
   ST.onboardingComplete=true;
   ST.firstUseDate=new Date().toISOString().slice(0,10);
   ST.tutorialStep=0;
+  _startTutorialSnapshot();
   saveST();
   ONBOARD_STEP=0;
   render();
@@ -3064,6 +3144,7 @@ function skipOnboarding(){
   ST.onboardingComplete=true;
   ST.firstUseDate=new Date().toISOString().slice(0,10);
   ST.tutorialStep=0;
+  _startTutorialSnapshot();
   saveST();
   ONBOARD_STEP=0;
   render();
@@ -3074,6 +3155,7 @@ function loadStarterAndFinish(){
   ST.onboardingComplete=true;
   ST.firstUseDate=new Date().toISOString().slice(0,10);
   ST.tutorialStep=0;
+  _startTutorialSnapshot();
   saveST();
   ONBOARD_STEP=0;
   render();
@@ -3303,6 +3385,7 @@ function render(){
 
 function setTab(t){
   playTabSound();TAB=t;
+  if(t==="tracker"){TRACKER_DAY=null;TRACKER_MONTH=null;}
   if(ST.tutorialStep!==null&&ST.tutorialStep!==undefined){
     const step=TUTORIAL_STEPS[ST.tutorialStep];
     if(step&&step.gate==="tap-tab:"+t){
@@ -3660,7 +3743,8 @@ function checkPopupTriggers(di,sid,wasChecked){
 
   var checkedSlots=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0&&d[s.id]&&s.id!==sid;});
   if(checkedSlots.length===0&&wasChecked){
-    showPopup(randPick(["C’est parti ! La machine est lancée 🚀","Premier check du jour !","Une tâche = une brique vers le SSJ."]),"⚡","#f59e0b",2200);
+    var _topTier=tierAt(TIERS.length-1).title;
+    showPopup(randPick(["C’est parti ! La machine est lancée 🚀","Premier check du jour !","Une tâche = une brique vers "+_topTier+"."]),"⚡","#f59e0b",2200);
     return;
   }
 
@@ -3829,14 +3913,16 @@ function tDay(di,sid,monthKey){
   const selDayTD=TRACKER_DAY!==null?TRACKER_DAY:(nowTD.getDate()-1);
   if(!monthKey&&di===selDayTD){
     const aIdsTD=(ST.history[key].activeSlots)||[];
-    const aSlotsTD=ST.slots.filter(s=>aIdsTD.includes(s.id));
+    const dateStrTD=ymdKey(nowTD.getFullYear(),nowTD.getMonth(),di+1);
+    const aSlotsTD=ST.slots.filter(s=>aIdsTD.includes(s.id)&&isPlannedForDay(s.id,dateStrTD));
     const doneTD=aSlotsTD.filter(s=>md.days[di][s.id]).length;
     const totalTD=aSlotsTD.length;
+    const xpScoreTD=aSlotsTD.reduce((sum,s)=>sum+(typeof md.days[di][s.id]==="number"?md.days[di][s.id]:0),0);
     const countEl=document.getElementById('today-count');
     const barEl=document.getElementById('today-bar');
     if(countEl&&totalTD>0){
       const pctTD=Math.round(doneTD/totalTD*100);
-      countEl.textContent=doneTD+'/'+totalTD+' t\u00e2ches';
+      countEl.innerHTML=doneTD+'/'+totalTD+' t\u00e2ches<span id="today-xp-score" style="margin-left:6px;font-size:.7rem;color:#10b981"> · +'+xpScoreTD+' XP</span>';
       countEl.style.color=pctTD===100?'#10b981':'#8b5cf6';
       if(barEl){
         barEl.style.width=pctTD+'%';
@@ -4386,13 +4472,22 @@ const TUTORIAL_STEPS=[
   {tab:"config",targetId:"subtab-general",text:"Et voici le Shop — dépense tes gemmes en thèmes, cadres de profil, skins de confettis et bien plus."},
   {tab:"config",targetId:"settings-gear-btn",text:"Le ⚙️ en haut à droite, c'est tes Paramètres — et le mode d'emploi complet si jamais tu as un doute.",last:true}
 ];
+function _restoreTutorialSnapshot(){
+  const snap=ST._tutorialSnapshot;
+  if(!snap)return;
+  if(ST.history[snap.monthKey])ST.history[snap.monthKey].days=snap.days;
+  ST.dayPlans=snap.dayPlans;
+  ST.gems=snap.gems;
+  ST.gemsEarnedTotal=snap.gemsEarnedTotal;
+  delete ST._tutorialSnapshot;
+}
 function tutorialNext(){
   if(ST.tutorialStep===null||ST.tutorialStep===undefined)return;
   const step=TUTORIAL_STEPS[ST.tutorialStep];
-  if(step&&step.last){ST.tutorialStep=null;_lastScrolledTargetKey=null;}
+  if(step&&step.last){ST.tutorialStep=null;_lastScrolledTargetKey=null;_restoreTutorialSnapshot();}
   else{
     ST.tutorialStep=(ST.tutorialStep||0)+1;
-    if(ST.tutorialStep>=TUTORIAL_STEPS.length){ST.tutorialStep=null;_lastScrolledTargetKey=null;}
+    if(ST.tutorialStep>=TUTORIAL_STEPS.length){ST.tutorialStep=null;_lastScrolledTargetKey=null;_restoreTutorialSnapshot();}
   }
   saveST();
   render();
@@ -4400,6 +4495,7 @@ function tutorialNext(){
 function tutorialSkip(){
   ST.tutorialStep=null;
   _lastScrolledTargetKey=null;
+  _restoreTutorialSnapshot();
   saveST();
   render();
 }
@@ -4514,7 +4610,7 @@ function openSettingsPanel(){
   </div>`;
 
   html+=`<div class="sl" style="margin-bottom:10px">🎯 COMPÉTENCES ACTIVES</div>`;
-  html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Désactive une compétence pour la masquer du Profil et du Tracker. Réactive-la ici quand tu veux t'y remettre.</div>`;
+  html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.68rem;color:#1e3a4a">Désactive une compétence pour la masquer du Profil et du Tracker. Réactive-la ici quand tu veux t'y remettre — elle repart avec une seule tâche active, à toi de reconfigurer le reste dans Config → Tâches.</div>`;
   {
     const _activeC=activeCompetencies();
     STATS.forEach(stat=>{
@@ -4611,7 +4707,7 @@ function openHelpGuide(){
     {t:"🔥 Habitude quotidienne",d:"Verrouille une tâche sur l’agenda tous les jours, impossible à retirer. Elle a son propre streak (record affiché dans Badges) — un jour raté remet à zéro, sauf si tu utilises un 🛡️ Bouclier de série (Shop).",show:{tab:"config",ctab:"tasks",targetId:"subtab-tasks"}},
     {t:"Malus",d:"Crée tes propres malus (alcool, mauvais sommeil...) avec XP perdu et durée d’effet.",show:{tab:"config",ctab:"malus",targetId:"subtab-malus"}},
     {t:"Decay",d:"Certaines stats perdent des points si tu restes inactif trop longtemps.",show:{tab:"config",ctab:"decay",targetId:"subtab-decay"}},
-    {t:"Streak",d:"Configure le combo bonus (ex : 3 tâches Craft = +5 XP), le malus hebdo automatique.",show:{tab:"config",ctab:"streak",targetId:"subtab-streak"}},
+    {t:"Streak",d:"Configure le combo bonus (ex : 3 tâches Créativité = +5 XP), le malus hebdo automatique.",show:{tab:"config",ctab:"streak",targetId:"subtab-streak"}},
     {t:"💎 Shop",d:"12 thèmes (couleur générale + noms de rang), cadres de profil, skins de confettis, boosts XP, freeze anti-decay, boucliers de série, et programmes de tâches prêts à charger — tout s’achète en gemmes ici.",show:{tab:"config",ctab:"general",targetId:"shop-boost-header"}},
   ]);
 
@@ -4623,6 +4719,7 @@ function openHelpGuide(){
   ]);
 
   html+=helpSection("📚 HISTORIQUE",'#ec4899',[
+    {t:"📊 Récap par tâche",d:"Combien de fois chaque tâche active a été cochée cette semaine (depuis lundi) et ce mois-ci — pratique pour suivre un objectif du genre « 5 séances de muscu par semaine ».",show:{tab:"history",targetId:"history-task-recap-header"}},
     {t:"Vue par mois",d:"Clique un mois pour voir le détail complet — XP par stat, jour par jour, tâches cochées.",show:{tab:"history",targetId:"tab-history"}},
   ]);
 
@@ -4993,9 +5090,20 @@ function updateGokuAura(totXP){
   ring.style.animationDuration=speed;
 }
 
+function showDailyMotivationPopup(){
+  const today=new Date().toISOString().slice(0,10);
+  if(ST.motivMsgShownDate===today)return; // déjà vu aujourd'hui, reste en carte discrète sur le Profil
+  if(!ST.onboardingComplete)return;
+  if(ST.tutorialStep!==null&&ST.tutorialStep!==undefined)return;
+  const m=getMotivationMsg(engine());
+  showPopup(m.msg,m.icon,m.color,3200);
+  ST.motivMsgShownDate=today;
+  saveST();
+}
 render();
 checkSaveReminder();
 checkStreakBreaks();
+showDailyMotivationPopup();
 window.addEventListener('scroll',function(){renderTutorialOverlay();},true);
 
   // Update Goku aura after render
