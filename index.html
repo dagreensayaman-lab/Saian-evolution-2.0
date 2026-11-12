@@ -1230,6 +1230,36 @@ function streakBeforeDate(slotId,beforeDateStr){
   return count;
 }
 var _streakBreakQueue=[];
+function checkWeeklyGoals(){
+  // Même découpage en tranches de 7 jours (depuis le tout premier jour suivi) que le malus de fréquence,
+  // pour que "la semaine" veuille dire exactement la même chose des deux côtés (malus si raté, bonus si atteint).
+  const eng=engine();
+  const flat=eng.flat;
+  if(!flat||flat.length<7)return;
+  if(!ST.slotRules)return;
+  if(!ST.weeklyGoalRewarded)ST.weeklyGoalRewarded={};
+  let any=false;
+  Object.keys(ST.slotRules).forEach(function(slotId){
+    const rule=ST.slotRules[slotId];
+    if(!rule||!rule.minPerWeek||!rule.bonusGems)return;
+    const slot=ST.slots.find(function(s){return s.id===slotId;});
+    if(!slot)return;
+    let lastDone=ST.weeklyGoalRewarded[slotId];
+    if(lastDone===undefined)lastDone=-7;
+    for(let weekStart=lastDone+7;weekStart+7<=flat.length-1;weekStart+=7){
+      // on ne traite jamais la semaine en cours (tronquée) — seulement les semaines complètes déjà passées
+      const weekEnd=weekStart+7;
+      const weekCount=flat.slice(weekStart,weekEnd).filter(function(x){return x.aIds.indexOf(slotId)>=0&&x.d[slotId];}).length;
+      ST.weeklyGoalRewarded[slotId]=weekStart;
+      any=true;
+      if(weekCount>=rule.minPerWeek){
+        const amt=addBonusGems(rule.bonusGems);
+        showPopup("🎯 Objectif atteint : "+slot.name+" ("+weekCount+"/"+rule.minPerWeek+" cette semaine)","💎","#10b981",3000,amt);
+      }
+    }
+  });
+  if(any)saveST();
+}
 function checkStreakBreaks(){
   const dailySlots=ST.slots.filter(function(s){return s.daily;});
   if(dailySlots.length===0)return;
@@ -2589,6 +2619,8 @@ function computeTaskRecap(eng){
   const md=ST.history[curKey];
   const aIds=(md&&md.activeSlots)||[];
   const activeSlots=ST.slots.filter(function(s){return aIds.indexOf(s.id)>=0;});
+  const slotRules=ST.slotRules||{};
+  const chunkStart=Math.floor(lastIdx/7)*7; // même tranche de 7 jours que le malus/bonus de fréquence
 
   return activeSlots.map(function(s){
     let weekCount=0,monthCount=0;
@@ -2598,7 +2630,14 @@ function computeTaskRecap(eng){
         if(i>=weekStartIdx)weekCount++;
       }
     }
-    return{id:s.id,name:s.name,stat:s.stat,weekCount:weekCount,monthCount:monthCount};
+    const rule=slotRules[s.id];
+    let goal=null;
+    if(rule&&rule.minPerWeek){
+      let chunkCount=0;
+      for(let i=chunkStart;i<=lastIdx;i++){if(flat[i].d[s.id])chunkCount++;}
+      goal={minPerWeek:rule.minPerWeek,bonusGems:rule.bonusGems||0,chunkCount:chunkCount,pct:Math.min(100,Math.round(chunkCount/rule.minPerWeek*100))};
+    }
+    return{id:s.id,name:s.name,stat:s.stat,weekCount:weekCount,monthCount:monthCount,goal:goal};
   });
 }
 function rHistory(eng){
@@ -2612,15 +2651,28 @@ function rHistory(eng){
       html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.66rem;color:#1e3a4a">Combien de fois chaque tâche active a été cochée, cette semaine (depuis lundi) et ce mois-ci.</div>`;
       recap.forEach(function(r){
         const m=SM[r.stat];
-        html+=`<div class="card" style="margin-bottom:8px;border:1px solid ${m.dim};display:flex;align-items:center;justify-content:space-between;padding:10px 16px">
-          <div style="display:flex;align-items:center;gap:10px">
-            <span style="font-size:1.1rem">${m.icon}</span>
-            <span style="font-weight:700;color:#1e3a4a;font-size:.8rem">${r.name}</span>
+        const g=r.goal;
+        const barColor=g?(g.pct>=100?"#10b981":g.pct>=50?"#f59e0b":"#dc2626"):null;
+        html+=`<div class="card" style="margin-bottom:8px;border:1px solid ${m.dim};padding:10px 16px">
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="font-size:1.1rem">${m.icon}</span>
+              <span style="font-weight:700;color:#1e3a4a;font-size:.8rem">${r.name}</span>
+            </div>
+            <div style="display:flex;gap:14px;text-align:center">
+              <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.weekCount}</div><div style="font-size:.5rem;color:#94a3b8">cette sem.</div></div>
+              <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.monthCount}</div><div style="font-size:.5rem;color:#94a3b8">ce mois</div></div>
+            </div>
           </div>
-          <div style="display:flex;gap:14px;text-align:center">
-            <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.weekCount}</div><div style="font-size:.5rem;color:#94a3b8">cette sem.</div></div>
-            <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.monthCount}</div><div style="font-size:.5rem;color:#94a3b8">ce mois</div></div>
-          </div>
+          ${g?`<div style="margin-top:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <span style="font-size:.6rem;color:#64748b">🎯 Objectif : ${g.minPerWeek}x/semaine${g.bonusGems>0?` · +${g.bonusGems}💎 si atteint`:""}</span>
+              <span style="font-size:.62rem;font-weight:700;color:${barColor}">${g.chunkCount}/${g.minPerWeek}</span>
+            </div>
+            <div style="height:7px;border-radius:99px;background:rgba(0,0,0,0.06);overflow:hidden">
+              <div style="height:100%;width:${g.pct}%;background:${barColor};border-radius:99px;transition:width .3s"></div>
+            </div>
+          </div>`:""}
         </div>`;
       });
     }
@@ -4033,7 +4085,7 @@ function dFreqRule(field,delta,mn,mx){
 function saveFreqRule(){
   if(!_freqRuleDraft)return;
   if(!ST.slotRules)ST.slotRules={};
-  ST.slotRules[_freqRuleDraft.slotId]={minPerWeek:_freqRuleDraft.minPerWeek,malusXP:_freqRuleDraft.malusXP};
+  ST.slotRules[_freqRuleDraft.slotId]={minPerWeek:_freqRuleDraft.minPerWeek,malusXP:_freqRuleDraft.malusXP,bonusGems:_freqRuleDraft.bonusGems};
   saveST();
   closePanel();
   render();
@@ -4074,7 +4126,16 @@ function renderFreqRulePanel(){
   html+="<span style='color:#1e3a4a;font-size:.8rem'>XP</span>";
   html+="</div></div>";
 
-  html+="<div style='font-size:.75rem;color:#0e7490;background:#f0faff;border-radius:12px;padding:12px;margin-bottom:16px'>Si tu coches \""+s.name+"\" moins de <strong>"+_freqRuleDraft.minPerWeek+"x</strong> cette semaine, tu perds <strong>"+_freqRuleDraft.malusXP+" XP</strong> automatiquement.</div>";
+  html+="<div style='background:rgba(16,185,129,0.06);border-radius:14px;padding:16px;margin-bottom:16px'>";
+  html+="<div style='font-size:.6rem;color:#10b981;font-family:Anton,sans-serif;letter-spacing:1px;margin-bottom:10px'>BONUS 💎 SI ATTEINT (optionnel)</div>";
+  html+="<div style='display:flex;align-items:center;gap:14px'>";
+  html+="<button class='btn-small' style='width:32px;height:32px;font-size:1.1rem' onclick='dFreqRule(\"bonusGems\",-5,0,200)'>−</button>";
+  html+="<span style='font-family:monospace;color:#10b981;font-weight:700;font-size:1.8rem;min-width:50px;text-align:center'>"+_freqRuleDraft.bonusGems+"</span>";
+  html+="<button class='btn-small' style='width:32px;height:32px;font-size:1.1rem' onclick='dFreqRule(\"bonusGems\",5,0,200)'>+</button>";
+  html+="<span style='color:#1e3a4a;font-size:.8rem'>💎</span>";
+  html+="</div></div>";
+
+  html+="<div style='font-size:.75rem;color:#0e7490;background:#f0faff;border-radius:12px;padding:12px;margin-bottom:16px'>Si tu coches \""+s.name+"\" moins de <strong>"+_freqRuleDraft.minPerWeek+"x</strong> cette semaine, tu perds <strong>"+_freqRuleDraft.malusXP+" XP</strong> automatiquement."+(_freqRuleDraft.bonusGems>0?" Si tu l'atteins, tu gagnes <strong>"+_freqRuleDraft.bonusGems+" 💎</strong> en bonus.":"")+"</div>";
 
   html+="<button onclick='saveFreqRule()' style='width:100%;padding:13px;border:none;border-radius:12px;background:#8b5cf6;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>✓ Enregistrer</button>";
   if(hadRule)html+="<button onclick='removeFreqRule()' style='width:100%;padding:11px;border:1px solid rgba(220,38,38,0.3);border-radius:12px;background:#fff;color:#dc2626;font-weight:700;font-size:.78rem;cursor:pointer'>Retirer la règle</button>";
@@ -4086,8 +4147,8 @@ function renderFreqRulePanel(){
 function openFreqRule(slotId){
   const s=ST.slots.find(s=>s.id===slotId);
   if(!s)return;
-  const cur=(ST.slotRules&&ST.slotRules[slotId])||{minPerWeek:1,malusXP:2};
-  _freqRuleDraft={slotId:slotId,minPerWeek:cur.minPerWeek,malusXP:cur.malusXP};
+  const cur=(ST.slotRules&&ST.slotRules[slotId])||{minPerWeek:1,malusXP:2,bonusGems:0};
+  _freqRuleDraft={slotId:slotId,minPerWeek:cur.minPerWeek,malusXP:cur.malusXP,bonusGems:cur.bonusGems||0};
   renderFreqRulePanel();
 }
 var _repeatRuleDraft=null;
@@ -5103,6 +5164,7 @@ function showDailyMotivationPopup(){
 render();
 checkSaveReminder();
 checkStreakBreaks();
+checkWeeklyGoals();
 showDailyMotivationPopup();
 window.addEventListener('scroll',function(){renderTutorialOverlay();},true);
 
