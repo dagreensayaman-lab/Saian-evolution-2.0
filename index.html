@@ -579,7 +579,7 @@ function mkStatLabels(){return{intel:'Intelligence',physique:'Physique',craft:'C
 function mkDay(slots,malus){const d={};slots.forEach(s=>d[s.id]=0);malus.forEach(m=>d[m.id]=0);return d;}
 function mkMonth(y,m,slots,aSlots,malus){return{year:y,month:m,days:Array.from({length:dim(y,m)},()=>mkDay(slots,malus)),activeSlots:aSlots};}
 function loadST(){try{const r=localStorage.getItem("grind-v6");if(r)return JSON.parse(r);}catch(e){}return null;}
-function saveST(){try{localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}}
+function saveST(){try{ST.updatedAt=Date.now();localStorage.setItem("grind-v6",JSON.stringify(ST));}catch(e){}if(typeof cloudPush==="function")cloudPush();}
 function initST(){
   const now=new Date(),y=now.getFullYear(),m=now.getMonth(),slots=mkSlots(),malus=mkMalus(),key=mk(y,m);
   // Par défaut (avant tout onboarding, ou si le joueur saute le guidage), seuls les 4 premiers slots
@@ -3429,6 +3429,7 @@ function render(){
     </div>
     <div class="tabs">${[["profile","⚔️ Profil"],["tracker","📅 Tracker"],["badges","🏅 Badges"],["config","🛠️ Config"],["history","📚 Historique"]].map(([id,l])=>`<button id="tab-${id}" class="tab ${TAB===id?"active":""}" onclick="setTab('${id}')">${l}${id==="profile"&&wc>0?`<span style="margin-left:4px;color:#059669">⚠️</span>`:""}</button>`).join("")}</div>
     <div id="save-bar" class="save-bar"><span class="save-label">💾 Sauvegarde</span><button class="btn-export" onclick="exportData()">⬇️ Exporter</button><label class="btn-import-label">⬆️ Importer<input type="file" accept=".json" onchange="importData(event)" style="display:none"></label><button onclick="resetAll()" style="background:rgba(255,0,0,0.12);border:1px solid rgba(255,0,0,0.4);border-radius:9px;color:#ff4444;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap">🗑️ RESET</button></div>
+    ${typeof cloudBarHTML==="function"?cloudBarHTML():""}
     <div id="tc">${content[TAB]}</div>`;
   if(TAB==="profile"){const c=ge("radar-canvas");const _actS=activeCompetencies();if(c&&_actS.length>=3)drawRadar(c,_actS,eng.sxp,eng.warns,window._radarGhost||null);}
   updateGokuAura(eng.totXP);
@@ -4251,6 +4252,7 @@ function resetAllStep2(){
   showConfirmPanel("DERNIÈRE CHANCE","Confirme le reset total.\n\nIl n'y aura pas de retour en arrière possible.","resetAllConfirmed","🗑️ Tout effacer");
 }
 function resetAllConfirmed(){
+  if(typeof cloudReset==="function")cloudReset();
   localStorage.removeItem("grind-v6");
   ST = initST();
   saveST();
@@ -5170,6 +5172,123 @@ window.addEventListener('scroll',function(){renderTutorialOverlay();},true);
 
   // Update Goku aura after render
   setTimeout(()=>updateGokuAura(engine().totXP), 50);
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+// ===== SYNCHRO CLOUD (Firebase Auth + Firestore) =====
+(function(){
+var FB_CFG={apiKey:"AIzaSyBNRI1qAelHwZF5Ij-mI15DX9aTdEg41m4",authDomain:"grind-rpg-43c33.firebaseapp.com",projectId:"grind-rpg-43c33",storageBucket:"grind-rpg-43c33.firebasestorage.app",messagingSenderId:"901981027885",appId:"1:901981027885:web:c9b83f5610c7b8a85b42a4"};
+var auth=null,db=null,user=null,pushT=null,status="",blocked=false,pending=null,busy=false;
+var ok=false;
+try{if(typeof firebase!=="undefined"&&firebase.initializeApp){firebase.initializeApp(FB_CFG);auth=firebase.auth();db=firebase.firestore();ok=true;}}catch(e){ok=false;}
+
+function sigOf(o){var c={};for(var k in o){if(k!=="updatedAt"&&k!=="motivMsgShownDate")c[k]=o[k];}var s=JSON.stringify(c),h=5381;for(var i=0;i<s.length;i++){h=((h<<5)+h+s.charCodeAt(i))|0;}return h+":"+s.length;}
+function baseKey(){return "grind-cloud-base-"+(user?user.uid:"");}
+function getBase(){try{var r=localStorage.getItem(baseKey());if(r)return JSON.parse(r);}catch(e){}return null;}
+function setBase(ts,sig){try{localStorage.setItem(baseKey(),JSON.stringify({ts:ts,sig:sig}));}catch(e){}}
+function ref(){return db.collection("users").doc(user.uid);}
+function fmt(ts){try{var d=new Date(ts);return d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});}catch(e){return "?";}}
+
+function setStatus(s){status=s;refreshBar();}
+function refreshBar(){try{var el=document.getElementById("cloud-bar");if(el){el.innerHTML=barInner();}else{var sb=document.getElementById("save-bar");if(sb&&sb.insertAdjacentHTML)sb.insertAdjacentHTML("afterend",window.cloudBarHTML());}}catch(e){}}
+
+function barInner(){
+  var btn="background:#0891b2;border:none;border-radius:9px;color:#fff;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap";
+  var btn2="background:#fff;border:1px solid rgba(8,145,178,0.4);border-radius:9px;color:#0e7490;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap";
+  if(!ok)return "<span class='save-label'>☁️ Cloud</span><span style='font-size:.7rem;color:#64748b'>Indisponible (connexion requise au premier chargement)</span>";
+  if(!user)return "<span class='save-label'>☁️ Cloud</span><button style=\""+btn+"\" onclick=\"cloudLogin()\">Se connecter avec Google</button><span style='font-size:.68rem;color:#64748b'>"+(status||"Sauvegarde auto + synchro multi-appareils")+"</span>";
+  var h="<span class='save-label'>☁️ Cloud</span><span style='font-size:.68rem;color:#0e7490;word-break:break-all'>"+(user.email||"connecté")+"</span>";
+  if(pending){
+    h+="<span style='font-size:.68rem;color:#b45309;flex-basis:100%'>⚠️ Conflit : cloud ("+fmt(pending.updatedAt)+") ≠ cet appareil. Choisis quelle version garder.</span>";
+    h+="<button style=\""+btn+"\" onclick=\"cloudTakeCloud()\">☁️ Prendre le cloud</button><button style=\""+btn2+"\" onclick=\"cloudKeepLocal()\">📱 Garder cet appareil</button>";
+  }else{
+    h+="<span style='font-size:.68rem;color:#64748b'>"+(status||"")+"</span><button style=\""+btn2+"\" onclick=\"cloudSyncNow()\">🔄 Synchroniser</button><button style=\""+btn2+"\" onclick=\"cloudLogout()\">Déconnexion</button>";
+  }
+  return h;
+}
+window.cloudBarHTML=function(){return "<div id=\"cloud-bar\" class=\"save-bar\" style=\"position:static;flex-wrap:wrap;margin-top:-12px\">"+barInner()+"</div>";};
+
+function pushNow(extra){
+  if(!ok||!user||blocked||!ST||!ST.onboardingComplete)return Promise.resolve();
+  var sig=sigOf(ST),b=getBase();
+  if(!extra&&b&&b.sig===sig){setStatus("✅ À jour");return Promise.resolve();}
+  var payload=JSON.stringify(ST);
+  if(payload.length>900000){setStatus("⚠️ Données trop volumineuses pour le cloud");return Promise.resolve();}
+  var ts=Date.now(),doc={state:payload,updatedAt:ts};
+  if(extra&&extra.prev)doc.prev=extra.prev;
+  return ref().set(doc).then(function(){setBase(ts,sig);setStatus("✅ Sauvegardé "+fmt(ts));}).catch(function(e){setStatus("⚠️ Hors ligne, réessai plus tard");});
+}
+window.cloudPush=function(){
+  if(!ok||!user||blocked||!ST||!ST.onboardingComplete)return;
+  if(pushT)clearTimeout(pushT);
+  pushT=setTimeout(function(){pushT=null;pushNow();},4000);
+};
+
+function takeCloud(d){
+  try{localStorage.setItem("grind-v6-prelocal",JSON.stringify(ST));}catch(e){}
+  var cs=null;try{cs=JSON.parse(d.state);}catch(e){setStatus("⚠️ Données cloud illisibles");return;}
+  try{localStorage.setItem("grind-v6",d.state);}catch(e){setStatus("⚠️ Écriture locale impossible");return;}
+  setBase(d.updatedAt,sigOf(cs));
+  pending=null;blocked=false;
+  location.reload();
+}
+function reconcile(){
+  if(!ok||!user||busy||!ST)return Promise.resolve();
+  if(ST.tutorialStep!==null&&ST.tutorialStep!==undefined)return Promise.resolve();
+  busy=true;setStatus("⏳ Synchronisation…");
+  return ref().get().then(function(snap){
+    busy=false;
+    if(!snap.exists){blocked=false;return pushNow({});}
+    var d=snap.data(),cs=null;
+    try{cs=JSON.parse(d.state);}catch(e){setStatus("⚠️ Données cloud illisibles");return;}
+    var b=getBase(),localSig=sigOf(ST),dirty=!b||b.sig!==localSig;
+    if(!ST.onboardingComplete){takeCloud(d);return;}
+    if(b&&b.ts===d.updatedAt){blocked=false;if(dirty)return pushNow();setStatus("✅ À jour");return;}
+    if(sigOf(cs)===localSig){setBase(d.updatedAt,localSig);blocked=false;setStatus("✅ À jour");return;}
+    if(b&&!dirty){takeCloud(d);return;}
+    pending=d;blocked=true;setStatus("");
+  }).catch(function(e){busy=false;setStatus("⚠️ Hors ligne");});
+}
+window.cloudTakeCloud=function(){if(pending)takeCloud(pending);};
+window.cloudKeepLocal=function(){
+  var prev=pending?pending.state:null;pending=null;blocked=false;
+  if(prev&&prev.length>400000)prev=null;
+  pushNow({prev:prev});
+};
+window.cloudSyncNow=function(){if(pushT){clearTimeout(pushT);pushT=null;}reconcile();};
+window.cloudLogin=function(){
+  if(!ok)return;
+  setStatus("⏳ Connexion…");
+  var p=new firebase.auth.GoogleAuthProvider();
+  auth.signInWithPopup(p).catch(function(e){
+    if(e&&(e.code==="auth/popup-blocked"||e.code==="auth/operation-not-supported-in-this-environment")){auth.signInWithRedirect(p);return;}
+    if(e&&e.code==="auth/unauthorized-domain"){setStatus("⚠️ Domaine non autorisé dans Firebase");return;}
+    setStatus("⚠️ Connexion annulée ou impossible");
+  });
+};
+window.cloudLogout=function(){if(!ok)return;auth.signOut();};
+window.cloudReset=function(){
+  if(!ok||!user)return;
+  try{localStorage.removeItem(baseKey());}catch(e){}
+  ref().delete().catch(function(){});
+};
+if(ok){
+  auth.onAuthStateChanged(function(u){
+    user=u||null;pending=null;blocked=false;
+    if(user){reconcile();}else{setStatus("");}
+  });
+  document.addEventListener("visibilitychange",function(){
+    if(!user)return;
+    if(document.hidden){if(pushT){clearTimeout(pushT);pushT=null;}pushNow();}
+    else{reconcile();}
+  });
+  window.addEventListener("online",function(){if(user)reconcile();});
+}
+refreshBar();
+window.__cloudDbg={sigOf:sigOf,getBase:getBase,reconcile:reconcile,pushNow:pushNow};
+})();
 </script>
 </body>
 </html>
