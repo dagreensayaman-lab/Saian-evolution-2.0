@@ -558,7 +558,7 @@ function bonus(s){
 }
 function lvEmoji(x){return x>=12?"🔥":x>=8?"✅":x>=0?"⚪":"💀";}
 function stLbl(stat,lv){const l=SL2[stat];return l[Math.min(Math.floor((lv-1)/9),l.length-1)];}
-function gxp(d,aIds,slots){return slots.filter(s=>aIds.includes(s.id)&&d[s.id]).reduce((s,t)=>s+(d[t.id]||0),0);}
+function gxp(d,aIds,slots){return slots.filter(s=>aIds.includes(s.id)&&d[s.id]).reduce((s,t)=>s+(d[t.id]||0)*(1+(d[t.id+"_extra"]||0)),0);}
 function ge(id){return document.getElementById(id);}
 
 function mkSlots(){
@@ -984,7 +984,7 @@ function engine(){
   const sla={intel:-999,physique:-999,craft:-999,disc:-999,bienetre:-999};
   const sEverActive={intel:false,physique:false,craft:false,disc:false,bienetre:false};
   flat.forEach(({d,aIds},i)=>{
-    ST.slots.filter(s=>aIds.includes(s.id)&&d[s.id]).forEach(s=>{sxp[s.stat]+=(d[s.id]||0);sla[s.stat]=i;sEverActive[s.stat]=true;});
+    ST.slots.filter(s=>aIds.includes(s.id)&&d[s.id]).forEach(s=>{sxp[s.stat]+=(d[s.id]||0)*(1+(d[s.id+"_extra"]||0));sla[s.stat]=i;sEverActive[s.stat]=true;});
     if(bonXP[i]>0)sxp.craft+=bonXP[i];
     Object.entries(dstat[i]).forEach(([st,dmg])=>{sxp[st]=Math.max(0,sxp[st]-dmg);});
     for(const stat of ["physique","disc","bienetre"]){const cfg=ST.decayCfg[stat];if(!cfg||!sEverActive[stat]||sxp[stat]<=0)continue;const days=i-sla[stat];if(days>cfg.daysThreshold&&days>0&&sla[stat]>=0&&!isFreezeActive())sxp[stat]=Math.max(0,sxp[stat]-cfg.xpPerDay);}
@@ -1072,6 +1072,56 @@ function drawRadar(canvas,sts,sxp,warns,ghostSxp){
   });
 }
 
+// ── SÉANCES EXTERNES (Beatbox Classroom, Tabata, Workout…) ── elles arrivent par la boîte aux lettres cloud.
+// Chaque séance = +1 coche (la 1re du jour) puis +1 "séance supplémentaire" payée au même XP. Les tâches
+// sont créées à la volée : un joueur qui n'a jamais reçu d'événement ne voit rien de plus.
+var EXT_KINDS={cours:{id:"craft_bbx_cours",stat:"craft",name:"Cours beatbox",xp:2},workout:{id:"craft_bbx_workout",stat:"craft",name:"Beatbox workout",xp:2}};
+function ensureExtSlot(kind){
+  var def=EXT_KINDS[kind];if(!def)return null;
+  var sl=ST.slots.find(function(x){return x.id===def.id;});
+  if(!sl){
+    sl={id:def.id,stat:def.stat,name:def.name,xp:def.xp};ST.slots.push(sl);
+  }
+  Object.keys(ST.history).forEach(function(k){ST.history[k].days.forEach(function(d){if(d[def.id]===undefined)d[def.id]=0;});});
+  return sl;
+}
+function grantExternalSession(evt){
+  if(!evt||!evt.id||!EXT_KINDS[evt.kind])return false;
+  if(!ST.inboxDone)ST.inboxDone=[];
+  if(ST.inboxDone.indexOf(evt.id)>=0)return false;
+  var def=EXT_KINDS[evt.kind],slot=ensureExtSlot(evt.kind);
+  var when=evt.t?new Date(+evt.t):new Date();
+  if(isNaN(when.getTime()))when=new Date();
+  var md=ST.history[mk(when.getFullYear(),when.getMonth())];
+  if(!md){when=new Date();md=ST.history[mk(when.getFullYear(),when.getMonth())];}
+  if(!md)return false;
+  var di=when.getDate()-1,d=md.days[di];if(!d)return false;
+  if(!md.activeSlots)md.activeSlots=[];
+  if(md.activeSlots.indexOf(def.id)<0)md.activeSlots.push(def.id);
+  if(d[def.id])d[def.id+"_extra"]=(d[def.id+"_extra"]||0)+1;else d[def.id]=scaledXP(slot.xp);
+  addGems(1);
+  var ds=ymdKey(when.getFullYear(),when.getMonth(),when.getDate());
+  if(ST.dayPlans&&ST.dayPlans[ds]&&ST.dayPlans[ds].indexOf(def.id)<0)ST.dayPlans[ds].push(def.id);
+  if(!ST.sessionLog)ST.sessionLog=[];
+  ST.sessionLog.push({id:evt.id,kind:evt.kind,t:when.getTime(),min:Math.max(0,Math.round(+evt.min||0)),n:Math.max(0,Math.round(+evt.students||0))});
+  if(ST.sessionLog.length>500)ST.sessionLog=ST.sessionLog.slice(-500);
+  ST.inboxDone.push(evt.id);if(ST.inboxDone.length>300)ST.inboxDone=ST.inboxDone.slice(-300);
+  saveST();
+  return true;
+}
+function bbxStatsHTML(){
+  var log=ST.sessionLog||[];if(!log.length)return "";
+  var now=new Date(),wd=(now.getDay()+6)%7,ws=new Date(now.getFullYear(),now.getMonth(),now.getDate()-wd).getTime(),ms=new Date(now.getFullYear(),now.getMonth(),1).getTime();
+  var wk=0,co=0,mins=0,stu=0;
+  log.forEach(function(e){
+    if(e.kind==="workout"&&e.t>=ws)wk++;
+    if(e.kind==="cours"&&e.t>=ms){co++;stu+=(e.n||0);}
+    if(e.t>=ms)mins+=(e.min||0);
+  });
+  var h=Math.floor(mins/60),m=mins%60,tm=(h>0?h+"h":"")+(m<10&&h>0?"0"+m:m)+(h>0?"":" min");
+  function box(v,l){return "<div style='flex:1;min-width:90px;text-align:center'><div style='font-family:Anton,sans-serif;font-size:1.3rem;color:#0e7490'>"+v+"</div><div style='font-size:.55rem;color:#64748b;letter-spacing:.5px'>"+l+"</div></div>";}
+  return "<div class='sl'>🥁 Beatbox</div><div style='background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:16px;padding:14px 10px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px'>"+box(wk,"WORKOUTS CETTE SEMAINE")+box(co,"COURS DONNÉS CE MOIS")+box(tm,"TEMPS CE MOIS")+(stu>0?box(stu,"ÉLÈVES CE MOIS"):"")+"</div>";
+}
 function exportData(){
   const blob=new Blob([JSON.stringify({version:"grind-v6",exportedAt:new Date().toISOString(),data:ST},null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -1822,6 +1872,7 @@ html+=rThrowback(eng);
   html+=`</div>`;
   const motiv=getMotivationMsg(eng);
   html+=`<div style="background:${motiv.color}10;border:1px solid ${motiv.color}35;border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:.85rem;font-weight:600;color:#1e3a4a"><span style="font-size:1.4rem;flex-shrink:0">${motiv.icon}</span><span>${motiv.msg}</span></div>`;
+  html+=bbxStatsHTML();
   return html;
 }
 
@@ -3872,6 +3923,7 @@ function tDay(di,sid,monthKey){
     md.days[di][sid]=malusDef?{xp:malusDef.xp,debtDays:malusDef.debtDays}:1;
   } else {
     md.days[di][sid]=0;
+    delete md.days[di][sid+"_extra"];
   }
   saveST();
   if(monthKey){
@@ -5226,7 +5278,9 @@ window.cloudPush=function(){
   pushT=setTimeout(function(){pushT=null;pushNow();},4000);
 };
 
+var reloading=false;
 function takeCloud(d){
+  reloading=true;
   try{localStorage.setItem("grind-v6-prelocal",JSON.stringify(ST));}catch(e){}
   var cs=null;try{cs=JSON.parse(d.state);}catch(e){setStatus("⚠️ Données cloud illisibles");return;}
   try{localStorage.setItem("grind-v6",d.state);}catch(e){setStatus("⚠️ Écriture locale impossible");return;}
@@ -5251,13 +5305,23 @@ function reconcile(){
     pending=d;blocked=true;setStatus("");
   }).catch(function(e){busy=false;setStatus("⚠️ Hors ligne");});
 }
+function consumeInbox(){
+  if(!ok||!user||pending||blocked||reloading||!ST||!ST.onboardingComplete)return Promise.resolve();
+  return ref().collection("inbox").get().then(function(qs){
+    if(reloading)return;
+    var n=0,docs=[];qs.forEach(function(x){docs.push(x);});
+    docs.forEach(function(x){var e=x.data()||{};e.id=x.id;try{if(typeof grantExternalSession==="function"&&grantExternalSession(e))n++;}catch(err){}x.ref.delete().catch(function(){});});
+    if(n>0){try{render();}catch(err){}try{showPopup("🥁 "+n+" séance"+(n>1?"s":"")+" Beatbox ajoutée"+(n>1?"s":""),"🥁","#10b981",3200);}catch(err){}}
+  }).catch(function(){});
+}
+function syncAll(){return reconcile().then(function(){return consumeInbox();});}
 window.cloudTakeCloud=function(){if(pending)takeCloud(pending);};
 window.cloudKeepLocal=function(){
   var prev=pending?pending.state:null;pending=null;blocked=false;
   if(prev&&prev.length>400000)prev=null;
   pushNow({prev:prev});
 };
-window.cloudSyncNow=function(){if(pushT){clearTimeout(pushT);pushT=null;}reconcile();};
+window.cloudSyncNow=function(){if(pushT){clearTimeout(pushT);pushT=null;}syncAll();};
 window.cloudLogin=function(){
   if(!ok)return;
   setStatus("⏳ Connexion…");
@@ -5277,14 +5341,14 @@ window.cloudReset=function(){
 if(ok){
   auth.onAuthStateChanged(function(u){
     user=u||null;pending=null;blocked=false;
-    if(user){reconcile();}else{setStatus("");}
+    if(user){syncAll();}else{setStatus("");}
   });
   document.addEventListener("visibilitychange",function(){
     if(!user)return;
     if(document.hidden){if(pushT){clearTimeout(pushT);pushT=null;}pushNow();}
-    else{reconcile();}
+    else{syncAll();}
   });
-  window.addEventListener("online",function(){if(user)reconcile();});
+  window.addEventListener("online",function(){if(user)syncAll();});
 }
 refreshBar();
 window.__cloudDbg={sigOf:sigOf,getBase:getBase,reconcile:reconcile,pushNow:pushNow};
