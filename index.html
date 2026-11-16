@@ -5527,7 +5527,7 @@ function fmt(ts){try{var d=new Date(ts);return d.toLocaleDateString("fr-FR")+" "
 
 function setStatus(s){status=s;refreshBar();}
 window.cloudRefresh=function(){refreshBar();};
-function refreshBar(){try{var el=document.getElementById("cloud-bar");if(el){el.innerHTML=barInner();}else{var sb=document.getElementById("save-bar");if(sb&&sb.insertAdjacentHTML)sb.insertAdjacentHTML("afterend",window.cloudBarHTML());}}catch(e){}}
+function refreshBar(){try{var el=document.getElementById("cloud-bar");if(el){el.innerHTML=barInner()+recoveryHTML();}else{var sb=document.getElementById("save-bar");if(sb&&sb.insertAdjacentHTML)sb.insertAdjacentHTML("afterend",window.cloudBarHTML());}}catch(e){}}
 
 function barInner(){
   var btn="background:#0891b2;border:none;border-radius:9px;color:#fff;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap";
@@ -5544,7 +5544,38 @@ function barInner(){
   }
   return h;
 }
-window.cloudBarHTML=function(){return "<div id=\"cloud-bar\" class=\"save-bar\" style=\"position:static;flex-wrap:wrap;margin-top:-12px\">"+barInner()+"</div>";};
+// ── Récupération : anciennes versions gardées sur cet appareil (avant une synchro cloud, ou version cloud écartée) ──
+var BK_KEYS=[["grind-v6-prelocal","Version de cet appareil avant la dernière synchro cloud"],["grind-v6-cloudbackup","Version du cloud écartée (« Garder cet appareil »)"]];
+function bkRead(k){
+  try{var raw=localStorage.getItem(k);if(!raw)return null;var st=raw;
+    if(k==="grind-v6-cloudbackup"){var o=JSON.parse(raw);st=o&&o.state;}
+    if(!st)return null;var data=JSON.parse(st),days=0;
+    Object.keys(data.history||{}).forEach(function(mk2){var md=data.history[mk2];(md.days||[]).forEach(function(d){if(Object.keys(d).some(function(x){return d[x];}))days++;});});
+    return {raw:st,days:days,kb:Math.round(st.length/1024),name:data.playerName||""};
+  }catch(e){return null;}
+}
+function recoveryHTML(){
+  var btn="background:#fff;border:1px solid rgba(8,145,178,0.4);border-radius:9px;color:#0e7490;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap";
+  var h="";
+  BK_KEYS.forEach(function(x){
+    var b=bkRead(x[0]);if(!b)return;
+    h+="<div style='flex-basis:100%;font-size:.66rem;color:#475569;margin-top:6px'>🛟 "+x[1]+" : "+b.days+" jour"+(b.days>1?"s":"")+" avec activité, "+b.kb+" ko</div>";
+    h+="<button style=\""+btn+"\" onclick=\"cloudBkExport('"+x[0]+"')\">📥 Exporter</button><button style=\""+btn+"\" onclick=\"cloudBkRestore('"+x[0]+"')\">♻️ Restaurer cette version</button>";
+  });
+  return h;
+}
+window.cloudBkExport=function(k){
+  var b=bkRead(k);if(!b)return;
+  var blob=new Blob([JSON.stringify({version:"grind-v6",exportedAt:new Date().toISOString(),data:JSON.parse(b.raw)},null,2)],{type:"application/json"});
+  var url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="grind-recuperation-"+new Date().toISOString().slice(0,10)+".json";a.click();URL.revokeObjectURL(url);
+};
+window.cloudBkRestore=function(k){
+  var b=bkRead(k);if(!b)return;
+  if(!confirm("Remplacer les données de cet appareil par cette version ("+b.days+" jours avec activité) ?\nElle sera ensuite envoyée vers le cloud."))return;
+  try{localStorage.setItem("grind-v6-beforerestore",JSON.stringify(ST));localStorage.setItem("grind-v6",b.raw);}catch(e){alert("Écriture impossible sur cet appareil.");return;}
+  reloading=true;location.reload();
+};
+window.cloudBarHTML=function(){return "<div id=\"cloud-bar\" class=\"save-bar\" style=\"position:static;flex-wrap:wrap;margin-top:-12px\">"+barInner()+recoveryHTML()+"</div>";};
 
 function pushNow(extra){
   if(!ok||!user||blocked||!ST||!ST.onboardingComplete)return Promise.resolve();
