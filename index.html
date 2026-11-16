@@ -1127,18 +1127,60 @@ function bbxStatsHTML(){
 // Aucun serveur : la page parle directement à l'API Google Agenda avec le jeton Google de la session (≈ 1 h).
 EXT_KINDS.concert={id:"craft_concert",stat:"craft",name:"Concert / scène",xp:3};
 EXT_KINDS.agenda={id:"craft_agenda",stat:"craft",name:"Agenda",xp:2};
-var AG_RULES_DEFAULT={cours:"cours, élève, classe, atelier, école",workout:"sport, workout, tabata, entraînement, muscu, gym, footing",concert:"concert, spectacle, répét, studio, scène, festival, show"};
+var AG_RULES_DEFAULT={cours:"cours, élève, classe, atelier, école",workout:"sport, workout, tabata, entraînement, muscu, gym, footing",concert:"concert, spectacle, répét, studio, scène, festival, show",must:"paperasse, démarchage"};
 var _agTok=null,_agTokT=0,_agBusy=false,_agStatus="";
 function agTokOk(){if(_agTok&&Date.now()-_agTokT>3300000)_agTok=null;return !!_agTok;}
 function agendaState(){
   if(!ST.agenda)ST.agenda={calId:null,events:{},rules:JSON.parse(JSON.stringify(AG_RULES_DEFAULT)),last:0};
   if(!ST.agenda.events)ST.agenda.events={};
   if(!ST.agenda.rules)ST.agenda.rules=JSON.parse(JSON.stringify(AG_RULES_DEFAULT));
+  if(ST.agenda.rules.must===undefined)ST.agenda.rules.must=AG_RULES_DEFAULT.must;
   return ST.agenda;
 }
 function agendaPeek(){return ST.agenda||{calId:null,events:{},rules:AG_RULES_DEFAULT,last:0};} // lecture seule : l'affichage ne doit jamais modifier ST
 function agNorm(s){s=String(s||"").toLowerCase();try{s=s.normalize("NFD").replace(/[̀-ͯ]/g,"");}catch(e){}return s;}
 function agEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+// ── Relais permanent (Google Apps Script) : lecture/validation de l'agenda sans jeton qui expire ──
+function agRelay(){var A=(typeof ST!=="undefined"&&ST)?ST.agenda:null;return(A&&A.relay&&A.relay.url&&A.relay.key)?A.relay:null;}
+function agReady(){return !!agRelay()||agTokOk();}
+function agRelayFetch(params){
+  var R=agRelay();if(!R)return Promise.reject(new Error("relais non configuré"));
+  var q="?key="+encodeURIComponent(R.key);
+  Object.keys(params).forEach(function(k){q+="&"+k+"="+encodeURIComponent(params[k]);});
+  return fetch(R.url+q).then(function(r){if(!r.ok)throw new Error("relais HTTP "+r.status);return r.json();}).then(function(j){
+    if(j&&j.error){var er=new Error(j.error==="key"?"clé du relais refusée":j.error==="notfound"?"gone":"relais : "+j.error);if(j.error==="notfound")er.gone=true;throw er;}
+    return j;
+  });
+}
+// Tâche obligatoire (mots du titre) : non validée à la fin du jour → malus automatique.
+function agMust(title){
+  var t=agNorm(title),ws=String(agendaState().rules.must||"").split(",");
+  for(var i=0;i<ws.length;i++){var w=agNorm(ws[i]).trim();if(w&&t.indexOf(w)>=0)return true;}
+  return false;
+}
+function agMalusDef(create){
+  var m=null;ST.malusList.forEach(function(x){if(x.id==="m_agenda")m=x;});
+  if(!m&&create){m={id:"m_agenda",name:"Tâche agenda manquée",xp:-3,stat:"disc",debtDays:2,icon:"📅"};ST.malusList.push(m);}
+  return m;
+}
+function agDayRec(e){var d=new Date(e.t),md=ST.history[mk(d.getFullYear(),d.getMonth())];return md?md.days[d.getDate()-1]:null;}
+function agendaPenalize(){
+  var A=agendaState(),n=0,t0=new Date();t0.setHours(0,0,0,0);
+  Object.keys(A.events).forEach(function(id){
+    var e=A.events[id];if(e.done||e.pen||e.t>=t0.getTime()||!agMust(e.title))return;
+    var day=agDayRec(e);if(!day)return;
+    var m=agMalusDef(true);
+    if(!day[m.id])day[m.id]={xp:m.xp,debtDays:m.debtDays};
+    e.pen=true;n++;
+  });
+  if(n){saveST();try{render();}catch(er){}try{showPopup("📅 "+n+" tâche"+(n>1?"s":"")+" obligatoire"+(n>1?"s":"")+" manquée"+(n>1?"s":"")+" : malus","⚠️","#dc2626",3600);}catch(er){}}
+  return n;
+}
+// Validation tardive : on retire le malus.
+function agendaUnpenalize(e){
+  try{var m=agMalusDef(false),day=agDayRec(e);if(m&&day&&day[m.id])delete day[m.id];}catch(er){}
+  e.pen=false;
+}
 function agendaKind(title){
   var r=agendaState().rules,t=agNorm(title),order=["cours","workout","concert"];
   for(var i=0;i<order.length;i++){
@@ -1174,7 +1216,7 @@ function agCredit(kind,when){
 // Valide un événement de l'agenda ; withXp=false quand l'XP a déjà été donnée par une autre voie (cours terminé, case cochée).
 function agendaFinish(id,withXp){
   var A=agendaState(),e=A.events[id];if(!e||e.done)return false;
-  e.done=true;e.doneT=Date.now();e.wb=false;
+  e.done=true;e.doneT=Date.now();e.wb=false;if(e.pen)agendaUnpenalize(e);
   if(withXp){var now=Date.now(),when=new Date(e.t>now?now:e.t);try{agCredit(e.kind,when);}catch(err){}}
   return true;
 }
@@ -1184,7 +1226,7 @@ function agendaMatch(kind,when){
     if(!ST.agenda||!ST.agenda.events)return false;
     var A=ST.agenda,ds=ymdKey(when.getFullYear(),when.getMonth(),when.getDate()),best=null;
     Object.keys(A.events).forEach(function(id){var e=A.events[id];if(e.done||e.kind!==kind||agDayKey(e.t)!==ds)return;if(!best||e.t<A.events[best].t)best=id;});
-    if(best){agendaFinish(best,false);agendaRefresh();if(agTokOk())agendaFlush().catch(function(){});return true;}
+    if(best){agendaFinish(best,false);agendaRefresh();if(agReady())agendaFlush().catch(function(){});return true;}
   }catch(err){}
   return false;
 }
@@ -1244,7 +1286,7 @@ function agendaFlush(){
   ids.forEach(function(id){
     p=p.then(function(){
       var e=A.events[id];
-      return agFetch("/calendars/"+encodeURIComponent(A.calId)+"/events/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({summary:"✅ "+e.title,colorId:"2",extendedProperties:{"private":{grindDone:"1"}}})})
+      return (agRelay()?agRelayFetch({action:"done",id:id}):agFetch("/calendars/"+encodeURIComponent(A.calId)+"/events/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({summary:"✅ "+e.title,colorId:"2",extendedProperties:{"private":{grindDone:"1"}}})}))
         .then(function(){e.wb=true;n++;},function(er){if(er&&er.gone){e.wb=true;return;}throw er;});
     });
   });
@@ -1252,16 +1294,20 @@ function agendaFlush(){
 }
 function agSyncRun(){
   if(_agBusy)return Promise.resolve();
-  if(!agTokOk()){_agStatus="Reconnecte l'agenda (jeton expiré)";agendaRefresh();return Promise.resolve();}
+  if(!agReady()){_agStatus="Reconnecte l'agenda (jeton expiré)";agendaRefresh();return Promise.resolve();}
   _agBusy=true;_agStatus="⏳ Synchronisation…";agendaRefresh();
-  var A=agendaState(),ws=new Date();ws.setHours(0,0,0,0);var winStart=ws.getTime()-3*86400000,winEnd=ws.getTime()+22*86400000;
-  return agFindCal().then(function(cal){
+  var A=agendaState(),ws=new Date();ws.setHours(0,0,0,0);var winStart=ws.getTime()-7*86400000,winEnd=ws.getTime()+22*86400000;
+  var listP=agRelay()?agRelayFetch({action:"list",from:new Date(winStart).toISOString(),to:new Date(winEnd).toISOString()}).then(function(res){
+    return {items:((res&&res.items)||[]).map(function(it){return {id:it.id,summary:it.summary,start:it.start,extendedProperties:{"private":{grindDone:it.done?"1":"0"}}};})};
+  }):agFindCal().then(function(cal){
     if(A.colored)return cal;
     return agFetch("/users/me/calendarList/"+encodeURIComponent(cal)+"?colorRgbFormat=true",{method:"PATCH",body:JSON.stringify({backgroundColor:"#f691b2",foregroundColor:"#000000"})}).then(function(){A.colored=true;return cal;},function(){return cal;});
   }).then(function(cal){
     return agFetch("/calendars/"+encodeURIComponent(cal)+"/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin="+encodeURIComponent(new Date(winStart).toISOString())+"&timeMax="+encodeURIComponent(new Date(winEnd).toISOString()));
-  }).then(function(res){
+  });
+  return listP.then(function(res){
     var xp=agendaApply((res&&res.items)||[],winStart,winEnd);
+    agendaPenalize();
     A.last=Date.now();saveST();
     return agendaFlush().then(function(){return xp;});
   }).then(function(xp){
@@ -1293,18 +1339,25 @@ window.agendaValidate=function(id){
   var A=agendaState(),e=A.events[id];if(!e||e.done)return;
   agendaFinish(id,true);saveST();agendaRefresh();
   if(typeof render==="function"){try{render();}catch(er){}}
-  if(agTokOk())agendaFlush().then(function(){agendaRefresh();}).catch(function(){agendaRefresh();});
+  if(agReady())agendaFlush().then(function(){agendaRefresh();}).catch(function(){agendaRefresh();});
+};
+window.agendaSaveRelay=function(){
+  var A=agendaState(),u=document.getElementById("ag-relay-url"),k=document.getElementById("ag-relay-key");
+  var url=u&&u.value?u.value.trim():"",key=k&&k.value?k.value.trim():"";
+  if(url&&!/^https:\/\/script\.google(usercontent)?\.com\//.test(url)){_agStatus="⚠️ L'URL doit venir de script.google.com";agendaRefresh();return;}
+  A.relay=(url&&key)?{url:url,key:key}:null;
+  saveST();agendaRefresh();if(A.relay)agSyncRun();
 };
 window.agendaSaveRules=function(){
   var A=agendaState();
-  ["cours","workout","concert"].forEach(function(k){var el=document.getElementById("ag-r-"+k);if(el&&typeof el.value==="string")A.rules[k]=el.value;});
+  ["cours","workout","concert","must"].forEach(function(k){var el=document.getElementById("ag-r-"+k);if(el&&typeof el.value==="string")A.rules[k]=el.value;});
   Object.keys(A.events).forEach(function(id){var e=A.events[id];if(!e.done){e.kind=agendaKind(e.title);agPlace(e);}});
   saveST();agendaRefresh();
 };
 function agendaInner(){
   var A=agendaPeek(),btn="background:#0891b2;border:none;border-radius:9px;color:#fff;padding:7px 12px;font-family:'Anton',sans-serif;font-size:.68rem;letter-spacing:1px;cursor:pointer";
   var h="<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px'>";
-  if(agTokOk())h+="<button style=\""+btn+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
+  if(agReady())h+="<button style=\""+btn+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
   else h+="<button style=\""+btn+"\" onclick=\"agendaConnect()\">📅 "+(A.last?"Reconnecter":"Connecter")+" Google Agenda</button>";
   h+="<span style='font-size:.68rem;color:#64748b'>"+agEsc(_agStatus||(A.last?"Dernière synchro : "+new Date(A.last).toLocaleDateString("fr-FR")+" "+new Date(A.last).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"Crée des événements dans l'agenda « Grind » : ils deviennent des tâches ici."))+"</span></div>";
   var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-86400000;
@@ -1321,7 +1374,13 @@ function agendaInner(){
   ["cours","workout","concert"].forEach(function(k){
     h+="<div style='margin-top:6px'><div style='font-size:.62rem;color:#64748b'>"+agEsc(EXT_KINDS[k].name)+" (mots séparés par des virgules)</div><input id='ag-r-"+k+"' value=\""+agEsc(A.rules[k]||"")+"\" style='width:100%;box-sizing:border-box;border:1px solid rgba(8,145,178,0.3);border-radius:8px;padding:6px;font-size:.72rem'></div>";
   });
+  h+="<div style='margin-top:6px'><div style='font-size:.62rem;color:#64748b'>Tâches obligatoires : malus si non validées (mots séparés par des virgules)</div><input id='ag-r-must' value=\""+agEsc(A.rules.must===undefined?AG_RULES_DEFAULT.must:A.rules.must)+"\" style='width:100%;box-sizing:border-box;border:1px solid rgba(8,145,178,0.3);border-radius:8px;padding:6px;font-size:.72rem'></div>";
   h+="<div style='font-size:.62rem;color:#94a3b8;margin-top:6px'>Les autres événements vont dans « Agenda ».</div><button style=\""+btn+";margin-top:8px\" onclick=\"agendaSaveRules()\">Enregistrer</button></details>";
+  var R=A.relay||{};
+  h+="<details style='margin-top:10px'"+(R.url?"":" open")+"><summary style='font-size:.68rem;color:#0e7490;cursor:pointer'>🔗 Relais permanent (sans reconnexion)"+(R.url?" · actif":"")+"</summary>";
+  h+="<div style='font-size:.62rem;color:#64748b;margin-top:6px'>URL de l'application Web Apps Script (finit par /exec)</div><input id='ag-relay-url' value=\""+agEsc(R.url||"")+"\" style='width:100%;box-sizing:border-box;border:1px solid rgba(8,145,178,0.3);border-radius:8px;padding:6px;font-size:.72rem'>";
+  h+="<div style='font-size:.62rem;color:#64748b;margin-top:6px'>Clé secrète</div><input id='ag-relay-key' type='password' value=\""+agEsc(R.key||"")+"\" style='width:100%;box-sizing:border-box;border:1px solid rgba(8,145,178,0.3);border-radius:8px;padding:6px;font-size:.72rem'>";
+  h+="<button style=\""+btn+";margin-top:8px\" onclick=\"agendaSaveRelay()\">Enregistrer et synchroniser</button></details>";
   return h;
 }
 function agendaHTML(){
@@ -1329,15 +1388,17 @@ function agendaHTML(){
 }
 function agendaBarInner(){
   var A=agendaPeek(),b="background:#fff;border:1px solid rgba(8,145,178,0.4);border-radius:9px;color:#0e7490;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap";
-  if(!A.last&&!agTokOk())return "";
-  if(agTokOk()){
+  if(!A.last&&!agReady())return "";
+  if(agReady()){
     var st=_agStatus&&_agStatus.indexOf("Synchronis")!==0?_agStatus:(A.last?"✓ "+new Date(A.last).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"");
     return "<span style='flex-basis:100%;height:0'></span><span class='save-label'>📅 Agenda</span><span style='font-size:.68rem;color:#64748b'>"+agEsc(st.replace(/^✅ Synchronisé à /,"✓ "))+"</span><button style=\""+b+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
   }
   return "<span style='flex-basis:100%;height:0'></span><span class='save-label'>📅 Agenda</span><button style=\""+b+"\" onclick=\"agendaConnect()\">Reconnecter</button>";
 }
 function agendaRefresh(){try{var el=document.getElementById("agenda-card");if(el)el.innerHTML=agendaInner();}catch(e){}try{if(typeof window.cloudRefresh==="function")window.cloudRefresh();}catch(e){}}
-try{document.addEventListener("visibilitychange",function(){if(!document.hidden&&agTokOk()&&Date.now()-(agendaPeek().last||0)>300000)agSyncRun();});}catch(e){}
+try{document.addEventListener("visibilitychange",function(){if(!document.hidden&&agReady()&&Date.now()-(agendaPeek().last||0)>300000)agSyncRun();});}catch(e){}
+try{setInterval(function(){if(!document.hidden&&agRelay()&&!_agBusy&&Date.now()-(agendaPeek().last||0)>840000)agSyncRun();},900000);}catch(e){}
+try{setTimeout(function(){if(agRelay()&&!document.hidden)agSyncRun();},4000);}catch(e){}
 function exportData(){
   const blob=new Blob([JSON.stringify({version:"grind-v6",exportedAt:new Date().toISOString(),data:ST},null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
