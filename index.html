@@ -1129,12 +1129,14 @@ EXT_KINDS.concert={id:"craft_concert",stat:"craft",name:"Concert / scène",xp:3}
 EXT_KINDS.agenda={id:"craft_agenda",stat:"craft",name:"Agenda",xp:2};
 var AG_RULES_DEFAULT={cours:"cours, élève, classe, atelier, école",workout:"sport, workout, tabata, entraînement, muscu, gym, footing",concert:"concert, spectacle, répét, studio, scène, festival, show"};
 var _agTok=null,_agTokT=0,_agBusy=false,_agStatus="";
+function agTokOk(){if(_agTok&&Date.now()-_agTokT>3300000)_agTok=null;return !!_agTok;}
 function agendaState(){
   if(!ST.agenda)ST.agenda={calId:null,events:{},rules:JSON.parse(JSON.stringify(AG_RULES_DEFAULT)),last:0};
   if(!ST.agenda.events)ST.agenda.events={};
   if(!ST.agenda.rules)ST.agenda.rules=JSON.parse(JSON.stringify(AG_RULES_DEFAULT));
   return ST.agenda;
 }
+function agendaPeek(){return ST.agenda||{calId:null,events:{},rules:AG_RULES_DEFAULT,last:0};} // lecture seule : l'affichage ne doit jamais modifier ST
 function agNorm(s){s=String(s||"").toLowerCase();try{s=s.normalize("NFD").replace(/[̀-ͯ]/g,"");}catch(e){}return s;}
 function agEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
 function agendaKind(title){
@@ -1179,9 +1181,10 @@ function agendaFinish(id,withXp){
 // Une séance/case validée ailleurs (Classroom, workout, case cochée) valide l'événement du même jour, sans 2e XP.
 function agendaMatch(kind,when){
   try{
-    var A=agendaState(),ds=ymdKey(when.getFullYear(),when.getMonth(),when.getDate()),best=null;
+    if(!ST.agenda||!ST.agenda.events)return false;
+    var A=ST.agenda,ds=ymdKey(when.getFullYear(),when.getMonth(),when.getDate()),best=null;
     Object.keys(A.events).forEach(function(id){var e=A.events[id];if(e.done||e.kind!==kind||agDayKey(e.t)!==ds)return;if(!best||e.t<A.events[best].t)best=id;});
-    if(best){agendaFinish(best,false);agendaRefresh();if(_agTok)agendaFlush().catch(function(){});return true;}
+    if(best){agendaFinish(best,false);agendaRefresh();if(agTokOk())agendaFlush().catch(function(){});return true;}
   }catch(err){}
   return false;
 }
@@ -1241,7 +1244,7 @@ function agendaFlush(){
   ids.forEach(function(id){
     p=p.then(function(){
       var e=A.events[id];
-      return agFetch("/calendars/"+encodeURIComponent(A.calId)+"/events/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({summary:"✅ "+e.title,colorId:"10",extendedProperties:{"private":{grindDone:"1"}}})})
+      return agFetch("/calendars/"+encodeURIComponent(A.calId)+"/events/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({summary:"✅ "+e.title,colorId:"2",extendedProperties:{"private":{grindDone:"1"}}})})
         .then(function(){e.wb=true;n++;},function(er){if(er&&er.gone){e.wb=true;return;}throw er;});
     });
   });
@@ -1249,10 +1252,13 @@ function agendaFlush(){
 }
 function agSyncRun(){
   if(_agBusy)return Promise.resolve();
-  if(!_agTok){_agStatus="Reconnecte l'agenda (jeton expiré)";agendaRefresh();return Promise.resolve();}
+  if(!agTokOk()){_agStatus="Reconnecte l'agenda (jeton expiré)";agendaRefresh();return Promise.resolve();}
   _agBusy=true;_agStatus="⏳ Synchronisation…";agendaRefresh();
   var A=agendaState(),ws=new Date();ws.setHours(0,0,0,0);var winStart=ws.getTime()-3*86400000,winEnd=ws.getTime()+22*86400000;
   return agFindCal().then(function(cal){
+    if(A.colored)return cal;
+    return agFetch("/users/me/calendarList/"+encodeURIComponent(cal)+"?colorRgbFormat=true",{method:"PATCH",body:JSON.stringify({backgroundColor:"#f691b2",foregroundColor:"#000000"})}).then(function(){A.colored=true;return cal;},function(){return cal;});
+  }).then(function(cal){
     return agFetch("/calendars/"+encodeURIComponent(cal)+"/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin="+encodeURIComponent(new Date(winStart).toISOString())+"&timeMax="+encodeURIComponent(new Date(winEnd).toISOString()));
   }).then(function(res){
     var xp=agendaApply((res&&res.items)||[],winStart,winEnd);
@@ -1287,7 +1293,7 @@ window.agendaValidate=function(id){
   var A=agendaState(),e=A.events[id];if(!e||e.done)return;
   agendaFinish(id,true);saveST();agendaRefresh();
   if(typeof render==="function"){try{render();}catch(er){}}
-  if(_agTok)agendaFlush().then(function(){agendaRefresh();}).catch(function(){agendaRefresh();});
+  if(agTokOk())agendaFlush().then(function(){agendaRefresh();}).catch(function(){agendaRefresh();});
 };
 window.agendaSaveRules=function(){
   var A=agendaState();
@@ -1296,9 +1302,9 @@ window.agendaSaveRules=function(){
   saveST();agendaRefresh();
 };
 function agendaInner(){
-  var A=agendaState(),btn="background:#0891b2;border:none;border-radius:9px;color:#fff;padding:7px 12px;font-family:'Anton',sans-serif;font-size:.68rem;letter-spacing:1px;cursor:pointer";
+  var A=agendaPeek(),btn="background:#0891b2;border:none;border-radius:9px;color:#fff;padding:7px 12px;font-family:'Anton',sans-serif;font-size:.68rem;letter-spacing:1px;cursor:pointer";
   var h="<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px'>";
-  if(_agTok)h+="<button style=\""+btn+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
+  if(agTokOk())h+="<button style=\""+btn+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
   else h+="<button style=\""+btn+"\" onclick=\"agendaConnect()\">📅 "+(A.last?"Reconnecter":"Connecter")+" Google Agenda</button>";
   h+="<span style='font-size:.68rem;color:#64748b'>"+agEsc(_agStatus||(A.last?"Dernière synchro : "+new Date(A.last).toLocaleDateString("fr-FR")+" "+new Date(A.last).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"Crée des événements dans l'agenda « Grind » : ils deviennent des tâches ici."))+"</span></div>";
   var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-86400000;
@@ -1321,8 +1327,17 @@ function agendaInner(){
 function agendaHTML(){
   return "<div class='sl'>📅 Agenda</div><div id='agenda-card' style='background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:16px;padding:14px;margin-bottom:18px'>"+agendaInner()+"</div>";
 }
-function agendaRefresh(){try{var el=document.getElementById("agenda-card");if(el)el.innerHTML=agendaInner();}catch(e){}}
-try{document.addEventListener("visibilitychange",function(){if(!document.hidden&&_agTok&&Date.now()-_agTokT<3300000&&Date.now()-(agendaState().last||0)>300000)agSyncRun();});}catch(e){}
+function agendaBarInner(){
+  var A=agendaPeek(),b="background:#fff;border:1px solid rgba(8,145,178,0.4);border-radius:9px;color:#0e7490;padding:6px 10px;font-family:'Anton',sans-serif;font-size:.65rem;letter-spacing:1px;cursor:pointer;white-space:nowrap";
+  if(!A.last&&!agTokOk())return "";
+  if(agTokOk()){
+    var st=_agStatus&&_agStatus.indexOf("Synchronis")!==0?_agStatus:(A.last?"✓ "+new Date(A.last).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"");
+    return "<span style='flex-basis:100%;height:0'></span><span class='save-label'>📅 Agenda</span><span style='font-size:.68rem;color:#64748b'>"+agEsc(st.replace(/^✅ Synchronisé à /,"✓ "))+"</span><button style=\""+b+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
+  }
+  return "<span style='flex-basis:100%;height:0'></span><span class='save-label'>📅 Agenda</span><button style=\""+b+"\" onclick=\"agendaConnect()\">Reconnecter</button>";
+}
+function agendaRefresh(){try{var el=document.getElementById("agenda-card");if(el)el.innerHTML=agendaInner();}catch(e){}try{if(typeof window.cloudRefresh==="function")window.cloudRefresh();}catch(e){}}
+try{document.addEventListener("visibilitychange",function(){if(!document.hidden&&agTokOk()&&Date.now()-(agendaPeek().last||0)>300000)agSyncRun();});}catch(e){}
 function exportData(){
   const blob=new Blob([JSON.stringify({version:"grind-v6",exportedAt:new Date().toISOString(),data:ST},null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -2074,7 +2089,6 @@ html+=rThrowback(eng);
   const motiv=getMotivationMsg(eng);
   html+=`<div style="background:${motiv.color}10;border:1px solid ${motiv.color}35;border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:.85rem;font-weight:600;color:#1e3a4a"><span style="font-size:1.4rem;flex-shrink:0">${motiv.icon}</span><span>${motiv.msg}</span></div>`;
   html+=bbxStatsHTML();
-  html+=(typeof agendaHTML==="function"?agendaHTML():"");
   return html;
 }
 
@@ -2542,7 +2556,7 @@ function navTrackerMonth(dir){
 
 function rConfig(){
   const now=new Date(),curKey=mk(now.getFullYear(),now.getMonth()),md=ST.history[curKey],aIds=md?md.activeSlots||[]:[];
-  let html=`<div class="sub-tabs">${[["tasks","📋 Tâches"],["malus","💀 Malus"],["decay","📉 Decay"],["streak","🔥 Streak"],["general","🛍️ Shop"]].map(([id,l])=>`<button id="subtab-${id}" class="sub-tab ${CTAB===id?"active":""}" onclick="setCTab('${id}')">${l}</button>`).join("")}</div>`;
+  let html=`<div class="sub-tabs">${[["tasks","📋 Tâches"],["malus","💀 Malus"],["decay","📉 Decay"],["streak","🔥 Streak"],["agenda","📅 Agenda"],["general","🛍️ Shop"]].map(([id,l])=>`<button id="subtab-${id}" class="sub-tab ${CTAB===id?"active":""}" onclick="setCTab('${id}')">${l}</button>`).join("")}</div>`;
   if(CTAB==="tasks"){
     html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:14px;font-size:.7rem;color:#1e3a4a;display:flex;align-items:flex-start;gap:8px">
       <span onclick="showInfoTip(event,'L\u2019ic\u00f4ne \u23f0 permet de fixer une fr\u00e9quence minimale par semaine pour une t\u00e2che. Si tu ne l\u2019atteins pas, un malus XP s\u2019applique automatiquement en fin de semaine.')" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;background:rgba(139,92,246,0.15);color:#8b5cf6;border-radius:50%;cursor:pointer;font-size:.68rem;font-weight:700;flex-shrink:0;margin-top:1px;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none" oncontextmenu="return false">i</span>
@@ -2804,6 +2818,7 @@ function rConfig(){
       </div>`;
     });
   }
+  if(CTAB==="agenda"){html+=(typeof agendaHTML==="function"?agendaHTML():"");}
   return html;
 }
 
@@ -5447,6 +5462,7 @@ function ref(){return db.collection("users").doc(user.uid);}
 function fmt(ts){try{var d=new Date(ts);return d.toLocaleDateString("fr-FR")+" "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});}catch(e){return "?";}}
 
 function setStatus(s){status=s;refreshBar();}
+window.cloudRefresh=function(){refreshBar();};
 function refreshBar(){try{var el=document.getElementById("cloud-bar");if(el){el.innerHTML=barInner();}else{var sb=document.getElementById("save-bar");if(sb&&sb.insertAdjacentHTML)sb.insertAdjacentHTML("afterend",window.cloudBarHTML());}}catch(e){}}
 
 function barInner(){
@@ -5460,6 +5476,7 @@ function barInner(){
     h+="<button style=\""+btn+"\" onclick=\"cloudTakeCloud()\">☁️ Prendre le cloud</button><button style=\""+btn2+"\" onclick=\"cloudKeepLocal()\">📱 Garder cet appareil</button>";
   }else{
     h+="<span style='font-size:.68rem;color:#64748b'>"+(status||"")+"</span><button style=\""+btn2+"\" onclick=\"cloudSyncNow()\">🔄 Synchroniser</button><button style=\""+btn2+"\" onclick=\"cloudLogout()\">Déconnexion</button>";
+    try{if(typeof agendaBarInner==="function")h+=agendaBarInner();}catch(e){}
   }
   return h;
 }
