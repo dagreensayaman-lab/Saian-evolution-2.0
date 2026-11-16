@@ -1106,6 +1106,7 @@ function grantExternalSession(evt){
   ST.sessionLog.push({id:evt.id,kind:evt.kind,t:when.getTime(),min:Math.max(0,Math.round(+evt.min||0)),n:Math.max(0,Math.round(+evt.students||0))});
   if(ST.sessionLog.length>500)ST.sessionLog=ST.sessionLog.slice(-500);
   ST.inboxDone.push(evt.id);if(ST.inboxDone.length>300)ST.inboxDone=ST.inboxDone.slice(-300);
+  if(typeof agendaMatch==="function")agendaMatch(evt.kind,when);
   saveST();
   return true;
 }
@@ -1122,6 +1123,206 @@ function bbxStatsHTML(){
   function box(v,l){return "<div style='flex:1;min-width:90px;text-align:center'><div style='font-family:Anton,sans-serif;font-size:1.3rem;color:#0e7490'>"+v+"</div><div style='font-size:.55rem;color:#64748b;letter-spacing:.5px'>"+l+"</div></div>";}
   return "<div class='sl'>🥁 Beatbox</div><div style='background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:16px;padding:14px 10px;display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px'>"+box(wk,"WORKOUTS CETTE SEMAINE")+box(co,"COURS DONNÉS CE MOIS")+box(tm,"TEMPS CE MOIS")+(stu>0?box(stu,"ÉLÈVES CE MOIS"):"")+"</div>";
 }
+// ── AGENDA GOOGLE ── un agenda dédié « Grind » dans Google Agenda ↔ tâches de Grind (validation dans les deux sens).
+// Aucun serveur : la page parle directement à l'API Google Agenda avec le jeton Google de la session (≈ 1 h).
+EXT_KINDS.concert={id:"craft_concert",stat:"craft",name:"Concert / scène",xp:3};
+EXT_KINDS.agenda={id:"craft_agenda",stat:"craft",name:"Agenda",xp:2};
+var AG_RULES_DEFAULT={cours:"cours, élève, classe, atelier, école",workout:"sport, workout, tabata, entraînement, muscu, gym, footing",concert:"concert, spectacle, répét, studio, scène, festival, show"};
+var _agTok=null,_agTokT=0,_agBusy=false,_agStatus="";
+function agendaState(){
+  if(!ST.agenda)ST.agenda={calId:null,events:{},rules:JSON.parse(JSON.stringify(AG_RULES_DEFAULT)),last:0};
+  if(!ST.agenda.events)ST.agenda.events={};
+  if(!ST.agenda.rules)ST.agenda.rules=JSON.parse(JSON.stringify(AG_RULES_DEFAULT));
+  return ST.agenda;
+}
+function agNorm(s){s=String(s||"").toLowerCase();try{s=s.normalize("NFD").replace(/[̀-ͯ]/g,"");}catch(e){}return s;}
+function agEsc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");}
+function agendaKind(title){
+  var r=agendaState().rules,t=agNorm(title),order=["cours","workout","concert"];
+  for(var i=0;i<order.length;i++){
+    var ws=String(r[order[i]]||"").split(",");
+    for(var j=0;j<ws.length;j++){var w=agNorm(ws[j]).trim();if(w&&t.indexOf(w)>=0)return order[i];}
+  }
+  return "agenda";
+}
+function agDayKey(t){var d=new Date(t);return ymdKey(d.getFullYear(),d.getMonth(),d.getDate());}
+function agPlace(e){
+  try{
+    var def=EXT_KINDS[e.kind];if(!def)return;
+    ensureExtSlot(e.kind);
+    var d=new Date(e.t),md=ST.history[mk(d.getFullYear(),d.getMonth())];
+    if(md){if(!md.activeSlots)md.activeSlots=[];if(md.activeSlots.indexOf(def.id)<0)md.activeSlots.push(def.id);}
+    var ds=agDayKey(e.t);
+    if(ST.dayPlans&&ST.dayPlans[ds]&&ST.dayPlans[ds].indexOf(def.id)<0)ST.dayPlans[ds].push(def.id);
+  }catch(err){}
+}
+function agCredit(kind,when){
+  var def=EXT_KINDS[kind];if(!def)return false;
+  var slot=ensureExtSlot(kind),md=ST.history[mk(when.getFullYear(),when.getMonth())];
+  if(!md)return false;
+  var d=md.days[when.getDate()-1];if(!d)return false;
+  if(!md.activeSlots)md.activeSlots=[];
+  if(md.activeSlots.indexOf(def.id)<0)md.activeSlots.push(def.id);
+  if(d[def.id])d[def.id+"_extra"]=(d[def.id+"_extra"]||0)+1;else d[def.id]=scaledXP(slot.xp);
+  addGems(1);
+  var ds=ymdKey(when.getFullYear(),when.getMonth(),when.getDate());
+  if(ST.dayPlans&&ST.dayPlans[ds]&&ST.dayPlans[ds].indexOf(def.id)<0)ST.dayPlans[ds].push(def.id);
+  return true;
+}
+// Valide un événement de l'agenda ; withXp=false quand l'XP a déjà été donnée par une autre voie (cours terminé, case cochée).
+function agendaFinish(id,withXp){
+  var A=agendaState(),e=A.events[id];if(!e||e.done)return false;
+  e.done=true;e.doneT=Date.now();e.wb=false;
+  if(withXp){var now=Date.now(),when=new Date(e.t>now?now:e.t);try{agCredit(e.kind,when);}catch(err){}}
+  return true;
+}
+// Une séance/case validée ailleurs (Classroom, workout, case cochée) valide l'événement du même jour, sans 2e XP.
+function agendaMatch(kind,when){
+  try{
+    var A=agendaState(),ds=ymdKey(when.getFullYear(),when.getMonth(),when.getDate()),best=null;
+    Object.keys(A.events).forEach(function(id){var e=A.events[id];if(e.done||e.kind!==kind||agDayKey(e.t)!==ds)return;if(!best||e.t<A.events[best].t)best=id;});
+    if(best){agendaFinish(best,false);agendaRefresh();if(_agTok)agendaFlush().catch(function(){});return true;}
+  }catch(err){}
+  return false;
+}
+function agendaMatchSlot(sid,when){
+  for(var k in EXT_KINDS){if(EXT_KINDS[k].id===sid)return agendaMatch(k,when);}
+  return false;
+}
+function agFetch(path,opt){
+  opt=opt||{};
+  var h={"Authorization":"Bearer "+_agTok,"Content-Type":"application/json"};
+  opt.headers=h;
+  return fetch("https://www.googleapis.com/calendar/v3"+path,opt).then(function(r){
+    if(r.status===401){_agTok=null;throw new Error("auth");}
+    if(r.status===404||r.status===410){var er=new Error("gone");er.gone=true;throw er;}
+    if(!r.ok){return r.text().then(function(t){throw new Error("HTTP "+r.status+" "+String(t).slice(0,120));});}
+    return r.status===204?null:r.json();
+  });
+}
+function agFindCal(){
+  var A=agendaState();
+  if(A.calId)return Promise.resolve(A.calId);
+  return agFetch("/users/me/calendarList?maxResults=250").then(function(res){
+    var items=(res&&res.items)||[];
+    for(var i=0;i<items.length;i++){if(items[i].summary==="Grind"){A.calId=items[i].id;return A.calId;}}
+    return agFetch("/calendars",{method:"POST",body:JSON.stringify({summary:"Grind",description:"Tâches synchronisées avec l'appli Grind RPG",timeZone:"Europe/Zurich"})}).then(function(c){A.calId=c.id;return A.calId;});
+  });
+}
+function agendaApply(items,winStart,winEnd){
+  var A=agendaState(),seen={},xpGiven=false;
+  (items||[]).forEach(function(it){
+    if(!it||!it.id||it.status==="cancelled")return;
+    var st=it.start||{},allDay=!st.dateTime&&!!st.date;
+    var t=st.dateTime?Date.parse(st.dateTime):(st.date?new Date(st.date+"T12:00:00").getTime():NaN);
+    if(isNaN(t))return;
+    var title=String(it.summary||"(sans titre)");
+    var priv=it.extendedProperties&&it.extendedProperties.private;
+    var gdone=(priv&&priv.grindDone==="1")||title.indexOf("✅")===0;
+    var clean=title.replace(/^✅\s*/,"");
+    seen[it.id]=1;
+    var e=A.events[it.id];
+    if(!e){e=A.events[it.id]={t:t,title:clean,kind:agendaKind(clean),done:false,wb:false,allDay:allDay};}
+    else{e.t=t;e.title=clean;e.allDay=allDay;if(!e.done)e.kind=agendaKind(clean);}
+    if(gdone){if(!e.done){if(agendaFinish(it.id,true))xpGiven=true;}e.wb=true;}
+    if(!e.done)agPlace(e);
+  });
+  var cutoff=Date.now()-14*86400000;
+  Object.keys(A.events).forEach(function(id){
+    var e=A.events[id];
+    if(e.t<cutoff){delete A.events[id];return;}
+    if(!seen[id]&&!e.done&&e.t>=winStart&&e.t<=winEnd)delete A.events[id];
+  });
+  return xpGiven;
+}
+function agendaFlush(){
+  var A=agendaState(),ids=Object.keys(A.events).filter(function(id){return A.events[id].done&&!A.events[id].wb;});
+  var p=Promise.resolve(),n=0;
+  ids.forEach(function(id){
+    p=p.then(function(){
+      var e=A.events[id];
+      return agFetch("/calendars/"+encodeURIComponent(A.calId)+"/events/"+encodeURIComponent(id),{method:"PATCH",body:JSON.stringify({summary:"✅ "+e.title,colorId:"10",extendedProperties:{"private":{grindDone:"1"}}})})
+        .then(function(){e.wb=true;n++;},function(er){if(er&&er.gone){e.wb=true;return;}throw er;});
+    });
+  });
+  return p.then(function(){if(n)saveST();return n;});
+}
+function agSyncRun(){
+  if(_agBusy)return Promise.resolve();
+  if(!_agTok){_agStatus="Reconnecte l'agenda (jeton expiré)";agendaRefresh();return Promise.resolve();}
+  _agBusy=true;_agStatus="⏳ Synchronisation…";agendaRefresh();
+  var A=agendaState(),ws=new Date();ws.setHours(0,0,0,0);var winStart=ws.getTime()-3*86400000,winEnd=ws.getTime()+22*86400000;
+  return agFindCal().then(function(cal){
+    return agFetch("/calendars/"+encodeURIComponent(cal)+"/events?singleEvents=true&orderBy=startTime&maxResults=250&timeMin="+encodeURIComponent(new Date(winStart).toISOString())+"&timeMax="+encodeURIComponent(new Date(winEnd).toISOString()));
+  }).then(function(res){
+    var xp=agendaApply((res&&res.items)||[],winStart,winEnd);
+    A.last=Date.now();saveST();
+    return agendaFlush().then(function(){return xp;});
+  }).then(function(xp){
+    _agBusy=false;_agStatus="✅ Synchronisé à "+new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+    agendaRefresh();if(xp&&typeof render==="function"){try{render();}catch(e){}}
+  }).catch(function(er){
+    _agBusy=false;
+    _agStatus=(er&&er.message==="auth")?"Reconnecte l'agenda (jeton expiré)":"⚠️ "+(er&&er.message?er.message:"erreur");
+    agendaRefresh();
+  });
+}
+window.agendaConnect=function(){
+  if(typeof firebase==="undefined"||!firebase.auth){_agStatus="⚠️ Firebase indisponible";agendaRefresh();return;}
+  var a=firebase.auth(),p=new firebase.auth.GoogleAuthProvider();
+  p.addScope("https://www.googleapis.com/auth/calendar");
+  _agStatus="⏳ Connexion à Google…";agendaRefresh();
+  var cu=a.currentUser,op=cu?cu.reauthenticateWithPopup(p):a.signInWithPopup(p);
+  op.then(function(r){
+    var tok=r&&r.credential&&r.credential.accessToken;
+    if(!tok){_agStatus="⚠️ Google n'a pas donné l'accès à l'agenda";agendaRefresh();return;}
+    _agTok=tok;_agTokT=Date.now();agSyncRun();
+  }).catch(function(e){
+    _agStatus=(e&&e.code==="auth/user-mismatch")?"⚠️ Utilise le même compte Google que pour le cloud":"⚠️ Connexion annulée ou refusée";
+    agendaRefresh();
+  });
+};
+window.agendaSync=function(){agSyncRun();};
+window.agendaValidate=function(id){
+  var A=agendaState(),e=A.events[id];if(!e||e.done)return;
+  agendaFinish(id,true);saveST();agendaRefresh();
+  if(typeof render==="function"){try{render();}catch(er){}}
+  if(_agTok)agendaFlush().then(function(){agendaRefresh();}).catch(function(){agendaRefresh();});
+};
+window.agendaSaveRules=function(){
+  var A=agendaState();
+  ["cours","workout","concert"].forEach(function(k){var el=document.getElementById("ag-r-"+k);if(el&&typeof el.value==="string")A.rules[k]=el.value;});
+  Object.keys(A.events).forEach(function(id){var e=A.events[id];if(!e.done){e.kind=agendaKind(e.title);agPlace(e);}});
+  saveST();agendaRefresh();
+};
+function agendaInner(){
+  var A=agendaState(),btn="background:#0891b2;border:none;border-radius:9px;color:#fff;padding:7px 12px;font-family:'Anton',sans-serif;font-size:.68rem;letter-spacing:1px;cursor:pointer";
+  var h="<div style='display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px'>";
+  if(_agTok)h+="<button style=\""+btn+"\" onclick=\"agendaSync()\">🔄 Synchroniser</button>";
+  else h+="<button style=\""+btn+"\" onclick=\"agendaConnect()\">📅 "+(A.last?"Reconnecter":"Connecter")+" Google Agenda</button>";
+  h+="<span style='font-size:.68rem;color:#64748b'>"+agEsc(_agStatus||(A.last?"Dernière synchro : "+new Date(A.last).toLocaleDateString("fr-FR")+" "+new Date(A.last).toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}):"Crée des événements dans l'agenda « Grind » : ils deviennent des tâches ici."))+"</span></div>";
+  var t0=new Date();t0.setHours(0,0,0,0);var from=t0.getTime()-86400000;
+  var ids=Object.keys(A.events).filter(function(id){return A.events[id].t>=from;}).sort(function(a,b){return A.events[a].t-A.events[b].t;}).slice(0,20);
+  if(!ids.length)h+="<div style='font-size:.72rem;color:#94a3b8;padding:6px 0'>Aucun événement à venir.</div>";
+  ids.forEach(function(id){
+    var e=A.events[id],d=new Date(e.t),def=EXT_KINDS[e.kind]||EXT_KINDS.agenda;
+    var when=d.toLocaleDateString("fr-FR",{weekday:"short",day:"numeric"})+(e.allDay?"":" · "+d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"}));
+    h+="<div style='display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid rgba(8,145,178,0.12)'><div style='flex:1;min-width:0'><div style='font-size:.78rem;font-weight:600;color:#0f172a;"+(e.done?"text-decoration:line-through;opacity:.6":"")+"'>"+agEsc(e.title)+"</div><div style='font-size:.62rem;color:#64748b'>"+agEsc(when)+" · "+agEsc(def.name)+(e.done&&!e.wb?" · ⏳ à écrire dans Google":"")+"</div></div>";
+    h+=e.done?"<span style='font-size:1.1rem'>✅</span>":"<button style=\""+btn+"\" onclick=\"agendaValidate('"+String(id).replace(/[^A-Za-z0-9_\-]/g,"")+"')\">Valider</button>";
+    h+="</div>";
+  });
+  h+="<details style='margin-top:10px'><summary style='font-size:.68rem;color:#0e7490;cursor:pointer'>⚙️ Règles par mot du titre</summary>";
+  ["cours","workout","concert"].forEach(function(k){
+    h+="<div style='margin-top:6px'><div style='font-size:.62rem;color:#64748b'>"+agEsc(EXT_KINDS[k].name)+" (mots séparés par des virgules)</div><input id='ag-r-"+k+"' value=\""+agEsc(A.rules[k]||"")+"\" style='width:100%;box-sizing:border-box;border:1px solid rgba(8,145,178,0.3);border-radius:8px;padding:6px;font-size:.72rem'></div>";
+  });
+  h+="<div style='font-size:.62rem;color:#94a3b8;margin-top:6px'>Les autres événements vont dans « Agenda ».</div><button style=\""+btn+";margin-top:8px\" onclick=\"agendaSaveRules()\">Enregistrer</button></details>";
+  return h;
+}
+function agendaHTML(){
+  return "<div class='sl'>📅 Agenda</div><div id='agenda-card' style='background:#fff;border:1px solid rgba(8,145,178,0.15);border-radius:16px;padding:14px;margin-bottom:18px'>"+agendaInner()+"</div>";
+}
+function agendaRefresh(){try{var el=document.getElementById("agenda-card");if(el)el.innerHTML=agendaInner();}catch(e){}}
+try{document.addEventListener("visibilitychange",function(){if(!document.hidden&&_agTok&&Date.now()-_agTokT<3300000&&Date.now()-(agendaState().last||0)>300000)agSyncRun();});}catch(e){}
 function exportData(){
   const blob=new Blob([JSON.stringify({version:"grind-v6",exportedAt:new Date().toISOString(),data:ST},null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
@@ -1873,6 +2074,7 @@ html+=rThrowback(eng);
   const motiv=getMotivationMsg(eng);
   html+=`<div style="background:${motiv.color}10;border:1px solid ${motiv.color}35;border-radius:16px;padding:14px 20px;display:flex;align-items:center;gap:12px;font-size:.85rem;font-weight:600;color:#1e3a4a"><span style="font-size:1.4rem;flex-shrink:0">${motiv.icon}</span><span>${motiv.msg}</span></div>`;
   html+=bbxStatsHTML();
+  html+=(typeof agendaHTML==="function"?agendaHTML():"");
   return html;
 }
 
@@ -3911,6 +4113,7 @@ function tDay(di,sid,monthKey){
     var slotDef=ST.slots.find(function(s){return s.id===sid;});
     md.days[di][sid]=slotDef?scaledXP(slotDef.xp):1;
     if(slotDef)addGems(1);
+    if(slotDef&&typeof agendaMatchSlot==="function"){var _kp=key.split("-");agendaMatchSlot(sid,new Date(+_kp[0],+_kp[1]-1,di+1,12));}
     if(ST.tutorialStep!==null&&ST.tutorialStep!==undefined){
       var _tutStep=TUTORIAL_STEPS[ST.tutorialStep];
       if(_tutStep&&_tutStep.gate==="check-task"){
