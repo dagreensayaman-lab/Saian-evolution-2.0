@@ -1127,14 +1127,17 @@ function bbxStatsHTML(){
 // Aucun serveur : la page parle directement à l'API Google Agenda avec le jeton Google de la session (≈ 1 h).
 EXT_KINDS.concert={id:"craft_concert",stat:"craft",name:"Concert / scène",xp:3};
 EXT_KINDS.agenda={id:"craft_agenda",stat:"craft",name:"Agenda",xp:2};
-var AG_RULES_DEFAULT={cours:"cours, élève, classe, atelier, école",workout:"sport, workout, tabata, entraînement, muscu, gym, footing",concert:"concert, spectacle, répét, studio, scène, festival, show",must:"paperasse, démarchage"};
+// Tâches du lundi : chacune a sa propre colonne dans le tracker (cocher la case = valider l'événement, et inversement)
+EXT_KINDS.paperasse={id:"craft_paperasse",stat:"disc",name:"Paperasse",xp:3};
+EXT_KINDS.demarchage={id:"craft_demarchage",stat:"disc",name:"Démarchage",xp:3};
+var AG_RULES_DEFAULT={cours:"cours, élève, classe, atelier, école",workout:"sport, workout, tabata, entraînement, muscu, gym, footing",concert:"concert, spectacle, répét, studio, scène, festival, show",must:"paperasse, démarchage",paperasse:"paperasse",demarchage:"demarchage, démarchage"};
 var _agTok=null,_agTokT=0,_agBusy=false,_agStatus="";
 function agTokOk(){if(_agTok&&Date.now()-_agTokT>3300000)_agTok=null;return !!_agTok;}
 function agendaState(){
   if(!ST.agenda)ST.agenda={calId:null,events:{},rules:JSON.parse(JSON.stringify(AG_RULES_DEFAULT)),last:0};
   if(!ST.agenda.events)ST.agenda.events={};
   if(!ST.agenda.rules)ST.agenda.rules=JSON.parse(JSON.stringify(AG_RULES_DEFAULT));
-  if(ST.agenda.rules.must===undefined)ST.agenda.rules.must=AG_RULES_DEFAULT.must;
+  ["must","paperasse","demarchage"].forEach(function(k){if(ST.agenda.rules[k]===undefined)ST.agenda.rules[k]=AG_RULES_DEFAULT[k];});
   return ST.agenda;
 }
 function agendaPeek(){return ST.agenda||{calId:null,events:{},rules:AG_RULES_DEFAULT,last:0};} // lecture seule : l'affichage ne doit jamais modifier ST
@@ -1182,7 +1185,7 @@ function agendaUnpenalize(e){
   e.pen=false;
 }
 function agendaKind(title){
-  var r=agendaState().rules,t=agNorm(title),order=["cours","workout","concert"];
+  var r=agendaState().rules,t=agNorm(title),order=["paperasse","demarchage","cours","workout","concert"];
   for(var i=0;i<order.length;i++){
     var ws=String(r[order[i]]||"").split(",");
     for(var j=0;j<ws.length;j++){var w=agNorm(ws[j]).trim();if(w&&t.indexOf(w)>=0)return order[i];}
