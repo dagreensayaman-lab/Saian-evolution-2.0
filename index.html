@@ -5554,7 +5554,7 @@ function pushNow(extra){
   if(payload.length>900000){setStatus("⚠️ Données trop volumineuses pour le cloud");return Promise.resolve();}
   var ts=Date.now(),doc={state:payload,updatedAt:ts};
   if(extra&&extra.prev)doc.prev=extra.prev;
-  return ref().set(doc).then(function(){setBase(ts,sig);setStatus("✅ Sauvegardé "+fmt(ts));}).catch(function(e){setStatus("⚠️ Hors ligne, réessai plus tard");});
+  return ref().set(doc,{merge:true}).then(function(){setBase(ts,sig);setStatus("✅ Sauvegardé "+fmt(ts));}).catch(function(e){setStatus("⚠️ Hors ligne, réessai plus tard");});
 }
 window.cloudPush=function(){
   if(!ok||!user||blocked||!ST||!ST.onboardingComplete)return;
@@ -5601,7 +5601,9 @@ function consumeInbox(){
 function syncAll(){return reconcile().then(function(){return consumeInbox();});}
 window.cloudTakeCloud=function(){if(pending)takeCloud(pending);};
 window.cloudKeepLocal=function(){
-  var prev=pending?pending.state:null;pending=null;blocked=false;
+  var prev=pending?pending.state:null;
+  try{if(prev)localStorage.setItem("grind-v6-cloudbackup",JSON.stringify({savedAt:Date.now(),cloudUpdatedAt:pending.updatedAt,state:prev}));}catch(e){}
+  pending=null;blocked=false;
   if(prev&&prev.length>400000)prev=null;
   pushNow({prev:prev});
 };
