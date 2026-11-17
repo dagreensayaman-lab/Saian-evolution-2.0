@@ -2311,7 +2311,7 @@ function tPlan(y,m,d,slotId){
           const sm2=SM[s.stat];
           const sty2=!_pl2?'background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)':'background:'+sm2.dim+';color:'+sm2.color+';border:1px solid '+sm2.color+'40';
           const mark2=_pl2?' <strong>\u2715</strong>':' <strong>+</strong>';
-          return '<span onclick="tPlan('+y+','+m+','+d+',\''+s.id+'\')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;'+sty2+';cursor:pointer;font-weight:600">'+sm2.icon+' '+s.name+mark2+'</span>';
+          return '<span data-lp="'+s.id+'" data-lpd="'+(d-1)+'" onclick="tPlan('+y+','+m+','+d+',\''+s.id+'\')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;'+sty2+';cursor:pointer;font-weight:600">'+sm2.icon+' '+s.name+mark2+'</span>';
         }).join('');
       }
     }
@@ -2341,6 +2341,102 @@ function tPlan(y,m,d,slotId){
     });
   }
 }
+// ── APPUI LONG SUR UNE TÂCHE ── épingle (ou retire) la tâche pour tout le reste de la semaine (jusqu'à dimanche).
+// Si la tâche est déjà épinglée sur tous ces jours → l'appui long la retire de toute la semaine (annule).
+// Départ = le jour appuyé s'il est futur, sinon demain. Jamais le passé ni aujourd'hui (rien ne change pour ce qui est déjà coché).
+// Un dimanche, ou si demain est un lundi : on prend la semaine qui suit. S'arrête à la fin du mois affiché.
+function lpWeek(fromIdx,slotId){
+  const s=ST.slots.find(function(x){return x.id===slotId;});
+  if(!s)return;
+  if(s.daily){
+    showInfoAlert("🔥 Cette tâche est verrouillée en habitude quotidienne — elle est déjà au programme tous les jours.",false);
+    return;
+  }
+  const now=new Date(),y=now.getFullYear(),m=now.getMonth(),curD=now.getDate()-1,last=dim(y,m)-1;
+  const start=Math.max(fromIdx,curD+1);
+  const days=[];
+  for(let i=start;i<=last;i++){days.push(i);if(new Date(y,m,i+1).getDay()===0)break;}
+  if(!days.length){showPopup("Fin du mois : rien à épingler après","📌","#8b5cf6",2600);return;}
+  const allPlanned=days.every(function(i){return isPlannedForDay(slotId,ymdKey(y,m,i+1));});
+  const md=ST.history[mk(y,m)];
+  const active=(md&&md.activeSlots)||[];
+  if(!ST.dayPlans)ST.dayPlans={};
+  days.forEach(function(i){
+    const key=ymdKey(y,m,i+1);
+    if(!ST.dayPlans[key])ST.dayPlans[key]=active.slice();
+    const arr=ST.dayPlans[key],idx=arr.indexOf(slotId);
+    if(allPlanned){if(idx>=0)arr.splice(idx,1);}
+    else if(idx<0)arr.push(slotId);
+  });
+  saveST();
+  const _sb=document.querySelector('.table-scroll');
+  const sl=_sb?_sb.scrollLeft:0,st=_sb?_sb.scrollTop:0,wy=window.pageYOffset||0;
+  render();
+  const _sb2=document.querySelector('.table-scroll');
+  [0,30,120,300].forEach(function(dl){setTimeout(function(){
+    if(_sb2){_sb2.scrollLeft=sl;_sb2.scrollTop=st;}
+    window.scrollTo(0,wy);
+  },dl);});
+  const dn=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"][new Date(y,m,days[days.length-1]+1).getDay()];
+  showPopup((allPlanned?"✕ ":"📌 ")+s.name+(allPlanned?" retiré":" épinglé")+" · "+days.length+" jour"+(days.length>1?"s":"")+" jusqu'à "+dn,allPlanned?"✕":"📌",allPlanned?"#94a3b8":"#8b5cf6",3200);
+}
+var _lpTimer=null,_lpFiredAt=0,_lpX=0,_lpY=0;
+function lpTarget(el){
+  while(el&&el!==document.body&&el.nodeType===1){
+    if(el.getAttribute){
+      var a=el.getAttribute("data-lp");
+      if(a)return{slot:a,day:parseInt(el.getAttribute("data-lpd"),10)};
+      var id=el.id||"",mm=/^tog-(\d+)-(.+)$/.exec(id);
+      if(mm&&ST&&ST.slots.some(function(x){return x.id===mm[2];}))return{slot:mm[2],day:parseInt(mm[1],10),grid:true};
+    }
+    el=el.parentNode;
+  }
+  return null;
+}
+function lpCancel(){if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}}
+function lpStart(e){
+  lpCancel();
+  if(TAB!=="tracker")return;
+  var t=lpTarget(e.target);
+  if(!t||isNaN(t.day))return;
+  if(t.grid){
+    var now=new Date();
+    if(TRACKER_MONTH&&TRACKER_MONTH!==mk(now.getFullYear(),now.getMonth()))return;
+    if(t.day<now.getDate()-1)return; // lignes passées : pas d'appui long
+  }
+  var pt=(e.touches&&e.touches[0])||e;
+  _lpX=pt.clientX||0;_lpY=pt.clientY||0;
+  _lpTimer=setTimeout(function(){
+    _lpTimer=null;_lpFiredAt=Date.now();
+    try{if(navigator.vibrate)navigator.vibrate(30);}catch(er){}
+    lpWeek(t.day,t.slot);
+  },550);
+}
+function lpMove(e){
+  if(!_lpTimer)return;
+  var pt=(e.touches&&e.touches[0])||e;
+  if(Math.abs((pt.clientX||0)-_lpX)>10||Math.abs((pt.clientY||0)-_lpY)>10)lpCancel();
+}
+(function(){
+  if(typeof document==="undefined"||!document.addEventListener)return;
+  try{
+    var st=document.createElement("style");
+    st.textContent="#today-remaining span,.tog{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}";
+    document.head.appendChild(st);
+  }catch(er){}
+  document.addEventListener("touchstart",lpStart,{passive:true});
+  document.addEventListener("touchmove",lpMove,{passive:true});
+  document.addEventListener("touchend",lpCancel,{passive:true});
+  document.addEventListener("touchcancel",lpCancel,{passive:true});
+  document.addEventListener("mousedown",lpStart);
+  document.addEventListener("mousemove",lpMove);
+  document.addEventListener("mouseup",lpCancel);
+  document.addEventListener("contextmenu",function(e){if(TAB==="tracker"&&lpTarget(e.target))e.preventDefault();});
+  // après un appui long, on avale le "clic" qui suit pour ne pas cocher/décocher en plus
+  document.addEventListener("click",function(e){
+    if(Date.now()-_lpFiredAt<900){_lpFiredAt=0;e.preventDefault();e.stopPropagation();}
+  },true);
+})();
 // ── DUPLICATION DE PLANNING ── pour ceux qui veulent répéter une semaine ou un mois type.
 // Copie simple et ponctuelle (pas de règle "liée" permanente) : une fois dupliqué, chaque jour
 // reste librement modifiable via tPlan (ajouter/enlever des tâches), exactement comme un jour planifié à la main.
@@ -2523,12 +2619,12 @@ function rTracker(eng){
         if(!isFutureSel&&_target>1){
           const _cnt=Math.min(_target,(md.days[selDay]||{})[s.id+"_cnt"]||0);
           const _gc=_cnt>0?progressColor(_cnt/_target):null;
-          return `<span onclick="tCounterPill(${selDay},'${s.id}')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:${_gc||SM[s.stat].dim};color:${_gc?"#fff":SM[s.stat].color};border:1px solid ${_gc||SM[s.stat].color+"40"};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name} · ${_cnt}/${_target}</span>`;
+          return `<span data-lp="${s.id}" data-lpd="${selDay}" onclick="tCounterPill(${selDay},'${s.id}')" style="font-size:.66rem;padding:5px 10px;border-radius:99px;background:${_gc||SM[s.stat].dim};color:${_gc?"#fff":SM[s.stat].color};border:1px solid ${_gc||SM[s.stat].color+"40"};cursor:pointer;font-weight:600">${SM[s.stat].icon} ${s.name} · ${_cnt}/${_target}</span>`;
         }
         const _act=isFutureSel?(s.daily?"":`tPlan(${curY},${curM},${selDay+1},'${s.id}')`):`tDay(${selDay},'${s.id}')`;
         const _sty=isFutureSel&&!_pl?`background:rgba(0,0,0,0.04);color:#94a3b8;border:1px solid rgba(0,0,0,0.08)`:`background:${SM[s.stat].dim};color:${SM[s.stat].color};border:1px solid ${SM[s.stat].color}40`;
         const _mark=isFutureSel?(s.daily?` <strong>🔥</strong>`:(_pl?` <strong>✕</strong>`:` <strong>+</strong>`)):"";
-        return `<span onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:${isFutureSel&&s.daily?"default":"pointer"};font-weight:600">${SM[s.stat].icon} ${s.name}${_mark}</span>`;
+        return `<span data-lp="${s.id}" data-lpd="${selDay}" onclick="${_act}" style="font-size:.66rem;padding:5px 10px;border-radius:99px;${_sty};cursor:${isFutureSel&&s.daily?"default":"pointer"};font-weight:600">${SM[s.stat].icon} ${s.name}${_mark}</span>`;
       }).join("")}</div>`:""}
     </div>`;
   }
