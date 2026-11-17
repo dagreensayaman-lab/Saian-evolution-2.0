@@ -2378,9 +2378,9 @@ function lpWeek(fromIdx,slotId){
     window.scrollTo(0,wy);
   },dl);});
   const dn=["dimanche","lundi","mardi","mercredi","jeudi","vendredi","samedi"][new Date(y,m,days[days.length-1]+1).getDay()];
-  showPopup((allPlanned?"✕ ":"📌 ")+s.name+(allPlanned?" retiré":" épinglé")+" · "+days.length+" jour"+(days.length>1?"s":"")+" jusqu'à "+dn,allPlanned?"✕":"📌",allPlanned?"#94a3b8":"#8b5cf6",3200);
+  showPopup(s.name+(allPlanned?" retiré":" épinglé")+" · "+days.length+" jour"+(days.length>1?"s":"")+" jusqu'à "+dn,allPlanned?"✕":"📌",allPlanned?"#94a3b8":"#8b5cf6",3200);
 }
-var _lpTimer=null,_lpFiredAt=0,_lpX=0,_lpY=0;
+var _lpTimer=null,_lpFiredAt=0,_lpX=0,_lpY=0,_lpEl=null,_lpVis=null;
 function lpTarget(el){
   while(el&&el!==document.body&&el.nodeType===1){
     if(el.getAttribute){
@@ -2393,7 +2393,11 @@ function lpTarget(el){
   }
   return null;
 }
-function lpCancel(){if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}}
+function lpUnpress(){
+  if(_lpVis){clearTimeout(_lpVis);_lpVis=null;}
+  if(_lpEl){try{_lpEl.classList.remove("lp-press");}catch(er){}_lpEl=null;}
+}
+function lpCancel(){if(_lpTimer){clearTimeout(_lpTimer);_lpTimer=null;}lpUnpress();}
 function lpStart(e){
   lpCancel();
   if(TAB!=="tracker")return;
@@ -2406,8 +2410,12 @@ function lpStart(e){
   }
   var pt=(e.touches&&e.touches[0])||e;
   _lpX=pt.clientX||0;_lpY=pt.clientY||0;
+  var _pe=e.target;
+  while(_pe&&_pe.nodeType===1&&!(_pe.getAttribute("data-lp")||/^tog-\d+-/.test(_pe.id||"")))_pe=_pe.parentNode;
+  // retour visuel : la case "se creuse" après 200 ms pour montrer que l'appui long est bien pris en compte
+  _lpVis=setTimeout(function(){_lpVis=null;if(_pe&&_pe.classList){_lpEl=_pe;_pe.classList.add("lp-press");}},200);
   _lpTimer=setTimeout(function(){
-    _lpTimer=null;_lpFiredAt=Date.now();
+    _lpTimer=null;lpUnpress();_lpFiredAt=Date.now();
     try{if(navigator.vibrate)navigator.vibrate(30);}catch(er){}
     lpWeek(t.day,t.slot);
   },550);
@@ -2421,7 +2429,7 @@ function lpMove(e){
   if(typeof document==="undefined"||!document.addEventListener)return;
   try{
     var st=document.createElement("style");
-    st.textContent="#today-remaining span,.tog{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}";
+    st.textContent="#today-remaining span,.tog{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}.lp-press{transform:scale(.88);box-shadow:0 0 0 3px rgba(139,92,246,.55);transition:transform .35s,box-shadow .35s}";
     document.head.appendChild(st);
   }catch(er){}
   document.addEventListener("touchstart",lpStart,{passive:true});
