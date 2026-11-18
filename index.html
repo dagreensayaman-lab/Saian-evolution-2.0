@@ -3120,9 +3120,14 @@ function renderMonthGoalPanel(){
   html+="</div>";
   if(pw>0){
     const t=Math.max(1,Math.round(pw*dimN/7));
-    html+="<div style='font-size:.75rem;color:#0e7490;background:#f0faff;border-radius:12px;padding:12px;margin-bottom:16px;line-height:1.5'>Objectif : <strong>"+mgLabel(pw)+"</strong>, soit environ <strong>"+t+" fois</strong> ce mois-ci ("+dimN+" jours).<br>La couleur va du rouge (en retard sur le rythme) au vert (dans les temps) ; 85 % du rythme suffit pour \u00eatre au vert.</div>";
+    html+="<div style='font-size:.75rem;color:#0e7490;background:#f0faff;border-radius:12px;padding:12px;margin-bottom:12px;line-height:1.5'>Objectif : <strong>"+mgLabel(pw)+"</strong>, soit environ <strong>"+t+" fois</strong> ce mois-ci ("+dimN+" jours).<br>La couleur va du rouge (en retard sur le rythme) au vert (dans les temps) ; 85 % du rythme suffit pour \u00eatre au vert.</div>";
   }else{
     html+="<div style='font-size:.75rem;color:#64748b;background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:16px'>Choisis une fr\u00e9quence pour voir cette t\u00e2che en couleur dans le r\u00e9cap.</div>";
+  }
+  if(pw>=7){
+    html+="<div style='font-size:.7rem;color:#b45309;background:#fff7ed;border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5'>\ud83d\udd25 \u00ab Tous les jours \u00bb verrouille la t\u00e2che en <strong>habitude quotidienne</strong> : elle reste toujours au programme sur le tracker (impossible de la retirer d\u2019un jour) et a son propre streak.</div>";
+  }else if(s.daily){
+    html+="<div style='font-size:.7rem;color:#b45309;background:#fff7ed;border:1px solid rgba(245,158,11,0.35);border-radius:12px;padding:10px 12px;margin-bottom:16px;line-height:1.5'>Cette t\u00e2che est verrouill\u00e9e en \ud83d\udd25 habitude quotidienne : en choisissant moins que \u00ab tous les jours \u00bb, le verrou est retir\u00e9.</div>";
   }
   html+="<button onclick='saveMonthGoal()' style='width:100%;padding:13px;border:none;border-radius:12px;background:#8b5cf6;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>\u2705 Enregistrer</button>";
   html+="<button onclick='removeMonthGoal()' style='width:100%;padding:11px;border:1px solid rgba(220,38,38,0.3);border-radius:12px;background:#fff;color:#dc2626;font-weight:700;font-size:.78rem;cursor:pointer'>Pas d\u2019objectif pour cette t\u00e2che</button>";
@@ -3133,13 +3138,18 @@ function renderMonthGoalPanel(){
 function saveMonthGoal(){
   if(!_mgDraft)return;
   const s=ST.slots.find(function(x){return x.id===_mgDraft.slotId;});
-  if(s)s.goalPW=Math.max(0,Math.min(7,_mgDraft.pw|0));
+  if(s){
+    s.goalPW=Math.max(0,Math.min(7,_mgDraft.pw|0));
+    // "Tous les jours" = habitude 🔥 verrouillée (toujours au programme, streak dédié). Moins que ça : le verrou saute.
+    if(s.goalPW>=7)s.daily=true;
+    else if(s.daily)delete s.daily;
+  }
   saveST();closePanel();render();
 }
 function removeMonthGoal(){
   if(!_mgDraft)return;
   const s=ST.slots.find(function(x){return x.id===_mgDraft.slotId;});
-  if(s)s.goalPW=0;
+  if(s){s.goalPW=0;if(s.daily)delete s.daily;}
   saveST();closePanel();render();
 }
 function rHistory(eng){
