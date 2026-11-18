@@ -3073,8 +3073,74 @@ function computeTaskRecap(eng){
       for(let i=chunkStart;i<=lastIdx;i++){if(flat[i].d[s.id])chunkCount++;}
       goal={minPerWeek:rule.minPerWeek,bonusGems:rule.bonusGems||0,chunkCount:chunkCount,pct:Math.min(100,Math.round(chunkCount/rule.minPerWeek*100))};
     }
-    return{id:s.id,name:s.name,stat:s.stat,weekCount:weekCount,monthCount:monthCount,goal:goal};
+    // 🎯 Objectif mensuel : exprimé en "fois par semaine" (7 = tous les jours) puis converti selon la longueur du mois.
+    // Sans réglage explicite (s.goalPW), on déduit : habitude 🔥 = tous les jours, sinon la fréquence min. ⏰ si elle existe.
+    let mg=null;
+    const dimN=dim(now.getFullYear(),now.getMonth()),elapsed=now.getDate();
+    const auto=(typeof s.goalPW!=="number");
+    let pw=auto?(s.daily?7:(rule&&rule.minPerWeek?rule.minPerWeek:0)):s.goalPW;
+    pw=Math.max(0,Math.min(7,Math.round(pw||0)));
+    if(pw>0){
+      const target=Math.max(1,Math.round(pw*dimN/7));
+      // Rythme attendu à date (arrondi vers le bas : on n'est "en retard" que quand une occurrence est vraiment due)
+      const expected=Math.floor(target*elapsed/dimN);
+      const ratio=expected<=0?1:Math.min(1.5,monthCount/expected);
+      // 85 % du rythme suffit pour être au vert (25 sur 30 = vert)
+      const color=progressColor(Math.min(1,ratio/0.85));
+      mg={pw:pw,target:target,expected:expected,ratio:ratio,color:color,auto:auto,missing:Math.max(0,target-monthCount),pctFull:Math.min(100,Math.round(monthCount/target*100)),pctPace:Math.round(expected/target*100)};
+    }
+    return{id:s.id,name:s.name,stat:s.stat,weekCount:weekCount,monthCount:monthCount,goal:goal,mg:mg};
   });
+}
+// ── 🎯 OBJECTIF MENSUEL ── réglage par tâche : combien de fois par semaine (1 à 7, 7 = tous les jours)
+var _mgDraft=null;
+function mgLabel(pw){return pw>=7?"tous les jours":pw+"\u00d7 par semaine";}
+function openMonthGoal(slotId){
+  const s=ST.slots.find(function(x){return x.id===slotId;});
+  if(!s)return;
+  const rec=computeTaskRecap(engine()).filter(function(r){return r.id===slotId;})[0];
+  _mgDraft={slotId:slotId,pw:(rec&&rec.mg)?rec.mg.pw:0};
+  renderMonthGoalPanel();
+}
+function mgPick(pw){if(!_mgDraft)return;_mgDraft.pw=pw;renderMonthGoalPanel();}
+function renderMonthGoalPanel(){
+  const s=ST.slots.find(function(x){return x.id===_mgDraft.slotId;});
+  if(!s)return;
+  const now=new Date(),dimN=dim(now.getFullYear(),now.getMonth());
+  const pw=_mgDraft.pw;
+  let html="<div style='display:flex;align-items:center;gap:12px;margin-bottom:20px'><span style='font-size:1.8rem'>\ud83c\udfaf</span>";
+  html+="<div><div style='font-family:Anton,sans-serif;font-size:1.05rem;color:#8b5cf6;letter-spacing:1px'>OBJECTIF DU MOIS</div><div style='font-size:.72rem;color:#0e7490'>"+s.name+"</div></div>";
+  html+="<button onclick='closePanel()' style='margin-left:auto;border:none;background:rgba(0,0,0,0.06);border-radius:99px;width:32px;height:32px;font-size:1rem;cursor:pointer'>\u2715</button></div>";
+  html+="<div style='font-size:.62rem;color:#8b5cf6;font-family:Anton,sans-serif;letter-spacing:1px;margin-bottom:8px'>COMBIEN DE FOIS ?</div>";
+  html+="<div style='display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px'>";
+  [1,2,3,4,5,6,7].forEach(function(n){
+    const on=(pw===n);
+    html+="<button onclick='mgPick("+n+")' style='flex:1;min-width:64px;padding:12px 6px;border-radius:12px;border:2px solid "+(on?"#8b5cf6":"rgba(139,92,246,0.25)")+";background:"+(on?"#8b5cf6":"#fff")+";color:"+(on?"#fff":"#8b5cf6")+";font-weight:700;font-size:.8rem;cursor:pointer'>"+(n===7?"Tous les jours":n+"\u00d7 / sem.")+"</button>";
+  });
+  html+="</div>";
+  if(pw>0){
+    const t=Math.max(1,Math.round(pw*dimN/7));
+    html+="<div style='font-size:.75rem;color:#0e7490;background:#f0faff;border-radius:12px;padding:12px;margin-bottom:16px;line-height:1.5'>Objectif : <strong>"+mgLabel(pw)+"</strong>, soit environ <strong>"+t+" fois</strong> ce mois-ci ("+dimN+" jours).<br>La couleur va du rouge (en retard sur le rythme) au vert (dans les temps) ; 85 % du rythme suffit pour \u00eatre au vert.</div>";
+  }else{
+    html+="<div style='font-size:.75rem;color:#64748b;background:#f8fafc;border-radius:12px;padding:12px;margin-bottom:16px'>Choisis une fr\u00e9quence pour voir cette t\u00e2che en couleur dans le r\u00e9cap.</div>";
+  }
+  html+="<button onclick='saveMonthGoal()' style='width:100%;padding:13px;border:none;border-radius:12px;background:#8b5cf6;color:#fff;font-weight:700;font-size:.85rem;cursor:pointer;margin-bottom:8px'>\u2705 Enregistrer</button>";
+  html+="<button onclick='removeMonthGoal()' style='width:100%;padding:11px;border:1px solid rgba(220,38,38,0.3);border-radius:12px;background:#fff;color:#dc2626;font-weight:700;font-size:.78rem;cursor:pointer'>Pas d\u2019objectif pour cette t\u00e2che</button>";
+  document.getElementById("stat-panel-content").innerHTML=html;
+  document.getElementById("stat-panel").style.display="block";
+  document.body.style.overflow="hidden";
+}
+function saveMonthGoal(){
+  if(!_mgDraft)return;
+  const s=ST.slots.find(function(x){return x.id===_mgDraft.slotId;});
+  if(s)s.goalPW=Math.max(0,Math.min(7,_mgDraft.pw|0));
+  saveST();closePanel();render();
+}
+function removeMonthGoal(){
+  if(!_mgDraft)return;
+  const s=ST.slots.find(function(x){return x.id===_mgDraft.slotId;});
+  if(s)s.goalPW=0;
+  saveST();closePanel();render();
 }
 function rHistory(eng){
   const{skeys,streaks,netXP,totXP,rstr,adays,tdays}=eng;
@@ -3085,7 +3151,11 @@ function rHistory(eng){
     if(recap.length>0){
       html+=`<div id="history-task-recap-header" class="sl" style="margin-top:4px">📊 Récap par tâche</div>`;
       html+=`<div style="background:rgba(139,92,246,0.06);border-radius:12px;padding:10px 14px;margin-bottom:12px;font-size:.66rem;color:#1e3a4a">Combien de fois chaque tâche active a été cochée, cette semaine (depuis lundi) et ce mois-ci.</div>`;
-      recap.forEach(function(r){
+      // Les tâches en retard sur leur objectif du mois remontent en premier ; celles sans objectif restent en bas.
+      recap.map(function(r,i){r._i=i;return r;}).sort(function(a,b){
+        if(a.mg&&b.mg)return (a.mg.ratio-b.mg.ratio)||(a._i-b._i);
+        if(a.mg)return -1;if(b.mg)return 1;return a._i-b._i;
+      }).forEach(function(r){
         const m=SM[r.stat];
         const g=r.goal;
         const barColor=g?(g.pct>=100?"#10b981":g.pct>=50?"#f59e0b":"#dc2626"):null;
@@ -3097,9 +3167,20 @@ function rHistory(eng){
             </div>
             <div style="display:flex;gap:14px;text-align:center">
               <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.weekCount}</div><div style="font-size:.5rem;color:#94a3b8">cette sem.</div></div>
-              <div><div style="font-size:.95rem;font-weight:700;color:${m.color}">${r.monthCount}</div><div style="font-size:.5rem;color:#94a3b8">ce mois</div></div>
+              <div><div style="font-size:.95rem;font-weight:700;color:${r.mg?r.mg.color:m.color}">${r.monthCount}</div><div style="font-size:.5rem;color:#94a3b8">ce mois</div></div>
             </div>
           </div>
+          ${r.mg?`<div onclick="openMonthGoal('${r.id}')" style="margin-top:8px;cursor:pointer">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <span style="font-size:.6rem;color:#64748b">🎯 ${mgLabel(r.mg.pw)} · objectif ${r.mg.target}/mois ✎</span>
+              <span style="font-size:.66rem;font-weight:800;color:${r.mg.color}">${r.monthCount}/${r.mg.target}</span>
+            </div>
+            <div style="position:relative;height:9px;border-radius:99px;background:rgba(0,0,0,0.07);overflow:hidden">
+              <div style="height:100%;width:${r.mg.pctFull}%;background:${r.mg.color};border-radius:99px;transition:width .3s"></div>
+              ${r.mg.expected>0&&r.mg.pctPace<100?`<div style="position:absolute;top:0;bottom:0;left:${r.mg.pctPace}%;width:2px;background:rgba(30,58,74,0.55)"></div>`:""}
+            </div>
+            <div style="font-size:.58rem;margin-top:3px;color:${r.mg.missing===0?"#059669":r.mg.color};font-weight:600">${r.mg.missing===0?"✅ Objectif du mois atteint":(r.monthCount>=r.mg.expected?"Dans les temps · encore "+r.mg.missing+" à faire":"En retard de "+(r.mg.expected-r.monthCount)+" · il t’en manque "+r.mg.missing+" ce mois-ci")}</div>
+          </div>`:`<div onclick="openMonthGoal('${r.id}')" style="margin-top:8px;padding:6px 10px;border:1px dashed rgba(139,92,246,0.35);border-radius:10px;font-size:.6rem;color:#8b5cf6;cursor:pointer;text-align:center">🎯 Fixer un objectif mensuel</div>`}
           ${g?`<div style="margin-top:8px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
               <span style="font-size:.6rem;color:#64748b">🎯 Objectif : ${g.minPerWeek}x/semaine${g.bonusGems>0?` · +${g.bonusGems}💎 si atteint`:""}</span>
